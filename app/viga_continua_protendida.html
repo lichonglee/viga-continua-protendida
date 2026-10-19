@@ -4,21 +4,21 @@
 <style>
 /* Layout: cabeçalho fixo com situação do projeto; à esquerda os dados de entrada (a antiga aba Dados), à direita uma aba por assunto da planilha. */
 :root{
-  --plane:#F2F4F7; --surface:#FCFCFB; --ink:#0B0B0B; --ink2:#52514E; --muted:#6E6C67; --grid:#E1E0D9; --axis:#C3C2B7;
-  --accent:#1C5CAB; --accent-soft:#E4EEFB; --accent-ink:#FFFFFF; --ring:rgba(11,11,11,.10);
-  --s1:#2A78D6; --s2:#EB6834; --s3:#1BAF7A; --s4:#4A3AA7; --band:rgba(42,120,214,.13);
+  --plane:#EDF1F6; --surface:#FCFCFB; --ink:#0B0B0B; --ink2:#4F5868; --muted:#6E6C67; --grid:#E1E0D9; --axis:#C3C2B7;
+  --accent:#164194; --accent-soft:#E3EAF6; --accent-ink:#FFFFFF; --ring:rgba(11,11,11,.10);
+  --s1:#164194; --s2:#EA5950; --s3:#1E9B5B; --s4:#0095DB; --band:rgba(22,65,148,.13);
   --good:#0CA30C; --warn:#FAB219; --bad:#D03B3B; --warn-soft:#FFF3D6; --bad-soft:#FBE5E5; --good-soft:#E3F4E3;
   --sans:'IBM Plex Sans',system-ui,-apple-system,'Segoe UI',sans-serif; --mono:'IBM Plex Mono',ui-monospace,Consolas,monospace;
 }
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
   --plane:#0D0D0D; --surface:#1A1A19; --ink:#FFFFFF; --ink2:#C3C2B7; --muted:#9C9A93; --grid:#2C2C2A; --axis:#383835;
-  --accent:#6DA7EC; --accent-soft:#1E2E45; --accent-ink:#0D0D0D; --ring:rgba(255,255,255,.10);
-  --s1:#3987E5; --s2:#D95926; --s3:#199E70; --s4:#9085E9; --band:rgba(57,135,229,.16);
+  --accent:#6FB1EC; --accent-soft:#1E2E45; --accent-ink:#0D0D0D; --ring:rgba(255,255,255,.10);
+  --s1:#5B8FE6; --s2:#F27B72; --s3:#35C07A; --s4:#38B6EE; --band:rgba(91,143,230,.18);
   --warn-soft:#3A2F10; --bad-soft:#3A1A1A; --good-soft:#12301A; color-scheme:dark}}
 :root[data-theme="dark"]{
   --plane:#0D0D0D; --surface:#1A1A19; --ink:#FFFFFF; --ink2:#C3C2B7; --muted:#9C9A93; --grid:#2C2C2A; --axis:#383835;
-  --accent:#6DA7EC; --accent-soft:#1E2E45; --accent-ink:#0D0D0D; --ring:rgba(255,255,255,.10);
-  --s1:#3987E5; --s2:#D95926; --s3:#199E70; --s4:#9085E9; --band:rgba(57,135,229,.16);
+  --accent:#6FB1EC; --accent-soft:#1E2E45; --accent-ink:#0D0D0D; --ring:rgba(255,255,255,.10);
+  --s1:#5B8FE6; --s2:#F27B72; --s3:#35C07A; --s4:#38B6EE; --band:rgba(91,143,230,.18);
   --warn-soft:#3A2F10; --bad-soft:#3A1A1A; --good-soft:#12301A; color-scheme:dark}
 
 *{box-sizing:border-box}
@@ -110,13 +110,40 @@ details.tv .tw{max-height:320px;margin-top:6px}
 .cut.sel{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
 .cutctl{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:12px;font-size:13px}
 .cutctl input[type=range]{flex:1;min-width:160px;max-width:420px}
+.unbbar{background:var(--surface);border-top:4px solid #0095DB;border-bottom:1px solid var(--grid)}
+.unbin{max-width:1500px;margin-inline:auto;padding:9px 16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.unbin .wm{font-weight:800;font-size:22px;letter-spacing:-.02em;color:var(--accent);padding-right:12px;border-right:2px solid #0095DB;line-height:1}
+.unbin .un{font-size:12.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--ink2);font-weight:500}
+.unbin .dep{margin-left:auto;font-size:12.5px;color:var(--muted)}
+h1{color:var(--accent)}
+.credit{font-size:12.5px;color:var(--ink2);margin-top:3px}
+.ver{display:inline-block;margin-left:8px;padding:1px 8px;border-radius:999px;background:var(--accent);color:var(--accent-ink);font-family:var(--mono);font-size:11.5px;vertical-align:1px}
+.tab[aria-selected="true"]{border-bottom-width:3px}
+.card{border-top:3px solid var(--accent)}
+.lgctl{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:6px;font-size:12px;color:var(--muted)}
+.lgctl button{font:inherit;font-size:12px;padding:2px 9px;border:1px solid var(--axis);border-radius:999px;background:var(--surface);color:var(--ink)}
+.lgctl button:hover{background:var(--accent-soft)}.lgctl button[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.legend button.lg{font:inherit;font-size:12.5px;display:inline-flex;align-items:center;gap:0;padding:1px 8px 1px 6px;border:1px solid transparent;border-radius:6px;background:none;color:var(--ink2)}
+.legend button.lg:hover{background:var(--accent-soft)}.legend button.lg[aria-pressed="false"]{opacity:.45;text-decoration:line-through}
+.rodape{margin:26px 0 0;padding-top:10px;border-top:1px solid var(--grid);font-size:12px;color:var(--muted)}
+.paper{--ink:#0B0B0B;--ink2:#4F5868;--muted:#6E6C67;--grid:#E1E0D9;--axis:#C3C2B7;--surface:#FFFFFF;--plane:#EDF1F6;--accent:#164194;--accent-soft:#E3EAF6;--ring:rgba(11,11,11,.10);--s1:#164194;--s2:#EA5950;--s3:#1E9B5B;--s4:#0095DB;
+  background:#fff;color:#0B0B0B;border:1px solid var(--ring);border-radius:8px;padding:22px 26px}
+.paper h1{font-size:22px}.paper h2{font-size:17px;margin:26px 0 8px;padding-bottom:4px;border-bottom:2px solid #164194;color:#164194}.paper .card h2{font-size:14px;border:0;color:#0B0B0B;margin:0 0 8px;padding:0}
+.paper .capa{border-bottom:3px solid #164194;padding-bottom:10px;margin-bottom:12px}.paper .capa .sub{color:var(--ink2)}.paper .toc{columns:2;padding-left:20px}.paper .toc a{color:#164194;text-decoration:none}
+.paper table.fmt td.fx{font-family:"Cambria Math",Cambria,Georgia,serif;font-size:13.5px}.paper table.fmt td.sb{color:var(--ink2);font-family:var(--mono);font-size:12px}.paper table.fmt td.n{white-space:normal}
+.paper .tela{border:1px solid var(--axis);border-radius:8px;padding:10px;margin:12px 0 16px}.paper .tela-h{font-size:11.5px;font-weight:600;color:#164194;text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px}
+.paper .tela .card{border:0;padding:0;box-shadow:none}.paper.no-tela .tela{display:none}
+.paper .unbl{color:#164194;font-size:12px;letter-spacing:.08em;text-transform:uppercase;margin-bottom:8px;border-top:4px solid #0095DB;padding-top:8px}.paper .unbl b{font-size:20px;letter-spacing:0;margin-right:10px}
+@media (max-width:700px){.paper{padding:14px}.paper .toc{columns:1}}
 </style>
 
 
+<div class="unbbar"><div class="unbin"><span class="wm" aria-hidden="true">UnB</span><span class="un">Universidade de Brasília</span><span class="dep">Concreto Protendido · Engenharia Civil</span></div></div>
 <div class="app">
   <header class="top">
     <div>
       <h1>Viga contínua protendida, 2 vãos</h1>
+      <div class="credit">Produzido pelo Professor DSc. Li Chong Lee (Todos os direitos reservados) <span class="ver" id="ver" title="Versão do painel">v1.2.0</span></div>
       <div class="sub">Pós-tração aderente · NBR 6118 · mesma lógica da planilha de apoio, recalculada a cada alteração</div>
     </div>
     <div class="status" id="status"></div>
@@ -611,7 +638,21 @@ function lerp(xs, ys, x){
   return ys[lo] + (ys[hi] - ys[lo]) * (x - xs[lo]) / (xs[hi] - xs[lo]);
 }
 /* cfg: series[{name,x,y,color,dash,w,area,nolegend}], bands[{x,lo,up,name}], refs[{y,label,dash}], ylim, invertY, xlab, ylab, yd, tx, tcols */
+/* Cada gráfico deixa escolher quais efeitos mostrar (um a um ou por agrupamento, cfg.groups). A escolha é guardada por gráfico (HID) e vale até recarregar. */
+let CAPTURING = false; const HID = {};
 function chart(host, cfg){
+  const key = cfg.key || cfg.title || 'g', hid = CAPTURING ? [] : (HID[key] || []);
+  const all = cfg.series.filter(s => !s.nolegend).map(s => ({n: s.name, c: s.color, d: s.dash, k: 's'}))
+    .concat((cfg.bands || []).map(b => ({n: b.name, c: b.color || 'var(--band)', b: 1, k: 'b'})))
+    .concat((cfg.refs || []).filter(r => r.legend).map(r => ({n: r.label, c: 'var(--muted)', d: 1, k: 'r'})));
+  const sn = cfg.series.filter(s => !s.nolegend).map(s => s.name);
+  let hidden = hid.filter(n => all.some(o => o.n === n));
+  if (sn.length && sn.every(n => hidden.indexOf(n) >= 0)) hidden = hidden.filter(n => sn.indexOf(n) < 0);
+  const vis = Object.assign({}, cfg, {series: cfg.series.filter(s => hidden.indexOf(s.name) < 0), bands: (cfg.bands || []).filter(b => hidden.indexOf(b.name) < 0)});
+  const setHidden = list => { const keepS = sn.filter(n => list.indexOf(n) < 0).length; if (sn.length && !keepS) return; HID[key] = list; chart(host, cfg); };
+  chartDraw(host, vis, all, hidden, setHidden, cfg.groups || []);
+}
+function chartDraw(host, cfg, all, hidden, setHidden, groups){
   host.innerHTML = '';
   const W = Math.max(300, host.clientWidth || 640), H = cfg.height || 300, m = {l: 62, r: 16, t: 10, b: 38};
   const pw = W - m.l - m.r, ph = H - m.t - m.b;
@@ -627,12 +668,18 @@ function chart(host, cfg){
   const X = v => m.l + (v - x0) / (x1 - x0) * pw;
   const Y = v => cfg.invertY ? m.t + (v - y0) / (y1 - y0) * ph : m.t + ph - (v - y0) / (y1 - y0) * ph;
   const box = h('div', {class: 'cbox'});
-  const names = cfg.series.filter(s => !s.nolegend).map(s => ({n: s.name, c: s.color, d: s.dash}))
-    .concat((cfg.bands || []).map(b => ({n: b.name, c: b.color || 'var(--band)', b: 1})))
-    .concat((cfg.refs || []).filter(r => r.legend).map(r => ({n: r.label, c: 'var(--muted)', d: 1})));
-  if (names.length > 1){
-    const lg = h('div', {class: 'legend'});
-    names.forEach(o => { const sp = h('span'); const i = h('i', {class: o.b ? 'b' : (o.d ? 'd' : '')}); if (o.b) i.style.background = o.c; else i.style.borderTopColor = o.c; sp.appendChild(i); sp.appendChild(document.createTextNode(o.n)); lg.appendChild(sp); });
+  if (all.length > 1){
+    const lg = h('div', {class: 'legend'}), interactive = !CAPTURING;
+    if (interactive){
+      const names = all.map(o => o.n), gs = [{n: 'Todos', s: names}].concat(groups.filter(g => g.s.some(n => names.indexOf(n) >= 0)));
+      const ctl = h('div', {class: 'lgctl'}); ctl.appendChild(h('span', null, 'Mostrar:'));
+      gs.forEach(g => { const on = names.every(n => (g.s.indexOf(n) >= 0) === (hidden.indexOf(n) < 0)); const b = h('button', {type: 'button', 'aria-pressed': String(on), title: g.s.join(' · ')}, g.n);
+        b.addEventListener('click', () => setHidden(names.filter(n => g.s.indexOf(n) < 0))); ctl.appendChild(b); });
+      host.appendChild(ctl);
+    }
+    all.forEach(o => { const off = hidden.indexOf(o.n) >= 0, sp = interactive ? h('button', {type: 'button', class: 'lg', 'aria-pressed': String(!off), title: (off ? 'Mostrar ' : 'Ocultar ') + o.n}) : h('span');
+      const i = h('i', {class: o.b ? 'b' : (o.d ? 'd' : '')}); if (o.b) i.style.background = o.c; else i.style.borderTopColor = o.c; sp.appendChild(i); sp.appendChild(document.createTextNode(o.n));
+      if (interactive) sp.addEventListener('click', () => setHidden(off ? hidden.filter(n => n !== o.n) : hidden.concat(o.n))); lg.appendChild(sp); });
     host.appendChild(lg);
   }
   const svg = S('svg', {viewBox: '0 0 ' + W + ' ' + H, role: 'img', tabindex: 0, 'aria-label': cfg.title || 'gráfico'});
@@ -816,7 +863,7 @@ function renderStatus(){
 
 /* ---------- abas ---------- */
 const TABS = [['resumo', 'Resumo'], ['tracado', 'Traçado e fuso'], ['perdas', 'Perdas e alongamento'], ['esforcos', 'Esforços e hiperestático'], ['tensoes', 'Tensões'],
-  ['elu', 'Ruptura e cortante'], ['flecha', 'Flecha'], ['niveis', 'Níveis de protensão'], ['ca', 'Comparação com CA']];
+  ['elu', 'Ruptura e cortante'], ['flecha', 'Flecha'], ['niveis', 'Níveis de protensão'], ['ca', 'Comparação com CA'], ['memorial', 'Memorial de cálculo']];
 function buildTabs(){
   const t = $('#tabs'); t.innerHTML = '';
   TABS.forEach(([id, n]) => { const b = h('button', {class: 'tab', role: 'tab', id: 'tab_' + id, 'aria-selected': String(id === tab), 'data-t': id}, n); t.appendChild(b); });
@@ -847,7 +894,8 @@ function traceSeries(opts){
     lk.forEach(k => s.push({name: k, x: xsOf(), y: A.fu.lows[k], color: C.s1, w: 1, d: 3, nolegend: true}));
     uk.forEach(k => s.push({name: k, x: xsOf(), y: A.fu.ups[k], color: C.s3, w: 1, d: 3, nolegend: true}));
   }
-  return {series: s, bands, refs};
+  const FU = 'Fuso limite (e mín. a e máx.)', groups = [{n: 'Cabo e fuso', s: ['Cabo e(x)', FU]}, {n: 'Linha de pressões e fuso', s: ['Linha de pressões e_lp', FU]}];
+  return {series: s, bands, refs, groups};
 }
 
 
@@ -920,7 +968,7 @@ PANELS.resumo = function(){
         ['Força no macaco Pj', f(Ls.Pj, 0) + ' kN'], ['Pi no ato (mín.)', f(Math.min.apply(null, Ls.Pi), 0) + ' kN'], ['P∞ (mín. a máx.)', f(Math.min.apply(null, Ls.Pinf), 0) + ' a ' + f(Math.max.apply(null, Ls.Pinf), 0) + ' kN'],
         ['Alcance da cravação xa', f(Ls.xa, 2) + ' m'], ['Alongamento por extremidade', f(Ls.elong, 1) + ' mm'], ['Reação hiperestática R_B(∞)', f(a.r.res.inf.RB, 1) + ' kN'],
         ['M_hip no apoio B (∞)', f(a.r.res.inf.Mhip[a.iB], 1) + ' kN·m'], ['Passiva no ato As,ato', f(Math.max.apply(null, a.aato), 1) + ' cm²'], ['Flecha máx. quase perm. ×(1+φ)', f(Math.min.apply(null, a.df.qp_inf.slice(0, 21)) * 1000, 1) + ' mm']]) + '</div>',
-    after(){ initCuts(); const t = traceSeries(); chart($('#c1'), {series: t.series, bands: t.bands, refs: t.refs, invertY: true, height: 300, xlab: 'x (m)', ylab: 'e (m)  + abaixo do CG', yd: 2, vd: 3, title: 'Traçado e fuso', tx: xsOf()}); }
+    after(){ initCuts(); const t = traceSeries(); chart($('#c1'), {series: t.series, bands: t.bands, refs: t.refs, groups: t.groups, invertY: true, height: 300, xlab: 'x (m)', ylab: 'e (m)  + abaixo do CG', yd: 2, vd: 3, title: 'Traçado e fuso', tx: xsOf()}); }
   };
 };
 
@@ -936,7 +984,7 @@ PANELS.tracado = function(){
       '<div class="ctl"><label><input type="checkbox" id="lim"> Mostrar os 10 limites</label></div><div id="c1"></div></div>' + cutsCard() +
       '<div class="grid2"><div class="card"><h2>Parábolas</h2>' + kv([['Parábola A, de 0 a x_i', 'e = e_vão − aA·(x − x0)²'], ['aA', f(pp.aA, 5) + ' 1/m'], ['x0', f(pp.x0, 3) + ' m'], ['Parábola reversa, de x_i a L', 'e = −e_sup + aB·(L − x)²'], ['aB', f(pp.aB, 5) + ' 1/m'], ['x_i = L − λ', f(pp.xi, 2) + ' m']]) + '</div>' +
       '<div class="card"><h2>Seções do 1º vão</h2>' + table(['x (m)', 'e cabo (m)', 'e_lp (m)', 'e mín. (m)', 'e máx. (m)', 'e_lp no fuso?'], rows) + '</div></div>',
-    after(){ initCuts(); const draw = () => { const t = traceSeries({lim: $('#lim').checked}); chart($('#c1'), {series: t.series, bands: t.bands, refs: t.refs, invertY: true, height: 380, ylim: [-0.5, 0.5], xlab: 'x (m)', ylab: 'e (m)  + abaixo do CG', yd: 2, vd: 3, tx: xsOf(), title: 'Traçado e fuso'}); };
+    after(){ initCuts(); const draw = () => { const t = traceSeries({lim: $('#lim').checked}); chart($('#c1'), {series: t.series, bands: t.bands, refs: t.refs, groups: t.groups, invertY: true, height: 380, ylim: [-0.5, 0.5], xlab: 'x (m)', ylab: 'e (m)  + abaixo do CG', yd: 2, vd: 3, tx: xsOf(), title: 'Traçado e fuso'}); };
       $('#lim').addEventListener('change', draw); draw(); }
   };
 };
@@ -959,7 +1007,7 @@ PANELS.perdas = function(){
     after(){ const x = Ls.x; chart($('#c1'), {series: [
       {name: 'Atrito (da extremidade esquerda)', x, y: Ls.sL, color: C.s1, d: 1}, {name: 'Após a cravação', x, y: Ls.sig_slip, color: C.s2, d: 1},
       {name: 'No ato σp,i', x, y: Ls.sig_i, color: C.s3, d: 1}, {name: 'Em t∞ σp,∞', x, y: Ls.sig_inf, color: C.s4, d: 1}],
-      refs: [{y: d.sig_j, label: 'σp,j'}], height: 340, xlab: 'x (m)', ylab: 'σp (MPa)', yd: 0, vd: 1, unit: 'MPa', tx: x, title: 'Tensão no aço'}); }
+      refs: [{y: d.sig_j, label: 'σp,j'}], groups: [{n: 'Perdas imediatas', s: ['Atrito (da extremidade esquerda)', 'Após a cravação', 'No ato σp,i']}, {n: 'Do ato ao longo prazo', s: ['No ato σp,i', 'Em t∞ σp,∞']}], height: 340, xlab: 'x (m)', ylab: 'σp (MPa)', yd: 0, vd: 1, unit: 'MPa', tx: x, title: 'Tensão no aço'}); }
   };
 };
 
@@ -971,9 +1019,9 @@ PANELS.esforcos = function(){
       '<div class="card"><h2>Momentos da protensão em t∞</h2><div class="src">Planilha: Hiperestatico</div><p class="lead">M_iso = −P∞·cosα·e. O apoio central impede a deformação da protensão e gera a reação hiperestática R_B, que dá M_hip = −R_B·m. R_B(∞) = ' + f(rf.RB, 1) + ' kN; M_hip no apoio B = ' + f(rf.Mhip[A.iB], 1) + ' kN·m.</p><div id="c2"></div></div>' +
       '<div class="card"><h2>Seções do 1º vão</h2>' + table(['x (m)', 'Mg', 'Mq,máx', 'Mq,mín', 'M_iso,∞', 'M_hip,∞', 'M_P,∞', 'Vg'], rows) + '<p class="foot">Momentos em kN·m, cortante em kN.</p></div>',
     after(){ chart($('#c1'), {series: [{name: 'Mg', x, y: e.Mg, color: C.s1, d: 1}, {name: 'Mg + Mq,máx', x, y: x.map((_, i) => e.Mg[i] + e.Mq_max[i]), color: C.s2, d: 1}, {name: 'Mg + Mq,mín', x, y: x.map((_, i) => e.Mg[i] + e.Mq_min[i]), color: C.s3, d: 1}],
-        invertY: true, height: 300, xlab: 'x (m)', ylab: 'M (kN·m)', yd: 0, vd: 1, unit: 'kN·m', tx: x, title: 'Momentos externos'});
+        groups: [{n: 'Permanente', s: ['Mg']}, {n: 'Com sobrecarga', s: ['Mg + Mq,máx', 'Mg + Mq,mín']}, {n: 'Envoltória positiva', s: ['Mg', 'Mg + Mq,máx']}], invertY: true, height: 300, xlab: 'x (m)', ylab: 'M (kN·m)', yd: 0, vd: 1, unit: 'kN·m', tx: x, title: 'Momentos externos'});
       chart($('#c2'), {series: [{name: 'M_iso,∞', x, y: rf.Miso, color: C.s1, d: 1}, {name: 'M_hip,∞', x, y: rf.Mhip, color: C.s2, d: 1}, {name: 'M_P,∞ total', x, y: rf.MP, color: C.s4, d: 1}],
-        invertY: true, height: 280, xlab: 'x (m)', ylab: 'M (kN·m)', yd: 0, vd: 1, unit: 'kN·m', tx: x, title: 'Momentos da protensão'}); }
+        groups: [{n: 'Isostático', s: ['M_iso,∞']}, {n: 'Hiperestático', s: ['M_hip,∞']}, {n: 'Total', s: ['M_P,∞ total']}, {n: 'Isostático + hiperestático', s: ['M_iso,∞', 'M_hip,∞']}], invertY: true, height: 280, xlab: 'x (m)', ylab: 'M (kN·m)', yd: 0, vd: 1, unit: 'kN·m', tx: x, title: 'Momentos da protensão'}); }
   };
 };
 
@@ -983,18 +1031,22 @@ PANELS.tensoes = function(){
   const rows = Object.keys(m).map(k => ({c: [k, f(m[k], 2) + ' MPa', ok(m[k] >= 0, 'Atende', k.indexOf('Ato: tração') === 0 ? 'Passiva' : 'Não atende')]}));
   return {
     html: '<div class="card"><h2>Tensões nas fibras</h2><div class="src">Planilha: Tensoes</div><p class="lead">Tração positiva. σ1 é a fibra inferior e σ2 a superior. Combinações: frequente (ψ1), rara e quase permanente (ψ2).</p>' +
-      '<div class="ctl"><label for="ts">Estado</label><select id="ts"><option value="ato">No ato (Pi + peso próprio)</option><option value="cqp">Quase permanente (ψ2)</option><option value="cf">ELS-D · frequente (ψ1)</option><option value="cr">ELS-F e ELS-CE · rara</option></select></div><div id="c1"></div></div>' +
+      '<div class="ctl"><label for="ts">Estado</label><select id="ts"><option value="ato">No ato (Pi + peso próprio)</option><option value="cqp">Quase permanente (ψ2)</option><option value="cf">ELS-D · frequente (ψ1)</option><option value="cr">ELS-F e ELS-CE · rara</option><option value="all">Todos os estados (agrupados)</option></select></div><div id="c1"></div></div>' +
       '<div class="grid2"><div class="card"><h2>Margens aos limites</h2>' + table(['Verificação', 'Margem', 'Situação'], rows) + '<p class="foot">Margem positiva significa folga. No ato a tração acima do limite é absorvida por armadura passiva As,ato = ' + f(Math.max.apply(null, A.aato), 1) + ' cm².</p></div>' +
       '<div class="card"><h2>Limites adotados</h2>' + kv([['fct,m', f(d.fctm, 2) + ' MPa'], ['fctk,inf', f(d.fctkinf, 2) + ' MPa'], ['fcj em t0', f(d.fcj, 1) + ' MPa'], ['Tração no ato 1,2·fct,m,j', f(d.ft_ato, 2) + ' MPa'], ['Compressão no ato 0,7·fcj', f(-0.7 * d.fcj, 2) + ' MPa'], ['Tração em serviço 1,2·fctk,inf', f(d.ft_els, 2) + ' MPa'], ['Compressão em serviço 0,7·fck', f(-0.7 * d.fck, 2) + ' MPa'], ['Ecs', f(d.Ecs, 0) + ' MPa'], ['Núcleo central k', f(d.k, 3) + ' m']]) + '</div></div>',
     after(){ const sel = $('#ts'); sel.value = tsel; const x = xsOf(), ck = A.r.ck, lv = A.lv.t, d = A.d;
       const draw = () => { tsel = sel.value; let s1, s2, refs, ttl;
+        if (tsel === 'all'){ const E = [['Ato', 'ato', ck.ato_s1, ck.ato_s2, C.s1], ['Quase perm.', 'cqp', lv.cqp[0], lv.cqp[1], C.s3], ['Frequente', 'cf', ck.cfq_s1, ck.cfq_s2, C.s2], ['Rara', 'cr', ck.cr_s1, ck.cr_s2, C.s4]], ser = [], groups = [];
+          E.forEach(([n, , a1, a2, col]) => { ser.push({name: n + ' σ1', x, y: a1, color: col, d: 2}); ser.push({name: n + ' σ2', x, y: a2, color: col, dash: 1, d: 2}); groups.push({n: n, s: [n + ' σ1', n + ' σ2']}); });
+          groups.push({n: 'Fibra inferior (σ1)', s: E.map(e => e[0] + ' σ1')}, {n: 'Fibra superior (σ2)', s: E.map(e => e[0] + ' σ2')}, {n: 'Serviço (sem o ato)', s: E.slice(1).reduce((r, e) => r.concat([e[0] + ' σ1', e[0] + ' σ2']), [])});
+          chart($('#c1'), {series: ser, groups, key: 'Tensões todos', refs: [{y: 0, label: '0'}, {y: d.ft_els, label: '+1,2·fctk,inf'}], height: 360, xlab: 'x (m)', ylab: 'σ (MPa)', yd: 1, vd: 2, unit: 'MPa', tx: x, title: 'Tensões, todos os estados'}); return; }
         if (tsel === 'ato'){ s1 = ck.ato_s1; s2 = ck.ato_s2; refs = [{y: d.ft_ato, label: '+1,2·fct,m,j'}, {y: -0.7 * d.fcj, label: '−0,7·fcj'}]; }
         else if (tsel === 'cqp'){ s1 = lv.cqp[0]; s2 = lv.cqp[1]; refs = [{y: 0, label: '0'}]; }
         else if (tsel === 'cf'){ s1 = ck.cfq_s1; s2 = ck.cfq_s2; refs = [{y: 0, label: 'descompressão = 0'}, {y: d.ft_els, label: '+1,2·fctk,inf'}]; }
         else { s1 = ck.cr_s1; s2 = ck.cr_s2; refs = [{y: d.ft_els, label: '+1,2·fctk,inf'}, {y: -0.7 * d.fck, label: '−0,7·fck'}]; }
         const ser = [{name: 'σ1 fibra inferior', x, y: s1, color: C.s1, d: 2}, {name: 'σ2 fibra superior', x, y: s2, color: C.s2, d: 2}];
         if (tsel === 'cr'){ ser.push({name: 'σ2 compressão máx. (ELS-CE)', x, y: ck.ce_s2, color: C.s3, dash: 1, d: 2}); ser.push({name: 'σ1 compressão máx. (ELS-CE)', x, y: ck.ce_s1, color: C.s4, dash: 1, d: 2}); }
-        chart($('#c1'), {series: ser, refs, height: 320, xlab: 'x (m)', ylab: 'σ (MPa)', yd: 1, vd: 2, unit: 'MPa', tx: x, title: 'Tensões'}); };
+        chart($('#c1'), {series: ser, refs, key: 'Tensões ' + tsel, groups: [{n: 'Fibra inferior', s: ['σ1 fibra inferior', 'σ1 compressão máx. (ELS-CE)']}, {n: 'Fibra superior', s: ['σ2 fibra superior', 'σ2 compressão máx. (ELS-CE)']}, {n: 'Só tração (fibras)', s: ['σ1 fibra inferior', 'σ2 fibra superior']}, {n: 'Só compressão máx.', s: ['σ2 compressão máx. (ELS-CE)', 'σ1 compressão máx. (ELS-CE)']}], height: 320, xlab: 'x (m)', ylab: 'σ (MPa)', yd: 1, vd: 2, unit: 'MPa', tx: x, title: 'Tensões'}); };
       sel.addEventListener('change', draw); draw(); }
   };
 };
@@ -1033,7 +1085,7 @@ PANELS.flecha = function(){
       '<div class="card"><h2>Resultados</h2>' + kv([['Máx. |δ| do peso g', f(Math.abs(mx(g)), 1) + ' mm'], ['Máx. |δ| da protensão P∞', f(Math.abs(mx(P)), 1) + ' mm'], ['δ quase permanente (líquida)', f(mx(qp), 1) + ' mm'], ['δ quase permanente ×(1+φ)', f(mx(inf), 1) + ' mm'], ['Combinação frequente', f(mx(cf), 1) + ' mm'], ['Limite L/250', f(lim, 1) + ' mm'], ['Frequência f1 (modo antissimétrico)', f(df.f1, 1) + ' Hz']]) +
       '<p style="margin-top:10px">' + ok(dinf <= lim, 'Dentro de L/250', 'Acima de L/250') + (mx(inf) < 0 ? ' ' + chip('info', 'Contraflecha: a protensão levanta a viga') : '') + '</p></div>',
     after(){ chart($('#c1'), {series: [{name: 'Quase permanente líquida', x, y: qp, color: C.s1, d: 2}, {name: 'Quase permanente ×(1+φ)', x, y: inf, color: C.s2, d: 2}, {name: 'Frequente', x, y: cf, color: C.s3, d: 2}],
-      refs: [{y: lim, label: 'L/250'}, {y: -lim, label: '−L/250'}], invertY: true, height: 300, xlab: 'x (m)', ylab: 'δ (mm), + para baixo', yd: 0, vd: 2, unit: 'mm', tx: x, title: 'Flecha'}); }
+      refs: [{y: lim, label: 'L/250'}, {y: -lim, label: '−L/250'}], groups: [{n: 'Quase permanente', s: ['Quase permanente líquida', 'Quase permanente ×(1+φ)']}, {n: 'Frequente', s: ['Frequente']}, {n: 'Longo prazo', s: ['Quase permanente ×(1+φ)']}], invertY: true, height: 300, xlab: 'x (m)', ylab: 'δ (mm), + para baixo', yd: 0, vd: 2, unit: 'mm', tx: x, title: 'Flecha'}); }
   };
 };
 
@@ -1069,7 +1121,7 @@ PANELS.niveis = function(){
       '<p class="foot">Com protensão forte (nível 3) a passiva tracionada costuma ser zero, e o ELU é controlado pela passiva comprimida A′ da aba Ruptura.</p></div></div>',
     after(){ const t = lv.t; const mxS = a => x.map((_, i) => Math.max(a[0][i], a[1][i]));
       chart($('#c1'), {series: [{name: 'Quase permanente (ψ2)', x, y: mxS(t.cqp), color: C.s1, d: 2}, {name: 'Frequente (ψ1)', x, y: mxS(t.cf), color: C.s2, d: 2}, {name: 'Rara', x, y: mxS(t.cr), color: C.s3, d: 2}],
-        refs: [{y: 0, label: '0 (descompressão)'}, {y: lv.ft, label: '1,2·fctk,inf'}], height: 300, xlab: 'x (m)', ylab: 'σ de tração máx. (MPa)', yd: 1, vd: 2, unit: 'MPa', tx: x, title: 'Tração por combinação'}); }
+        refs: [{y: 0, label: '0 (descompressão)'}, {y: lv.ft, label: '1,2·fctk,inf'}], groups: [{n: 'Nível 3 (frequente e rara)', s: ['Frequente (ψ1)', 'Rara']}, {n: 'Nível 2 (quase perm. e frequente)', s: ['Quase permanente (ψ2)', 'Frequente (ψ1)']}], height: 300, xlab: 'x (m)', ylab: 'σ de tração máx. (MPa)', yd: 1, vd: 2, unit: 'MPa', tx: x, title: 'Tração por combinação'}); }
   };
 };
 
@@ -1090,7 +1142,298 @@ PANELS.ca = function(){
     html: '<div class="card"><h2>Concreto protendido × concreto armado</h2><div class="src">Planilha: CA e CA_Flecha · mesma seção e mesmas cargas</div><p class="lead">ELU pelo bloco retangular 0,8x·0,85·fcd, sem redistribuição. Abertura de fissuras pelo item 17.3.3.2 na comb. frequente. Flecha por Branson com integração ao longo do vão. Barras e altura útil vêm dos dados (Concreto armado).</p>' +
       table(['Grandeza', 'Concreto armado', 'Concreto protendido'], rows) + '</div>' +
       '<div class="card"><h2>Flecha imediata do concreto armado, quase permanente</h2><div id="c1"></div><p class="foot">As,mín = ' + f(rc.As_min, 1) + ' cm² · Mr = ' + f(rc.Mr, 0) + ' kN·m · α_f = ' + f(rc.alpha_f, 2) + '</p></div>',
-    after(){ chart($('#c1'), {series: [{name: 'CA, imediata', x, y: rc.yi.slice(0, 21).map(v => v * 1000), color: C.s2, d: 2}, {name: 'PC, líquida', x, y: A.df.qp_net.slice(0, 21).map(v => v * 1000), color: C.s1, d: 2}], invertY: true, height: 260, xlab: 'x (m)', ylab: 'δ (mm), + para baixo', yd: 0, vd: 2, unit: 'mm', tx: x, title: 'Flecha CA e PC'}); }
+    after(){ chart($('#c1'), {series: [{name: 'CA, imediata', x, y: rc.yi.slice(0, 21).map(v => v * 1000), color: C.s2, d: 2}, {name: 'PC, líquida', x, y: A.df.qp_net.slice(0, 21).map(v => v * 1000), color: C.s1, d: 2}], groups: [{n: 'Só concreto armado', s: ['CA, imediata']}, {n: 'Só protendido', s: ['PC, líquida']}], invertY: true, height: 260, xlab: 'x (m)', ylab: 'δ (mm), + para baixo', yd: 0, vd: 2, unit: 'mm', tx: x, title: 'Flecha CA e PC'}); }
+  };
+};
+
+/* ---------- Memorial de cálculo: passo a passo com fórmulas, valores e telas; exporta HTML, Word e PDF ---------- */
+const LIGHT = {'--plane': '#EDF1F6', '--surface': '#FCFCFB', '--ink': '#0B0B0B', '--ink2': '#52514E', '--muted': '#6E6C67', '--grid': '#E1E0D9', '--axis': '#C3C2B7',
+  '--accent': '#164194', '--accent-soft': '#E3EAF6', '--accent-ink': '#FFFFFF', '--ring': 'rgba(11,11,11,.10)', '--s1': '#164194', '--s2': '#EA5950', '--s3': '#1E9B5B', '--s4': '#0095DB',
+  '--band': 'rgba(22,65,148,.13)', '--good': '#0CA30C', '--warn': '#FAB219', '--bad': '#D03B3B', '--warn-soft': '#FFF3D6', '--bad-soft': '#FBE5E5', '--good-soft': '#E3F4E3'};
+const lightVars = s => s.replace(/var\((--[a-z0-9-]+)\)/g, (m, k) => LIGHT[k] || m);
+const SVGP = ['fill', 'stroke', 'stroke-width', 'stroke-dasharray', 'opacity', 'font-family', 'font-size', 'font-weight', 'text-anchor'];
+function inlineSvgs(root){
+  root.querySelectorAll('svg').forEach(svg => {
+    const walk = el => { const cs = getComputedStyle(el); let s = ''; SVGP.forEach(p => { const v = cs.getPropertyValue(p); if (v) s += p + ':' + v.replace(/"/g, "'") + ';'; });
+      el.setAttribute('style', (el.getAttribute('style') || '') + ';' + s); Array.from(el.children).forEach(walk); };
+    walk(svg); const r = svg.getBoundingClientRect(); svg.setAttribute('data-w', Math.round(r.width)); svg.setAttribute('data-h', Math.round(r.height));
+  });
+}
+/* Renderiza uma aba fora da tela, em tema claro, e devolve o HTML de cada bloco (com SVG autônomo). */
+function capture(id, o){
+  o = o || {};
+  const de = document.documentElement, prev = de.getAttribute('data-theme'), saved = tsel; de.setAttribute('data-theme', 'light'); CAPTURING = true;
+  const st = h('div', {class: 'stage'}); st.style.cssText = 'position:absolute;left:-12000px;top:0;width:980px;visibility:hidden'; document.body.appendChild(st);
+  try {
+    if (o.tsel) tsel = o.tsel;
+    const p = PANELS[id](); st.innerHTML = p.html; if (p.after) p.after(); if (o.post) o.post(st);
+    st.querySelectorAll('.ctl,.cutctl,#cutone,.tip').forEach(n => n.remove());
+    inlineSvgs(st);
+    return Array.from(st.children).map(c => { let s = lightVars(c.outerHTML); const keep = {}; (s.match(/url\(#[^)]+\)/g) || []).forEach(u => { keep[u.slice(5, -1)] = 1; });
+      const w = h('div', null, s); w.querySelectorAll('[id]').forEach(n => { if (!keep[n.id]) n.removeAttribute('id'); }); return w.innerHTML; });
+  } finally { CAPTURING = false; tsel = saved; st.remove(); if (prev === null) de.removeAttribute('data-theme'); else de.setAttribute('data-theme', prev); }
+}
+const tela = (titulo, blocos) => '<div class="tela"><div class="tela-h">Tela · ' + titulo + '</div>' + [].concat(blocos).join('') + '</div>';
+const Rw = (a, b, c, d) => '<tr><td>' + a + '</td><td class="fx">' + b + '</td><td class="sb">' + c + '</td><td class="n"><b>' + d + '</b></td></tr>';
+const Tb = rows => '<div class="tw"><table class="fmt"><thead><tr><th>Item</th><th>Fórmula</th><th>Com os valores</th><th>Resultado</th></tr></thead><tbody>' + rows.join('') + '</tbody></table></div>';
+const em = (s, t) => '<i>' + s + '</i>' + (t ? '<sub>' + t + '</sub>' : '');
+
+function memorialBody(){
+  const a = A, d = a.d, r = a.r, Ls = r.Ls, ext = r.ext, rf = r.res.inf, ri = r.res.i, L = d.L, iB = a.iB, iV = 8, xv = Ls.x[iV], pp = profileParams(d), W = d.W, Ac = d.Ac;
+  const sec = [], num = (v, k) => f(v, k === undefined ? 2 : k);
+  let n = 0;
+  const S = (titulo, lead, html) => { n++; sec.push({n, titulo, html: '<section class="ms" id="ms' + n + '"><h2>' + n + '. ' + titulo + '</h2>' + (lead ? '<p class="lead">' + lead + '</p>' : '') + html + '</section>'}); };
+  const cap = {}; ['resumo', 'tracado', 'perdas', 'esforcos', 'elu', 'flecha', 'niveis', 'ca'].forEach(k => { cap[k] = capture(k); });
+  const tens = {ato: capture('tensoes', {tsel: 'ato'}), cqp: capture('tensoes', {tsel: 'cqp'}), cf: capture('tensoes', {tsel: 'cf'}), cr: capture('tensoes', {tsel: 'cr'})};
+  const fusoCap = capture('tracado', {post: st => { const c = st.querySelector('#lim'); if (c) { c.checked = true; c.dispatchEvent(new Event('change')); } }});
+
+  /* 1. Dados e propriedades */
+  S('Dados e propriedades dos materiais e da seção', 'Seção retangular b<sub>w</sub> × h. Unidades: kN, m e MPa; tração positiva; momento positivo traciona a fibra inferior; e positivo abaixo do centro de gravidade.', Tb([
+    Rw('Área da seção', em('A', 'c') + ' = ' + em('b', 'w') + '·' + em('h'), num(d.bw, 2) + ' × ' + num(d.h, 2), num(Ac, 3) + ' m²'),
+    Rw('Inércia', em('I', 'c') + ' = ' + em('b', 'w') + '·' + em('h') + '³ / 12', num(d.bw, 2) + ' × ' + num(d.h, 2) + '³ / 12', num(d.Ic, 5) + ' m⁴'),
+    Rw('Módulo resistente', em('W') + ' = ' + em('I', 'c') + ' / (' + em('h') + '/2)', num(d.Ic, 5) + ' / ' + num(d.h / 2, 2), num(W, 5) + ' m³'),
+    Rw('Núcleo central', em('k') + ' = ' + em('W') + ' / ' + em('A', 'c'), num(W, 5) + ' / ' + num(Ac, 3), num(d.k, 3) + ' m'),
+    Rw('Peso próprio', em('g', '0') + ' = 25·' + em('A', 'c'), '25 × ' + num(Ac, 3), num(d.g_pp, 2) + ' kN/m'),
+    Rw('Permanente total', em('g') + ' = ' + em('g', '0') + ' + ' + em('g', 'adic'), num(d.g_pp, 2) + ' + ' + num(d.g_add, 2), num(d.g, 2) + ' kN/m'),
+    Rw('Resistência de cálculo', em('f', 'cd') + ' = ' + em('f', 'ck') + ' / γ<sub>c</sub>', num(d.fck, 0) + ' / ' + num(d.gc, 2), num(d.fcd, 2) + ' MPa'),
+    Rw('Resistência à tração média', em('f', 'ct,m') + ' = 0,3·' + em('f', 'ck') + '<sup>2/3</sup>', '0,3 × ' + num(d.fck, 0) + '^(2/3)', num(d.fctm, 2) + ' MPa'),
+    Rw('Tração característica inf. / sup.', em('f', 'ctk,inf') + ' = 0,7·' + em('f', 'ct,m') + ' ;  ' + em('f', 'ctk,sup') + ' = 1,3·' + em('f', 'ct,m'), '0,7 × ' + num(d.fctm, 2) + ' ; 1,3 × ' + num(d.fctm, 2), num(d.fctkinf, 2) + ' / ' + num(d.fctksup, 2) + ' MPa'),
+    Rw('Módulo inicial', em('E', 'ci') + ' = 5600·√' + em('f', 'ck'), '5600 × √' + num(d.fck, 0), num(d.Eci, 0) + ' MPa'),
+    Rw('Módulo secante', em('E', 'cs') + ' = α<sub>i</sub>·' + em('E', 'ci') + ' ;  α<sub>i</sub> = 0,8 + 0,2·' + em('f', 'ck') + '/80 ≤ 1', num(d.alpha_i, 3) + ' × ' + num(d.Eci, 0), num(d.Ecs, 0) + ' MPa'),
+    Rw('Resistência no ato', em('f', 'cj') + ' = e^[0,38(1 − √(28/' + em('t', '0') + '))]·' + em('f', 'ck'), em('t', '0') + ' = ' + num(d.t0, 0) + ' dias', num(d.fcj, 1) + ' MPa'),
+    Rw('Limites de tensão', 'ato: +1,2·' + em('f', 'ct,m,j') + ' e −0,7·' + em('f', 'cj') + ' ; serviço: +1,2·' + em('f', 'ctk,inf') + ' e −0,7·' + em('f', 'ck'),
+      num(d.ft_ato, 2) + ' ; ' + num(-0.7 * d.fcj, 2) + ' ; ' + num(d.ft_els, 2) + ' ; ' + num(-0.7 * d.fck, 2), 'MPa'),
+    Rw('Armadura ativa', em('A', 'p') + ' = ' + em('n', 'cab') + '·' + em('n', 'cord') + '·' + em('A', 'p1'), num(d.n_cab, 0) + ' × ' + num(d.n_cord, 0) + ' × ' + num(d.Ap1, 3), num(d.Ap * 1e4, 2) + ' cm²'),
+    Rw('Resistências do aço de protensão', em('f', 'pyk') + ' = 0,9·' + em('f', 'ptk') + ' ;  ' + em('f', 'pyd') + ' = ' + em('f', 'pyk') + '/γ<sub>s</sub>', '0,9 × ' + num(d.fptk, 0) + ' ; / ' + num(d.gs, 2), num(d.fpyk, 0) + ' / ' + num(d.fpyd, 0) + ' MPa'),
+    Rw('Tensão no macaco', 'σ<sub>pj</sub> = ' + em('r', 'j') + '·' + em('f', 'ptk'), num(d.rj, 2) + ' × ' + num(d.fptk, 0), num(d.sig_j, 0) + ' MPa'),
+    Rw('Força no macaco', em('P', 'j') + ' = ' + em('A', 'p') + '·σ<sub>pj</sub>', num(d.Ap * 1e4, 2) + ' cm² × ' + num(d.sig_j, 0) + ' MPa', num(Ls.Pj, 0) + ' kN'),
+    Rw('Posição do cabo', 'd′ = ' + em('c', 'nom') + ' + Ø<sub>t</sub> + Ø<sub>bainha</sub>/2', num(d.cnom, 3) + ' + ' + num(d.phi_t, 3) + ' + ' + num(d.d_bain, 3) + '/2', num(d.dpp, 3) + ' m'),
+    Rw('Excentricidade máxima', em('e', 'max') + ' = ' + em('h') + '/2 − d′', num(d.h / 2, 3) + ' − ' + num(d.dpp, 3), num(d.e_max, 3) + ' m'),
+    Rw('Carga a equilibrar', em('p', 'bal') + ' = ' + em('g') + ' + ψ<sub>2</sub>·' + em('q'), num(d.g, 2) + ' + ' + num(d.psi2, 2) + ' × ' + num(d.q, 2), num(d.pbal, 2) + ' kN/m')]));
+
+  /* 2. Traçado */
+  S('Traçado do cabo', 'Duas parábolas por vão: a principal, de 0 a x<sub>i</sub> = L − λ, com vértice em x<sub>0</sub>; e a reversa, de x<sub>i</sub> até o apoio B, com concavidade para baixo. A inclinação é contínua em x<sub>i</sub>.', Tb([
+    Rw('Início da parábola reversa', em('x', 'i') + ' = ' + em('L') + ' − λ', num(L, 2) + ' − ' + num(d.lam, 2), num(pp.xi, 2) + ' m'),
+    Rw('Vértice da parábola principal', em('x', '0') + ': raiz de A·x² + B·x + C = 0, imposta a continuidade da inclinação em ' + em('x', 'i'), em('e', 'vão') + ' = ' + num(d.e_span, 3) + ' ; ' + em('e', 'sup') + ' = ' + num(d.e_sup, 3) + ' ; ' + em('e', 'ext') + ' = ' + num(d.e_end, 3), num(pp.x0, 3) + ' m'),
+    Rw('Curvatura A', em('a', 'A') + ' = (' + em('e', 'vão') + ' − ' + em('e', 'ext') + ') / ' + em('x', '0') + '²', '(' + num(d.e_span, 3) + ' − ' + num(d.e_end, 3) + ') / ' + num(pp.x0, 3) + '²', num(pp.aA, 5) + ' 1/m'),
+    Rw('Curvatura B', em('a', 'B') + ' = ' + em('a', 'A') + '·(' + em('x', 'i') + ' − ' + em('x', '0') + ') / λ', num(pp.aA, 5) + ' × (' + num(pp.xi, 2) + ' − ' + num(pp.x0, 3) + ') / ' + num(d.lam, 2), num(pp.aB, 5) + ' 1/m'),
+    Rw('Parábola A (0 ≤ x ≤ ' + em('x', 'i') + ')', em('e') + '(x) = ' + em('e', 'vão') + ' − ' + em('a', 'A') + '·(x − ' + em('x', '0') + ')²', 'em x = ' + num(xv, 1) + ' m', num(r.e[iV], 3) + ' m'),
+    Rw('Parábola reversa (' + em('x', 'i') + ' ≤ x ≤ L)', em('e') + '(x) = −' + em('e', 'sup') + ' + ' + em('a', 'B') + '·(L − x)²', 'em x = ' + num(L, 1) + ' m (apoio B)', num(r.e[iB], 3) + ' m'),
+    Rw('Ângulo do cabo', 'α(x) = arctg(de/dx) ;  Σα = soma das variações |Δα| ao longo do cabo', 'de 0 a ' + num(2 * L, 0) + ' m', num(Ls.theta_tot, 3) + ' rad')]) +
+    tela('Aba Traçado e fuso', cap.tracado[0]));
+
+  /* 3. Perdas */
+  const cES = d.n_cab > 1 ? Ls.ap * (d.n_cab - 1) / (2 * d.n_cab) : 0, rho_p = d.Ap / Ac;
+  S('Força de protensão e perdas', 'Protensão simultânea pelas duas extremidades. Seções conferidas: x = ' + num(xv, 1) + ' m (vão) e x = ' + num(L, 1) + ' m (apoio B).', Tb([
+    Rw('Atrito no apoio B', 'σ(s) = σ<sub>pj</sub>·e<sup>−(μΣα + k·s)</sup>', num(d.sig_j, 0) + ' · e^−(' + num(d.mu, 2) + ' × ' + num(Ls.theta[iB], 3) + ' + ' + num(d.kk, 4) + ' × ' + num(Ls.arc[iB], 2) + ')', num(Ls.sL[iB], 1) + ' MPa'),
+    Rw('Alcance da cravação', 'Δ(x<sub>a</sub>) = 2·(∫σ dx − σ·x)/' + em('E', 'p') + ' = ' + em('Δ', 'cunha'), em('Δ', 'cunha') + ' = ' + num(d.slip * 1000, 1) + ' mm', em('x', 'a') + ' = ' + num(Ls.xa, 2) + ' m'),
+    Rw('Tensão após a cravação (x = ' + num(xv, 1) + ' m)', 'σ = 2σ(x<sub>a</sub>) − σ(x), se x ≤ x<sub>a</sub>', 'x<sub>a</sub> = ' + num(Ls.xa, 2) + ' m', num(Ls.sig_slip[iV], 1) + ' MPa'),
+    Rw('Encurtamento elástico', 'Δσ<sub>ee</sub> = c·[A<sub>p</sub>(1/A<sub>c</sub> + e²/I<sub>c</sub>)·σ − M<sub>g0</sub>·e/I<sub>c</sub>] / (1 + c·A<sub>p</sub>(1/A<sub>c</sub> + e²/I<sub>c</sub>)) ;  c = α<sub>p</sub>(n−1)/(2n)',
+      'α<sub>p</sub> = ' + num(Ls.ap, 2) + ' ; c = ' + num(cES, 3) + ' ; e = ' + num(r.e[iV], 3) + ' m ; M<sub>g0</sub> = ' + num(ext.Mg0[iV], 1) + ' kN·m', num(Ls.des[iV], 1) + ' MPa'),
+    Rw('Tensão no ato', 'σ<sub>p,i</sub> = σ − Δσ<sub>ee</sub> ;  P<sub>i</sub> = A<sub>p</sub>·σ<sub>p,i</sub>', num(Ls.sig_slip[iV], 1) + ' − ' + num(Ls.des[iV], 1), num(Ls.sig_i[iV], 1) + ' MPa · ' + num(Ls.Pi[iV], 0) + ' kN'),
+    Rw('Perdas progressivas', 'Δσ<sub>∞</sub> = [|ε<sub>cs</sub>|E<sub>p</sub> + α<sub>p</sub>|σ<sub>cp0</sub>|φ + σ<sub>p,i</sub>χ] / [(1+χ) + (1+0,5φ)α<sub>p</sub>η·ρ<sub>p</sub>]',
+      '[' + num(Math.abs(d.eps_cs) * d.Ep, 1) + ' + ' + num(Ls.ap28 * Math.abs(Ls.scp0[iV]) * d.phi_cr, 1) + ' + ' + num(Ls.sig_i[iV] * Ls.chi[iV], 1) + '] / [' + num(1 + Ls.chi[iV], 3) + ' + ' + num((1 + 0.5 * d.phi_cr) * Ls.ap28 * Ls.eta[iV] * rho_p, 3) + ']', num(Ls.dsig[iV], 1) + ' MPa'),
+    Rw('Força final no vão', 'σ<sub>p,∞</sub> = σ<sub>p,i</sub> − Δσ<sub>∞</sub> ;  P<sub>∞</sub> = A<sub>p</sub>·σ<sub>p,∞</sub>', num(Ls.sig_i[iV], 1) + ' − ' + num(Ls.dsig[iV], 1), num(Ls.sig_inf[iV], 1) + ' MPa · ' + num(Ls.Pinf[iV], 0) + ' kN'),
+    Rw('Força final no apoio B', 'P<sub>∞</sub> = A<sub>p</sub>·σ<sub>p,∞</sub>', num(Ls.sig_inf[iB], 1) + ' MPa × ' + num(d.Ap * 1e4, 2) + ' cm²', num(Ls.Pinf[iB], 0) + ' kN'),
+    Rw('Alongamento por extremidade', 'Δl = ∫ σ/E<sub>p</sub> ds', 'comprimento do cabo ' + num(Ls.arc_tot, 2) + ' m', num(Ls.elong, 1) + ' mm'),
+    Rw('Alongamento líquido', 'Δl − Δ<sub>cunha</sub>', num(Ls.elong, 1) + ' − ' + num(d.slip * 1000, 1), num(Ls.elong - d.slip * 1000, 1) + ' mm')]) +
+    tela('Aba Perdas e alongamento', cap.perdas));
+
+  /* 4. Esforços externos */
+  const wq = d.q;
+  S('Esforços externos', 'Viga contínua de dois vãos iguais. A sobrecarga q é posicionada nos dois vãos, só no vão 1 ou só no vão 2, e as envoltórias são tomadas por seção.', Tb([
+    Rw('Momento no apoio B (carga uniforme w em ambos os vãos)', em('M', 'B') + ' = −(' + em('w', '1') + ' + ' + em('w', '2') + ')·' + em('L') + '² / 16 = −w·L²/8', 'g = ' + num(d.g, 2) + ' kN/m', num(-d.g * L * L / 8, 1) + ' kN·m'),
+    Rw('Reação no apoio A', em('R', 'A') + ' = w·L/2 + ' + em('M', 'B') + '/L', num(d.g, 2) + ' × ' + num(L, 0) + '/2 + (' + num(-d.g * L * L / 8, 1) + ')/' + num(L, 0), num(d.g * L / 2 - d.g * L / 8, 1) + ' kN'),
+    Rw('Momento permanente no vão (x = ' + num(xv, 1) + ' m)', em('M', 'g') + '(x) = ' + em('R', 'A') + '·x − g·x²/2', num(d.g * L * 3 / 8, 1) + ' × ' + num(xv, 1) + ' − ' + num(d.g, 2) + ' × ' + num(xv, 1) + '²/2', num(ext.Mg[iV], 1) + ' kN·m'),
+    Rw('Momento da sobrecarga no vão (máx.)', em('M', 'q,máx') + ' = máx. entre os três arranjos de q', 'q = ' + num(wq, 1) + ' kN/m', num(ext.Mq_max[iV], 1) + ' kN·m'),
+    Rw('Momento da sobrecarga em B (mín.)', em('M', 'q,mín') + ' = −q·L²/8', num(wq, 1) + ' × ' + num(L, 0) + '²/8', num(ext.Mq_min[iB], 1) + ' kN·m'),
+    Rw('Peso próprio isolado em B', em('M', 'g0') + ' = −g<sub>0</sub>·L²/8', num(d.g_pp, 2) + ' × ' + num(L, 0) + '²/8', num(ext.Mg0[iB], 1) + ' kN·m'),
+    Rw('Cortante permanente à esquerda de B', em('V', 'g') + ' = ' + em('R', 'A') + ' − g·L', num(d.g * L * 3 / 8, 1) + ' − ' + num(d.g, 2) + ' × ' + num(L, 0), num(ext.Vg[iB], 1) + ' kN')]) +
+    tela('Aba Esforços e hiperestático · momentos externos', cap.esforcos[0]));
+
+  /* 5. Hiperestático */
+  const EI = d.Ecs * 1e3 * d.Ic, mB = L / 2, d11 = L * L * L / (6 * EI);
+  S('Hiperestático de protensão (método das forças)', 'Sistema principal: viga com o apoio B liberado. A protensão isostática M<sub>iso</sub> = −P·cosα·e deflete a viga; a reação R<sub>B</sub> que restitui a deslocabilidade nula gera o momento hiperestático. Integral em trapézio, estações a cada 0,5 m.', Tb([
+    Rw('Momento isostático em B (t∞)', em('M', 'iso') + ' = −P<sub>∞</sub>·cosα·e', '−' + num(Ls.Pinf[iB], 0) + ' × ' + num(r.cosa[iB], 4) + ' × ' + num(r.e[iB], 3), num(rf.Miso[iB], 1) + ' kN·m'),
+    Rw('Momento isostático no vão (t∞)', em('M', 'iso') + ' = −P<sub>∞</sub>·cosα·e', '−' + num(Ls.Pinf[iV], 0) + ' × ' + num(r.cosa[iV], 4) + ' × ' + num(r.e[iV], 3), num(rf.Miso[iV], 1) + ' kN·m'),
+    Rw('Diagrama virtual (R<sub>B</sub> = 1)', em('m') + '(x) = x/2 (no vão 1) ;  m(' + num(L, 0) + ') = L/2', 'L/2', num(mB, 2) + ' m'),
+    Rw('Flexibilidade', 'δ<sub>11</sub> = ∫ m² dx / EI = L³ / (6·EI)', 'EI = ' + num(EI, 0) + ' kN·m²', num(d11, 6) + ' m/kN'),
+    Rw('Deslocamento da protensão', 'δ<sub>10</sub> = ∫ M<sub>iso</sub>·m dx / EI  (trapézio)', 'resultado numérico das 41 estações', num(rf.RB * d11, 6) + ' m'),
+    Rw('Reação hiperestática', em('R', 'B') + ' = δ<sub>10</sub> / δ<sub>11</sub>', num(rf.RB * d11, 6) + ' / ' + num(d11, 6), num(rf.RB, 2) + ' kN'),
+    Rw('Momento hiperestático em B', em('M', 'hip') + ' = −R<sub>B</sub>·m', '−(' + num(rf.RB, 2) + ') × ' + num(mB, 2), num(rf.Mhip[iB], 1) + ' kN·m'),
+    Rw('Momento hiperestático no vão', em('M', 'hip') + ' = −R<sub>B</sub>·x/2', '−(' + num(rf.RB, 2) + ') × ' + num(xv, 1) + '/2', num(rf.Mhip[iV], 1) + ' kN·m'),
+    Rw('Momento total da protensão em B', em('M', 'P') + ' = ' + em('M', 'iso') + ' + ' + em('M', 'hip'), num(rf.Miso[iB], 1) + ' + (' + num(rf.Mhip[iB], 1) + ')', num(rf.MP[iB], 1) + ' kN·m'),
+    Rw('Reação hiperestática no ato', em('R', 'B') + '(P<sub>i</sub>)', 'mesma sequência com P<sub>i</sub>', num(ri.RB, 2) + ' kN')]) +
+    tela('Aba Esforços e hiperestático · momentos da protensão', [cap.esforcos[1], cap.esforcos[2]]));
+
+  /* 6. Tensões */
+  const st = (i) => ({N: rf.N[i], MP: rf.MP[i]});
+  const sRow = (lab, i, e1, e2, M1, M2, k1, k2) => Rw(lab, 'σ<sub>1</sub> = −N/A<sub>c</sub> + (M<sub>P</sub> + M)/W ;  σ<sub>2</sub> = −N/A<sub>c</sub> − (M<sub>P</sub> + M)/W',
+    'N = ' + num(rf.N[i], 0) + ' kN ; M<sub>P</sub> = ' + num(rf.MP[i], 1) + ' ; M<sub>1</sub> = ' + num(M1, 1) + ' ; M<sub>2</sub> = ' + num(M2, 1) + ' kN·m', 'σ₁ = ' + num(k1, 2) + ' ; σ₂ = ' + num(k2, 2) + ' MPa');
+  S('Tensões nas fibras', 'Em cada estado a tensão é a soma da parcela normal, do momento da protensão (isostático + hiperestático) e do momento externo. Combinações: ato (P<sub>i</sub> + peso próprio g<sub>0</sub>), quase permanente (ψ<sub>2</sub>), frequente (ψ<sub>1</sub>) e rara (ψ = 1).', Tb([
+    Rw('Parcela normal em B', '−N/A<sub>c</sub>', '−' + num(rf.N[iB], 0) + ' / ' + num(Ac, 3) + ' / 10³', num(-rf.N[iB] / Ac / 1e3, 2) + ' MPa'),
+    Rw('Parcela do momento da protensão em B', '±M<sub>P</sub>/W', num(rf.MP[iB], 1) + ' / ' + num(W, 5) + ' / 10³', num(rf.MP[iB] / W / 1e3, 2) + ' MPa'),
+    sRow('Combinação rara em B (σ₁ com M<sub>q,máx</sub>, σ₂ com M<sub>q,mín</sub>)', iB, 0, 0, r.Mcr_max[iB], r.Mcr_min[iB], r.ck.cr_s1[iB], r.ck.cr_s2[iB]),
+    sRow('Combinação rara no vão, x = ' + num(xv, 1) + ' m', iV, 0, 0, r.Mcr_max[iV], r.Mcr_min[iV], r.ck.cr_s1[iV], r.ck.cr_s2[iV]),
+    Rw('Ato em B (P<sub>i</sub> + g<sub>0</sub>)', 'σ = −N<sub>i</sub>/A<sub>c</sub> ± (M<sub>P,i</sub> ± M<sub>g0</sub>)/W', 'M<sub>g0</sub> = ' + num(ext.Mg0[iB], 1) + ' kN·m', 'σ₁ = ' + num(r.ck.ato_s1[iB], 2) + ' ; σ₂ = ' + num(r.ck.ato_s2[iB], 2) + ' MPa')]) +
+    tela('Aba Tensões · no ato', tens.ato[0]) + tela('Aba Tensões · quase permanente', tens.cqp[0]) + tela('Aba Tensões · frequente (ELS-D)', tens.cf[0]) + tela('Aba Tensões · rara (ELS-F e ELS-CE)', tens.cr[0]) + tela('Aba Tensões · margens e limites', tens.cr[1]));
+
+  /* 7. Fuso */
+  const LK = Object.keys(a.fu.lows), UK = Object.keys(a.fu.ups);
+  const lowF = ['(M<sub>g0</sub> − f<sub>t,ato</sub>·W)/N<sub>i</sub> − k', '(M<sub>g0</sub> − 0,7f<sub>cj</sub>·W)/N<sub>i</sub> + k', 'M<sub>freq,máx</sub>/N<sub>∞</sub> − k', '(M<sub>rara,máx</sub> − f<sub>t,els</sub>·W)/N<sub>∞</sub> − k', '(M<sub>rara,máx</sub> − 0,7f<sub>ck</sub>·W)/N<sub>∞</sub> + k'];
+  const upF = ['(M<sub>g0</sub> + 0,7f<sub>cj</sub>·W)/N<sub>i</sub> − k', '(M<sub>g0</sub> + f<sub>t,ato</sub>·W)/N<sub>i</sub> + k', 'M<sub>freq,mín</sub>/N<sub>∞</sub> + k', '(f<sub>t,els</sub>·W + M<sub>rara,mín</sub>)/N<sub>∞</sub> + k', '(M<sub>rara,mín</sub> + 0,7f<sub>ck</sub>·W)/N<sub>∞</sub> − k'];
+  S('Fuso limite do cabo', 'Cada condição de tensão fornece um limite para a excentricidade e. O fuso é o maior dos cinco limites inferiores e o menor dos cinco superiores. Valores no apoio B (x = ' + num(L, 1) + ' m).',
+    Tb(LK.map((k, j) => Rw('e ≥ — ' + k, 'e ≥ ' + lowF[j], 'k = ' + num(d.k, 3) + ' m', num(a.fu.lows[k][iB], 3) + ' m')).concat(UK.map((k, j) => Rw('e ≤ — ' + k, 'e ≤ ' + upF[j], 'k = ' + num(d.k, 3) + ' m', num(a.fu.ups[k][iB], 3) + ' m'))).concat([
+      Rw('Fuso em B', em('e', 'mín') + ' = máx(limites inferiores) ;  ' + em('e', 'máx') + ' = mín(limites superiores)', '', num(a.fu.lo[iB], 3) + ' a ' + num(a.fu.up[iB], 3) + ' m'),
+      Rw('Linha de pressões em B', em('e', 'lp') + ' = e − M<sub>hip</sub>/N', num(r.e[iB], 3) + ' − (' + num(rf.Mhip[iB], 1) + ')/' + num(rf.N[iB], 0), num(a.fu.elp[iB], 3) + ' m')])) +
+    tela('Aba Traçado e fuso · com os 10 limites', fusoCap[0]));
+
+  /* 8. Passiva no ato */
+  const mxA = Math.max.apply(null, a.aato), iA = a.aato.indexOf(mxA);
+  let sA = 0, cA = 0; if (mxA > 0) { [[r.ck.ato_s1[iA], r.ck.ato_s2[iA]], [r.ck.ato_s2[iA], r.ck.ato_s1[iA]]].forEach(([t, c]) => { if (t > d.ft_ato) { const R = 0.5 * t * 1e3 * d.bw * (d.h * t / (t - c)) / 250e3 * 1e4; if (R >= sA - 1e-9) { sA = R; cA = c; } } }); }
+  const tA = mxA > 0 ? Math.max(r.ck.ato_s1[iA], r.ck.ato_s2[iA]) : 0;
+  S('Armadura passiva no ato', 'Quando a tração no ato supera 1,2·f<sub>ct,m,j</sub>, a resultante de tração do diagrama triangular é absorvida por armadura passiva com tensão de 250 MPa.', Tb([
+    Rw('Seção mais crítica', 'maior tração no ato', 'x = ' + num(Ls.x[iA], 1) + ' m', 'σ<sub>t</sub> = ' + num(tA, 2) + ' MPa (limite ' + num(d.ft_ato, 2) + ')'),
+    Rw('Altura tracionada', em('x', 't') + ' = h·σ<sub>t</sub>/(σ<sub>t</sub> − σ<sub>c</sub>)', mxA > 0 ? num(d.h, 2) + ' × ' + num(tA, 2) + ' / (' + num(tA, 2) + ' − (' + num(cA, 2) + '))' : 'sem tração acima do limite', mxA > 0 ? num(d.h * tA / (tA - cA), 3) + ' m' : '—'),
+    Rw('Resultante de tração', em('R', 't') + ' = ½·σ<sub>t</sub>·b<sub>w</sub>·x<sub>t</sub>', mxA > 0 ? '½ × ' + num(tA * 1e3, 0) + ' kPa × ' + num(d.bw, 2) + ' × ' + num(d.h * tA / (tA - cA), 3) : '—', mxA > 0 ? num(0.5 * tA * 1e3 * d.bw * d.h * tA / (tA - cA), 0) + ' kN' : '0 kN'),
+    Rw('Armadura', em('A', 's,ato') + ' = ' + em('R', 't') + ' / 250 MPa', mxA > 0 ? num(0.5 * tA * 1e3 * d.bw * d.h * tA / (tA - cA), 0) + ' / 250' : '—', num(mxA, 2) + ' cm²')]) +
+    tela('Aba Resumo · cortes com cabos e armadura passiva', cap.resumo[1]));
+
+  /* 9. ELU flexão */
+  const eluRows = E => [
+    Rw('Altura até a face comprimida', 'd<sub>p</sub> = ' + (E.hog ? 'h/2 − e' : 'h/2 + e'), num(d.h / 2, 3) + (E.hog ? ' − ' : ' + ') + '(' + num(E.e, 3) + ')', num(E.dp, 3) + ' m'),
+    Rw('Pré-alongamento', 'ε<sub>p0</sub> = σ<sub>p,∞</sub>/E<sub>p</sub> + P<sub>∞</sub>/(A<sub>c</sub>E<sub>cs</sub>)·(1 + e²A<sub>c</sub>/I<sub>c</sub>)', num(E.sinf, 1) + '/' + num(d.Ep, 0) + ' + ' + num(E.P, 0) + '/(' + num(Ac, 3) + ' · ' + num(d.Ecs * 1e3, 0) + ')·(…)', num(E.eps0 * 1000, 3) + ' ‰'),
+    Rw('Forças resistentes', 'T<sub>p</sub> = A<sub>p</sub>f<sub>pyd</sub> ;  T<sub>s</sub> = A<sub>s</sub>f<sub>yd</sub> ;  C<sub>s</sub> = A′f<sub>yd</sub>', num(d.Ap * 1e4, 2) + ' cm² × ' + num(d.fpyd, 0) + ' MPa ; A′ = ' + num(E.hog ? d.AscB : d.AscV, 2) + ' cm²', 'T<sub>p</sub> = ' + num(E.Tp, 0) + ' ; T<sub>s</sub> = ' + num(E.Ts, 0) + ' ; C<sub>s</sub> = ' + num(E.Cs, 0) + ' kN'),
+    Rw('Linha neutra', 'x = (T<sub>p</sub> + T<sub>s</sub> − C<sub>s</sub>) / (0,85·f<sub>cd</sub>·0,8·b<sub>w</sub>)', '(' + num(E.Tp, 0) + ' + ' + num(E.Ts, 0) + ' − ' + num(E.Cs, 0) + ') / (0,85 × ' + num(d.fcd * 1e3, 0) + ' × 0,8 × ' + num(d.bw, 2) + ')', num(E.xs, 3) + ' m (x/d<sub>p</sub> = ' + num(E.xd, 3) + ')'),
+    Rw('Deformação do aço ativo', 'ε<sub>p</sub> = ε<sub>p0</sub> + 3,5‰·(d<sub>p</sub> − x)/x', num(E.eps0 * 1000, 3) + ' + 3,5 × (' + num(E.dp, 3) + ' − ' + num(E.xs, 3) + ')/' + num(E.xs, 3), num(E.epsp * 1000, 2) + ' ‰ (ε<sub>py</sub> = ' + num(E.epsPy * 1000, 2) + ' ‰)'),
+    Rw('Momento resistente', 'M<sub>Rd</sub> = T<sub>p</sub>(d<sub>p</sub> − 0,4x) + T<sub>s</sub>(d<sub>s</sub> − 0,4x) + C<sub>s</sub>(0,4x − d′)', num(E.Tp, 0) + ' × (' + num(E.dp, 3) + ' − 0,4 × ' + num(E.xs, 3) + ') + …', num(E.MRd, 0) + ' kN·m'),
+    Rw('Momento solicitante', 'M<sub>sd</sub> = 1,4(M<sub>g</sub> + M<sub>q</sub>) + γ<sub>p</sub>·M<sub>hip</sub>', num(E.Mext, 0) + ' + ' + num(E.gp, 1) + ' × (' + num(E.Mh, 1) + ')', num(E.Msd, 0) + ' kN·m'),
+    Rw('Verificação', 'M<sub>Rd</sub> ≥ |M<sub>sd</sub>| ;  x/d<sub>p</sub> ≤ 0,45', num(E.MRd, 0) + ' / ' + num(Math.abs(E.Msd), 0), 'MRd/Msd = ' + num(E.ratio, 2) + (E.ok ? ' · atende' : ' · não atende') + (E.ductile ? '' : ' · x/d &gt; 0,45'))];
+  S('Ruptura à flexão (ELU)', 'Aço de protensão com pré-alongamento e patamar em f<sub>pyd</sub>; bloco retangular de tensões 0,8x·0,85f<sub>cd</sub>; armaduras passivas A′ (comprimida) e A<sub>s</sub> (tracionada) informadas nos dados.',
+    '<h3>Apoio B (x = ' + num(a.eluB.x, 1) + ' m, face comprimida inferior)</h3>' + Tb(eluRows(a.eluB)) + '<h3>Vão (x = ' + num(a.eluV.x, 1) + ' m, face comprimida superior)</h3>' + Tb(eluRows(a.eluV)) +
+    tela('Aba Ruptura e cortante · flexão', cap.elu[0]));
+
+  /* 10. Cortante */
+  const sh = a.sh, iS = sh.Vsd.indexOf(Math.max.apply(null, sh.Vsd));
+  S('Força cortante', 'Verificação da biela comprimida (VRd2) e dimensionamento dos estribos pelo modelo I, com a parcela da protensão (V<sub>p</sub>) e do hiperestático. Seção mais solicitada: x = ' + num(Ls.x[iS], 1) + ' m.', Tb([
+    Rw('Cortante da protensão', 'V<sub>p</sub> = −P<sub>∞</sub>·senα + V<sub>hip</sub> ;  V<sub>hip</sub> = ∓R<sub>B</sub>/2', '−' + num(Ls.Pinf[iS], 0) + ' × sen(' + num(Ls.alpha[iS], 4) + ') + (' + num(sh.Vhip[iS], 2) + ')', num(sh.Vp[iS], 1) + ' kN'),
+    Rw('Cortante solicitante', 'V<sub>sd</sub> = máx |γ<sub>p</sub>V<sub>p</sub> + γ<sub>g</sub>V<sub>g</sub> + 1,4V<sub>q</sub>|, com γ<sub>p</sub> = 0,9 e 1,2', 'V<sub>g</sub> = ' + num(ext.Vg[iS], 1) + ' ; V<sub>q</sub> = ' + num(ext.Vq_max[iS], 1) + ' / ' + num(ext.Vq_min[iS], 1) + ' kN', num(sh.Vsd[iS], 0) + ' kN'),
+    Rw('Largura efetiva', 'b<sub>w,red</sub> = b<sub>w</sub> − 0,5·n<sub>cab</sub>·Ø<sub>bainha</sub>  (se Ø<sub>bainha</sub> &gt; b<sub>w</sub>/8)', num(d.bw, 2) + ' − 0,5 × ' + num(d.n_cab, 0) + ' × ' + num(d.d_bain, 3), num(sh.bwred, 3) + ' m'),
+    Rw('Biela comprimida', 'V<sub>Rd2</sub> = 0,27(1 − f<sub>ck</sub>/250)·f<sub>cd</sub>·b<sub>w,red</sub>·0,9h', '0,27 × (1 − ' + num(d.fck, 0) + '/250) × ' + num(d.fcd * 1e3, 0) + ' × ' + num(sh.bwred, 3) + ' × ' + num(sh.dd, 3), num(sh.Vu, 0) + ' kN (' + (Math.max.apply(null, sh.Vsd) <= sh.Vu ? 'atende' : 'não atende') + ')'),
+    Rw('Fator da protensão', 'β = 1 + M<sub>0</sub>/M<sub>sd</sub> ≤ 2 ;  M<sub>0</sub> = 0,9(N·k ∓ M<sub>P</sub>)', 'M<sub>0</sub> = ' + num(sh.M0[iS], 1) + ' ; M<sub>sd</sub> = ' + num(sh.Msd[iS], 1) + ' kN·m', num(sh.beta[iS], 2)),
+    Rw('Parcela do concreto', 'τ<sub>c</sub> = 0,6·f<sub>ctd</sub> ;  τ<sub>c,cor</sub> = β·τ<sub>c</sub>', '0,6 × ' + num(d.fctd, 3) + ' × ' + num(sh.beta[iS], 2), num(sh.tau_cor[iS], 2) + ' MPa'),
+    Rw('Tensão de cálculo', 'τ<sub>wd</sub> = V<sub>sd</sub> / (b<sub>w,red</sub>·0,9h)', num(sh.Vsd[iS], 0) + ' / (' + num(sh.bwred, 3) + ' × ' + num(sh.dd, 3) + ') / 10³', num(sh.twd[iS], 2) + ' MPa'),
+    Rw('Estribos por ramo', 'a<sub>sw</sub>/n = [(τ<sub>wd</sub> − τ<sub>c,cor</sub>)/0,9] / f<sub>ywd</sub> · b<sub>w,red</sub>/2', '(' + num(sh.twd[iS], 2) + ' − ' + num(sh.tau_cor[iS], 2) + ')/0,9 / ' + num(d.fyk / d.gs, 0), num(sh.asw_n[iS], 2) + ' cm²/m'),
+    Rw('Mínimo', 'ρ<sub>sw,mín</sub> = 0,2·f<sub>ctm</sub>/f<sub>yk</sub> ;  a<sub>sw,mín</sub>/n = ρ·b<sub>w</sub>/2', '0,2 × ' + num(d.fctm, 2) + ' / ' + num(d.fyk, 0), num(sh.asw_min_n, 2) + ' cm²/m · adotado ' + num(sh.asw_calc[iS], 2)) ]) +
+    tela('Aba Ruptura e cortante · cortante e estribos', cap.elu[1]) + tela('Aba Ruptura e cortante · seções do 1º vão', cap.elu[2]));
+
+  /* 11. Flecha */
+  const df = a.df, mxS = v => v.slice(0, 21).reduce((m, x) => Math.abs(x) > Math.abs(m) ? x : m, 0) * 1000;
+  S('Flecha', 'Seção não fissurada, rigidez E<sub>cs</sub>·I<sub>c</sub>. Curvatura κ = −M/EI, integrada duas vezes por trapézios com δ = 0 nos apoios. Positivo para baixo.', Tb([
+    Rw('Rigidez', 'EI = E<sub>cs</sub>·I<sub>c</sub>', num(d.Ecs * 1e3, 0) + ' kPa × ' + num(d.Ic, 5) + ' m⁴', num(EI, 0) + ' kN·m²'),
+    Rw('Momento quase permanente', 'M = M<sub>g</sub> + ψ<sub>2</sub>·M<sub>q</sub> + M<sub>P,∞</sub>', 'carga uniforme g + ψ<sub>2</sub>q = ' + num(d.pbal, 2) + ' kN/m', 'M<sub>P,∞</sub> em B = ' + num(rf.MP[iB], 1) + ' kN·m'),
+    Rw('Integração', 'θ = ∫κ dx ;  δ = ∫θ dx − correção linear', '41 estações, Δx = ' + num(Ls.dx, 2) + ' m', ''),
+    Rw('Flecha do peso g', 'δ<sub>g</sub>', '', num(mxS(df.g), 1) + ' mm'),
+    Rw('Flecha da protensão P<sub>∞</sub>', 'δ<sub>P</sub>', '', num(mxS(df.P), 1) + ' mm'),
+    Rw('Quase permanente líquida', 'δ<sub>qp</sub> = δ(g + ψ<sub>2</sub>q + P)', '', num(mxS(df.qp_net), 1) + ' mm'),
+    Rw('Quase permanente a t∞', 'δ<sub>∞</sub> = δ<sub>qp</sub>·(1 + φ)', num(mxS(df.qp_net), 1) + ' × (1 + ' + num(d.phi_cr, 1) + ')', num(mxS(df.qp_inf), 1) + ' mm'),
+    Rw('Limite', 'L/250', num(L * 1000, 0) + ' / 250', num(L * 1000 / 250, 1) + ' mm'),
+    Rw('Frequência fundamental', 'f<sub>1</sub> = π/(2L²)·√(EI/m)', 'm = g/9,81 = ' + num(d.g / 9.81 * 1000, 0) + ' kg/m', num(df.f1, 1) + ' Hz')]) +
+    tela('Aba Flecha', cap.flecha));
+
+  /* 12. Níveis */
+  const lv = a.lv;
+  S('Níveis de protensão (NBR 6118, Tab. 13.4)', 'Pós-tração em CAA II: nível mínimo 2. Nível 3 (completa): ELS-D na combinação frequente e ELS-F na rara. Nível 2 (limitada): ELS-D na quase permanente e ELS-F na frequente. Nível 1 (parcial): ELS-W com w<sub>k</sub> ≤ 0,2 mm.', Tb([
+    Rw('Nível 3 · ELS-D', 'máx σ<sub>tração</sub> (frequente) ≤ 0', 'σ máx = ' + num(lv.max_cf, 2) + ' MPa', 'margem ' + num(lv.N3d, 2) + ' MPa · ' + (lv.N3d >= 0 ? 'atende' : 'não atende')),
+    Rw('Nível 3 · ELS-F', 'máx σ<sub>tração</sub> (rara) ≤ 1,2·f<sub>ctk,inf</sub>', 'σ máx = ' + num(lv.max_cr, 2) + ' ≤ ' + num(lv.ft, 2) + ' MPa', 'margem ' + num(lv.N3f, 2) + ' MPa · ' + (lv.N3f >= 0 ? 'atende' : 'não atende')),
+    Rw('Nível 2 · ELS-D', 'máx σ<sub>tração</sub> (quase permanente) ≤ 0', 'σ máx = ' + num(lv.max_cqp, 2) + ' MPa', 'margem ' + num(lv.N2d, 2) + ' MPa · ' + (lv.N2d >= 0 ? 'atende' : 'não atende')),
+    Rw('Nível 2 · ELS-F', 'máx σ<sub>tração</sub> (frequente) ≤ 1,2·f<sub>ctk,inf</sub>', 'σ máx = ' + num(lv.max_cf, 2) + ' ≤ ' + num(lv.ft, 2) + ' MPa', 'margem ' + num(lv.N2f, 2) + ' MPa · ' + (lv.N2f >= 0 ? 'atende' : 'não atende')),
+    Rw('Nível atingido', 'maior nível cujas verificações atendem', '', 'nível ' + levelOf())]) +
+    tela('Aba Níveis de protensão', cap.niveis));
+
+  /* 13. Comparação com CA */
+  const rc = a.rc;
+  S('Comparação com concreto armado', 'Mesma seção e mesmas cargas. ELU pelo bloco retangular, sem redistribuição; abertura de fissuras pelo item 17.3.3.2; flecha por Branson.', Tb([
+    Rw('Momento de cálculo em B', 'M<sub>d</sub> = 1,4|M<sub>g</sub> + M<sub>q,mín</sub>|', '1,4 × |' + num(ext.Mg[iB], 1) + ' + (' + num(ext.Mq_min[iB], 1) + ')|', num(rc.Md_neg, 0) + ' kN·m'),
+    Rw('Coeficiente', 'K<sub>md</sub> = M<sub>d</sub>/(b<sub>w</sub>·d²·f<sub>cd</sub>)', num(rc.Md_neg, 0) + ' / (' + num(d.bw, 2) + ' × ' + num(rc.dd, 2) + '² × ' + num(d.fcd * 1e3, 0) + ')', num(rc.neg.Kmd, 3)),
+    Rw('Linha neutra', 'x/d = 1,25·[1 − √(1 − 2K<sub>md</sub>/0,85)]', '', num(rc.neg.xd, 3)),
+    Rw('Armadura em B', 'A<sub>s</sub> = M<sub>d</sub> / [f<sub>yd</sub>(d − 0,4x)]', num(rc.Md_neg, 0) + ' / [' + num(d.fyk / d.gs * 1e3, 0) + ' × (' + num(rc.dd, 2) + ' − 0,4 × ' + num(rc.neg.x, 3) + ')]', num(rc.neg.As, 1) + ' cm² (adotado ' + num(rc.As_neg, 1) + ')'),
+    Rw('Armadura no vão (x = ' + num(rc.x_pos, 1) + ' m)', 'idem, com M<sub>d</sub> = ' + num(rc.Md_pos, 0) + ' kN·m', 'K<sub>md</sub> = ' + num(rc.pos.Kmd, 3), num(rc.pos.As, 1) + ' cm² (adotado ' + num(rc.As_pos, 1) + ')'),
+    Rw('Tensão na armadura (B, frequente)', 'σ<sub>s</sub> = α<sub>e</sub>·M·(d − x<sub>II</sub>)/I<sub>II</sub>', 'M = ' + num(rc.els.neg.Mf, 1) + ' kN·m ; x<sub>II</sub> = ' + num(rc.els.neg.x2, 3) + ' m', num(rc.els.neg.sig_s, 1) + ' MPa'),
+    Rw('Abertura de fissuras', 'w<sub>k</sub> = mín{ Ø/(12,5η₁)·σ<sub>s</sub>/E<sub>s</sub>·3σ<sub>s</sub>/f<sub>ctm</sub> ; Ø/(12,5η₁)·σ<sub>s</sub>/E<sub>s</sub>·(4/ρ<sub>ri</sub> + 45) }', 'w₁ = ' + num(rc.els.neg.w1, 3) + ' ; w₂ = ' + num(rc.els.neg.w2, 3) + ' mm', num(rc.els.neg.wk, 3) + ' mm'),
+    Rw('Momento de fissuração', 'M<sub>r</sub> = 1,5·f<sub>ctm</sub>·I<sub>c</sub>/(h/2)', '1,5 × ' + num(d.fctm * 1e3, 0) + ' × ' + num(d.Ic, 5) + ' / ' + num(d.h / 2, 2), num(rc.Mr, 0) + ' kN·m'),
+    Rw('Rigidez equivalente', 'I<sub>e</sub> = (M<sub>r</sub>/M<sub>a</sub>)³I<sub>c</sub> + [1 − (M<sub>r</sub>/M<sub>a</sub>)³]I<sub>II</sub> ≤ I<sub>c</sub>', 'por estação, com M<sub>a</sub> quase permanente', ''),
+    Rw('Flecha imediata e total', 'δ<sub>t</sub> = δ<sub>i</sub>·(1 + α<sub>f</sub>)', num(rc.defl_inst * 1000, 1) + ' × (1 + ' + num(rc.alpha_f, 2) + ')', num(rc.defl_tot * 1000, 1) + ' mm')]) +
+    tela('Aba Comparação com CA', cap.ca));
+
+  /* 14. Conclusão */
+  S('Verificações e valores principais', 'Resumo das verificações para os dados de entrada em uso.', cap.resumo[0] + cap.resumo[2]);
+  return sec;
+}
+
+const DOC_CSS = 'body{font-family:"Segoe UI",Calibri,Arial,sans-serif;font-size:10.5pt;line-height:1.4;color:#0B0B0B;max-width:1000px;margin:0 auto;padding:18px}' +
+  'h1{font-size:20pt;margin:0 0 4px}h2{font-size:14pt;margin:22px 0 8px;padding-bottom:4px;border-bottom:2px solid #164194;color:#164194}h3{font-size:11.5pt;margin:14px 0 6px}p{margin:0 0 8px}' +
+  '.capa{border-bottom:3px solid #164194;padding-bottom:10px;margin-bottom:14px}.capa .sub{color:#52514E}.unbl{color:#164194;font-size:10pt;letter-spacing:.08em;text-transform:uppercase;margin-bottom:6px;border-top:4px solid #0095DB;padding-top:6px}.unbl b{font-size:16pt;letter-spacing:0;margin-right:8px}.rodape{margin-top:24px;padding-top:8px;border-top:1px solid #D6D5CC;font-size:9pt;color:#6E6C67}.toc{margin:10px 0 18px;padding-left:18px;columns:2}.toc li{margin:2px 0}.toc a{color:#164194;text-decoration:none}' +
+  '.lead{color:#52514E}.src{color:#6E6C67;font-size:9pt}.foot{color:#6E6C67;font-size:9pt}' +
+  'table{border-collapse:collapse;width:100%;font-size:9.5pt;margin:6px 0 12px}th,td{border:1px solid #D6D5CC;padding:4px 7px;text-align:left;vertical-align:top}th{background:#E3EAF6;font-weight:600}' +
+  'td.n,th.n{text-align:right;font-family:Consolas,"Courier New",monospace;white-space:nowrap}table.fmt td.fx{font-family:"Cambria Math",Cambria,"Times New Roman",serif;font-size:10pt}table.fmt td.sb{color:#52514E;font-family:Consolas,"Courier New",monospace;font-size:8.8pt}' +
+  'tr.hl td{background:#E3EAF6}.card{border:1px solid #D6D5CC;border-radius:6px;padding:10px;margin:8px 0}.grid2{display:block}.card h2{font-size:12pt;border:0;color:#0B0B0B;margin:0 0 6px;padding:0}' +
+  '.tela{border:1px solid #C3C2B7;border-radius:6px;margin:10px 0 14px;padding:8px;page-break-inside:auto}.tela-h{font-size:9pt;font-weight:600;color:#164194;text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px}' +
+  '.chip{display:inline-block;border:1px solid #D6D5CC;border-radius:10px;padding:1px 8px;font-size:9pt;background:#FCFCFB}.chip svg{width:12px;height:12px;vertical-align:-2px;margin-right:3px}.chip.ok{background:#E3F4E3}.chip.warn{background:#FFF3D6}.chip.bad{background:#FBE5E5}' +
+  'dl.kv{display:grid;grid-template-columns:repeat(2,1fr);gap:2px 24px;margin:0}dl.kv div{display:flex;justify-content:space-between;gap:10px;border-bottom:1px solid #E1E0D9;padding:3px 0}dl.kv dt{color:#52514E}dl.kv dd{margin:0;font-family:Consolas,monospace;font-size:9pt;text-align:right}' +
+  '.cbox svg,.cut svg{display:block;width:100%;height:auto}.legend{font-size:9pt;color:#52514E;margin-bottom:4px}.legend span{margin-right:12px}.legend i{display:inline-block;width:16px;height:0;border-top:2px solid;vertical-align:middle;margin-right:4px}' +
+  '.cuts{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.cut{border:1px solid #E1E0D9;border-radius:6px;padding:6px}.cut .t{font-weight:600;font-size:9pt}.cut .m{font-size:8.5pt;color:#52514E}.tw{overflow:visible}' +
+  '@media print{body{max-width:none;padding:0}.ms{page-break-inside:auto}h2{page-break-after:avoid}.tela{page-break-inside:avoid}tr{page-break-inside:avoid}}@page{size:A4;margin:16mm 14mm}';
+
+const VERSION = '1.2.0'; { const v = document.getElementById('ver'); if (v) v.textContent = 'v' + VERSION; }
+let MEM = null;
+function memorialDoc(){
+  const sec = memorialBody(), d = A.d, pn = (PRESETS.find(p => p.id === preset) || {n: 'dados personalizados'}).n, dt = new Date().toLocaleDateString('pt-BR');
+  const rows = []; GROUPS.forEach(g => g.f.forEach(fl => { const [k, lab, sym, u, , sc] = fl; if (k === 'nivel') { rows.push('<tr><td>' + g.t + '</td><td>' + lab + '</td><td>' + sym + '</td><td class="n">' + inp[k] + '</td><td></td></tr>'); return; }
+    rows.push('<tr><td>' + g.t + '</td><td>' + lab + '</td><td>' + sym + '</td><td class="n">' + String(+(inp[k] * (sc || 1)).toPrecision(6)).replace('.', ',') + '</td><td>' + u + '</td></tr>'); }));
+  const capa = '<div class="capa"><div class="unbl"><b>UnB</b> Universidade de Brasília</div><h1>Memorial de cálculo · viga contínua protendida de 2 vãos</h1><div class="sub">Concreto protendido · pós-tração aderente · NBR 6118 · UnB · Prof. Li Chong Lee Bacelar de Castro</div>' +
+    '<div class="sub">Seção ' + f(d.bw * 100, 0) + ' × ' + f(d.h * 100, 0) + ' cm · C' + f(d.fck, 0) + ' · ' + d.n_cab + ' cabos × ' + d.n_cord + ' cordoalhas Ø12,7 · vão ' + f(d.L, 0) + ' m · ' + pn + ' · emitido em ' + dt + '</div><div class="sub">Produzido pelo Professor DSc. Li Chong Lee (Todos os direitos reservados) · painel v' + VERSION + '</div></div>';
+  const toc = '<h2>Sumário</h2><ol class="toc">' + sec.map(s => '<li><a href="#ms' + s.n + '">' + s.titulo + '</a></li>').join('') + '</ol>';
+  const dados = '<h2>Dados de entrada</h2><div class="tw"><table><thead><tr><th>Grupo</th><th>Dado</th><th>Símbolo</th><th class="n">Valor</th><th>Unid.</th></tr></thead><tbody>' + rows.join('') + '</tbody></table></div>';
+  return capa + toc + dados + sec.map(s => s.html).join('') + '<p class="rodape">Produzido pelo Professor DSc. Li Chong Lee (Todos os direitos reservados) · Universidade de Brasília · painel de viga contínua protendida v' + VERSION + '</p>';
+}
+function docWithoutTelas(body, withTelas){ const w = h('div', null, body); if (!withTelas) w.querySelectorAll('.tela').forEach(n => n.remove()); return w; }
+function fullHtml(body, withTelas){ return '<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><title>Memorial de cálculo · viga contínua protendida</title><style>' + DOC_CSS + '</style></head><body>' + docWithoutTelas(body, withTelas).innerHTML + '</body></html>'; }
+function download(name, mime, content){ const b = new Blob([content], {type: mime}), u = URL.createObjectURL(b), l = h('a', {href: u, download: name}); document.body.appendChild(l); l.click(); l.remove(); setTimeout(() => URL.revokeObjectURL(u), 4000); }
+function svgToPng(svg){
+  return new Promise(res => { const w = +svg.getAttribute('data-w') || 640, hh = +svg.getAttribute('data-h') || 300, c = svg.cloneNode(true);
+    c.setAttribute('xmlns', NS); c.setAttribute('width', w); c.setAttribute('height', hh);
+    const im = new Image(); im.onload = () => { const cv = document.createElement('canvas'); cv.width = w * 2; cv.height = hh * 2; const cx = cv.getContext('2d'); cx.fillStyle = '#fff'; cx.fillRect(0, 0, cv.width, cv.height); cx.drawImage(im, 0, 0, cv.width, cv.height); res({src: cv.toDataURL('image/png'), w, h: hh}); };
+    im.onerror = () => res(null); im.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(new XMLSerializer().serializeToString(c)); });
+}
+async function wordHtml(body, withTelas){
+  const el = docWithoutTelas(body, withTelas);
+  el.querySelectorAll('.chip').forEach(c => { const b = h('b', null, '[' + c.textContent.trim() + ']'); c.replaceWith(b); });
+  el.querySelectorAll('dl.kv').forEach(dl => { const t = h('table', {class: 'fmt'}, '<tbody>' + Array.from(dl.children).map(q => '<tr><td>' + q.children[0].innerHTML + '</td><td class="n">' + q.children[1].innerHTML + '</td></tr>').join('') + '</tbody>'); dl.replaceWith(t); });
+  el.querySelectorAll('.cuts').forEach(c => { c.style.display = 'block'; });
+  for (const svg of Array.from(el.querySelectorAll('svg'))) { const p = await svgToPng(svg); if (!p) { svg.remove(); continue; }
+    const w = Math.min(p.w, 620), im = h('img', {src: p.src, width: w, height: Math.round(p.h * w / p.w)}); svg.replaceWith(im); }
+  return '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40"><head><meta charset="utf-8"><title>Memorial de cálculo</title>' +
+    '<!--[if gte mso 9]><xml><w:WordDocument><w:View>Print</w:View><w:Zoom>100</w:Zoom></w:WordDocument></xml><![endif]--><style>' + DOC_CSS.replace(/@media print\{[^}]*\{[^}]*\}[^}]*\}/g, '').replace(/@page\{[^}]*\}/, '') + '@page{size:21cm 29.7cm;margin:1.6cm}</style></head><body>' + el.innerHTML + '</body></html>';
+}
+PANELS.memorial = function(){
+  $('#panel').innerHTML = '';  /* os gráficos são buscados por id: a aba anterior não pode estar na página durante a captura */
+  MEM = memorialDoc();
+  return {
+    html: '<div class="card"><h2>Memorial de cálculo passo a passo</h2><div class="src">Gerado com os dados de entrada atuais · mesma lógica das abas e da planilha</div>' +
+      '<p class="lead">Cada etapa traz a fórmula, a substituição com os valores e o resultado, seguida das telas correspondentes (gráficos, tabelas e cortes da seção). O arquivo exportado é igual à pré-visualização abaixo, sempre em tema claro.</p>' +
+      '<div class="ctl"><label><input type="checkbox" id="mtela" checked> Incluir as telas (gráficos, tabelas e cortes)</label>' +
+      '<button class="btn" id="mhtml" type="button">Baixar HTML</button><button class="btn" id="mdoc" type="button">Baixar Word (.doc)</button><button class="btn" id="mpdf" type="button">Imprimir / salvar em PDF</button><span id="mmsg" class="foot" role="status"></span></div></div>' +
+      '<div class="paper" id="paper">' + MEM + '</div>',
+    after(){
+      const tl = () => $('#mtela').checked, msg = t => { const m = $('#mmsg'); if (m) m.textContent = t; }, name = 'Memorial_Viga_Continua_Protendida';
+      $('#mtela').addEventListener('change', () => $('#paper').classList.toggle('no-tela', !tl()));
+      $('#mhtml').addEventListener('click', () => { download(name + '.html', 'text/html;charset=utf-8', fullHtml(MEM, tl())); msg('HTML gerado.'); });
+      $('#mdoc').addEventListener('click', async () => { msg('Gerando o arquivo Word…'); try { download(name + '.doc', 'application/msword', await wordHtml(MEM, tl())); msg('Arquivo Word gerado (abre no Word e no LibreOffice).'); } catch (e) { msg('Não foi possível gerar o Word: ' + e.message); } });
+      $('#mpdf').addEventListener('click', () => { const fr = h('iframe', {style: 'position:fixed;right:0;bottom:0;width:0;height:0;border:0'}); document.body.appendChild(fr);
+        fr.onload = () => { try { fr.contentWindow.focus(); fr.contentWindow.print(); } catch (e) { msg('Use o botão Baixar HTML e imprima o arquivo.'); } setTimeout(() => fr.remove(), 60000); };
+        fr.srcdoc = fullHtml(MEM, tl()); msg('Na janela de impressão, escolha “Salvar como PDF”.'); });
+    }
   };
 };
 
