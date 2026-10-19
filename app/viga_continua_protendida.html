@@ -8,18 +8,19 @@
   --accent:#164194; --accent-soft:#E3EAF6; --accent-ink:#FFFFFF; --ring:rgba(11,11,11,.10);
   --s1:#164194; --s2:#EA5950; --s3:#1E9B5B; --s4:#0095DB; --band:rgba(22,65,148,.13);
   --good:#0CA30C; --warn:#FAB219; --bad:#D03B3B; --warn-soft:#FFF3D6; --bad-soft:#FBE5E5; --good-soft:#E3F4E3;
+  --n3:#D9660A; --n3-soft:#FDEBD8; --n2:#1F6FEB; --n2-soft:#E1EDFE; --n1:#7A4FB5; --n1-soft:#EEE6F8; --n-ink:#FFFFFF;
   --sans:'IBM Plex Sans',system-ui,-apple-system,'Segoe UI',sans-serif; --mono:'IBM Plex Mono',ui-monospace,Consolas,monospace;
 }
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
   --plane:#0D0D0D; --surface:#1A1A19; --ink:#FFFFFF; --ink2:#C3C2B7; --muted:#9C9A93; --grid:#2C2C2A; --axis:#383835;
   --accent:#6FB1EC; --accent-soft:#1E2E45; --accent-ink:#0D0D0D; --ring:rgba(255,255,255,.10);
   --s1:#5B8FE6; --s2:#F27B72; --s3:#35C07A; --s4:#38B6EE; --band:rgba(91,143,230,.18);
-  --warn-soft:#3A2F10; --bad-soft:#3A1A1A; --good-soft:#12301A; color-scheme:dark}}
+  --warn-soft:#3A2F10; --bad-soft:#3A1A1A; --good-soft:#12301A; --n3:#F29A4A; --n3-soft:#3A2812; --n2:#6AA8FF; --n2-soft:#16294A; --n1:#B592E8; --n1-soft:#2B1F40; --n-ink:#0D0D0D; color-scheme:dark}}
 :root[data-theme="dark"]{
   --plane:#0D0D0D; --surface:#1A1A19; --ink:#FFFFFF; --ink2:#C3C2B7; --muted:#9C9A93; --grid:#2C2C2A; --axis:#383835;
   --accent:#6FB1EC; --accent-soft:#1E2E45; --accent-ink:#0D0D0D; --ring:rgba(255,255,255,.10);
   --s1:#5B8FE6; --s2:#F27B72; --s3:#35C07A; --s4:#38B6EE; --band:rgba(91,143,230,.18);
-  --warn-soft:#3A2F10; --bad-soft:#3A1A1A; --good-soft:#12301A; color-scheme:dark}
+  --warn-soft:#3A2F10; --bad-soft:#3A1A1A; --good-soft:#12301A; --n3:#F29A4A; --n3-soft:#3A2812; --n2:#6AA8FF; --n2-soft:#16294A; --n1:#B592E8; --n1-soft:#2B1F40; --n-ink:#0D0D0D; color-scheme:dark}
 
 *{box-sizing:border-box}
 body{background:var(--plane);color:var(--ink);font-family:var(--sans);font-size:14px;line-height:1.45}
@@ -54,6 +55,24 @@ p{margin:0 0 8px}
 .cbtn{flex:none;width:24px;height:24px;padding:0;border:1px solid var(--axis);border-radius:6px;background:var(--surface);color:var(--ink2);font-size:15px;line-height:1}
 .cbtn:hover{background:var(--accent-soft);color:var(--accent)}
 .btn:disabled{opacity:.5;cursor:not-allowed}
+/* destaque dos itens que só valem para um nível de protensão: laranja = nível 3, azul = nível 2, roxo = nível 1 */
+.lvb{display:inline-block;font-size:10.5px;font-weight:700;padding:1px 6px;border-radius:999px;margin-left:6px;vertical-align:1px;color:var(--n-ink);letter-spacing:.02em}
+.lvb.lv3{background:var(--n3)}.lvb.lv2{background:var(--n2)}.lvb.lv1{background:var(--n1)}
+tr.lv3 td{background:var(--n3-soft)}tr.lv2 td{background:var(--n2-soft)}tr.lv1 td{background:var(--n1-soft)}
+tr.lv3 td:first-child{box-shadow:inset 3px 0 0 var(--n3)}tr.lv2 td:first-child{box-shadow:inset 3px 0 0 var(--n2)}tr.lv1 td:first-child{box-shadow:inset 3px 0 0 var(--n1)}
+tr.xtra td{opacity:.78}
+.chip.lvc3{background:var(--n3-soft);border-color:var(--n3)}.chip.lvc3 svg{color:var(--n3)}
+.chip.lvc2{background:var(--n2-soft);border-color:var(--n2)}.chip.lvc2 svg{color:var(--n2)}
+.chip.lvc1{background:var(--n1-soft);border-color:var(--n1)}.chip.lvc1 svg{color:var(--n1)}
+.btn.lv3{border-left:4px solid var(--n3)}.btn.lv2{border-left:4px solid var(--n2)}.btn.lv1{border-left:4px solid var(--n1)}
+.btn.lv3[aria-pressed="true"]{background:var(--n3-soft);box-shadow:inset 0 0 0 1px var(--n3);border-color:var(--n3)}
+.btn.lv2[aria-pressed="true"]{background:var(--n2-soft);box-shadow:inset 0 0 0 1px var(--n2);border-color:var(--n2)}
+.btn.lv1[aria-pressed="true"]{background:var(--n1-soft);box-shadow:inset 0 0 0 1px var(--n1);border-color:var(--n1)}
+.lgctl button.lv3{border-color:var(--n3)}.lgctl button.lv2{border-color:var(--n2)}.lgctl button.lv1{border-color:var(--n1)}
+.lgctl button.lv3[aria-pressed="true"]{background:var(--n3);color:var(--n-ink)}.lgctl button.lv2[aria-pressed="true"]{background:var(--n2);color:var(--n-ink)}.lgctl button.lv1[aria-pressed="true"]{background:var(--n1);color:var(--n-ink)}
+details.grp.lv3{border-left:3px solid var(--n3);padding-left:6px}details.grp.lv2{border-left:3px solid var(--n2);padding-left:6px}details.grp.lv1{border-left:3px solid var(--n1);padding-left:6px}
+details.grp.lv3>summary{color:var(--n3)}details.grp.lv2>summary{color:var(--n2)}details.grp.lv1>summary{color:var(--n1)}
+.datasave{display:grid;grid-template-columns:repeat(2,1fr);gap:6px;margin-bottom:6px}.datasave .btn{text-align:center}
 .tiposl{font-size:11.5px;color:var(--muted);margin:2px 0 4px}
 .presets{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:10px}
 button{font:inherit;cursor:pointer}
@@ -72,7 +91,8 @@ details.grp>summary::after{content:'+';color:var(--ink2)} details.grp[open]>summ
 .fld input{width:100%;min-width:0;font:inherit;font-family:var(--mono);font-size:12.5px;padding:4px 6px;border:1px solid var(--axis);border-radius:5px;background:var(--plane);color:var(--ink);text-align:right}
 .fld .u{font-size:11px;color:var(--muted);min-width:2.2em}
 .fld .note{grid-column:1/-1;font-size:11px;color:var(--muted)}
-.spansw{margin-left:auto;display:flex;align-items:center;gap:4px;padding-bottom:4px;font-size:12px;color:var(--muted)}.spansw button{font:inherit;font-size:12px;padding:3px 10px;border:1px solid var(--axis);border-radius:999px;background:var(--surface);color:var(--ink)}.spansw button[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.spansw,.limsw{margin-left:auto;display:flex;align-items:center;gap:4px;padding-bottom:4px;font-size:12px;color:var(--muted)}.spansw+.limsw{margin-left:14px}
+.spansw button,.limsw button{font:inherit;font-size:12px;padding:3px 10px;border:1px solid var(--axis);border-radius:999px;background:var(--surface);color:var(--ink)}.spansw button[aria-pressed="true"],.limsw button[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
 .tabs{display:flex;gap:2px;flex-wrap:wrap;border-bottom:1px solid var(--axis);margin-bottom:14px;position:sticky;top:0;z-index:20;background:var(--plane);padding-top:6px;box-shadow:0 6px 8px -8px rgba(0,0,0,.35)}
 @media (max-width:700px){.tabs{flex-wrap:nowrap;overflow-x:auto}.tab{white-space:nowrap;flex:none}}
 .tab{padding:8px 12px;border:0;background:none;color:var(--ink2);border-bottom:2px solid transparent;font-weight:500;font-size:13.5px}
@@ -142,7 +162,7 @@ h1{color:var(--accent)}
 .legend button.lg{font:inherit;font-size:12.5px;display:inline-flex;align-items:center;gap:0;padding:1px 8px 1px 6px;border:1px solid transparent;border-radius:6px;background:none;color:var(--ink2)}
 .legend button.lg:hover{background:var(--accent-soft)}.legend button.lg[aria-pressed="false"]{opacity:.45;text-decoration:line-through}
 .rodape{margin:26px 0 0;padding-top:10px;border-top:1px solid var(--grid);font-size:12px;color:var(--muted)}
-.paper{--ink:#0B0B0B;--ink2:#4F5868;--muted:#6E6C67;--grid:#E1E0D9;--axis:#C3C2B7;--surface:#FFFFFF;--plane:#EDF1F6;--accent:#164194;--accent-soft:#E3EAF6;--ring:rgba(11,11,11,.10);--s1:#164194;--s2:#EA5950;--s3:#1E9B5B;--s4:#0095DB;
+.paper{--n3:#D9660A;--n3-soft:#FDEBD8;--n2:#1F6FEB;--n2-soft:#E1EDFE;--n1:#7A4FB5;--n1-soft:#EEE6F8;--n-ink:#FFFFFF;--ink:#0B0B0B;--ink2:#4F5868;--muted:#6E6C67;--grid:#E1E0D9;--axis:#C3C2B7;--surface:#FFFFFF;--plane:#EDF1F6;--accent:#164194;--accent-soft:#E3EAF6;--ring:rgba(11,11,11,.10);--s1:#164194;--s2:#EA5950;--s3:#1E9B5B;--s4:#0095DB;
   background:#fff;color:#0B0B0B;border:1px solid var(--ring);border-radius:8px;padding:22px 26px}
 .paper h1{font-size:22px}.paper h2{font-size:17px;margin:26px 0 8px;padding-bottom:4px;border-bottom:2px solid #164194;color:#164194}.paper .card h2{font-size:14px;border:0;color:#0B0B0B;margin:0 0 8px;padding:0}
 .paper .capa{border-bottom:3px solid #164194;padding-bottom:10px;margin-bottom:12px}.paper .capa .sub{color:var(--ink2)}.paper .toc{columns:2;padding-left:20px}.paper .toc a{color:#164194;text-decoration:none}
@@ -159,7 +179,7 @@ h1{color:var(--accent)}
   <header class="top">
     <div>
       <h1 id="ttl">Viga contínua protendida, 2 vãos</h1>
-      <div class="credit">Produzido pelo Professor DSc. Li Chong Lee (Todos os direitos reservados) <span class="ver" id="ver" title="Versão do painel">v2.4.0</span></div>
+      <div class="credit">Produzido pelo Professor DSc. Li Chong Lee (Todos os direitos reservados) <span class="ver" id="ver" title="Versão do painel">v2.7.0</span></div>
       <div class="sub">Pós-tração aderente · 1 a 6 vãos, iguais ou diferentes · NBR 6118 · mesma lógica da planilha de apoio, recalculada a cada alteração</div>
     </div>
     <div class="status" id="status"></div>
@@ -169,6 +189,7 @@ h1{color:var(--accent)}
   <div class="shell">
     <aside class="side" id="dados" aria-label="Dados de entrada">
       <h2>Dados <button class="btn" id="reset" type="button" style="padding:3px 8px">Restaurar</button></h2>
+      <div class="datasave"><button class="btn" id="savedata" type="button" title="Baixa um arquivo .json com todos os dados de entrada">Salvar dados</button><button class="btn" id="loaddata" type="button" title="Carrega um arquivo .json salvo antes">Carregar dados</button><input type="file" id="loadfile" accept=".json,application/json" hidden></div><div class="foot" id="datamsg" role="status" style="margin:0 0 6px"></div>
       <div class="tiposl">Dados carregados e níveis de protensão (da viga atual)</div><div class="presets" id="presets" style="grid-template-columns:repeat(2,1fr)"></div>
       <div class="tiposl">Tipo de viga</div><div class="presets" id="tipos" style="grid-template-columns:repeat(2,1fr)"></div>
       <div id="fields"></div>
@@ -198,7 +219,7 @@ const DEF = {
   e_sup: 0.28, es2: 0.28, es3: 0.28, es4: 0.28, es5: 0.28,
   lam: 1.0, lam2: 1.0, lam3: 1.0, lam4: 1.0, lam5: 1.0,
   n_cab: 2, n_cord: 5, Ap1: 0.987, fptk: 1900, Ep: 200000, rj: 0.74,
-  mu: 0.20, kk: 0.002, slip: 0.006, t0: 7, phi_cr: 2.9, eps_cs: -0.00023, perdaMode: 0, perdaTot: 20,
+  mu: 0.20, kk: 0.002, slip: 0.006, t0: 7, phi_cr: 2.9, eps_cs: -0.00023, perdaMode: 0, perdaTot: 20, cabMode: 0, Pj_res: 1388,
   fyk: 500, Es: 210000,
   AscB: 4.91, AscV: 2.45, dsc: 0.05,
   nnegCA: 8, nposCA: 6, phiCA: 20, ddCA: 0.82, cgCA: 0.0755,
@@ -255,8 +276,10 @@ function derive(D) {
   d.Eci = 5600 * Math.sqrt(d.fck); d.alpha_i = Math.min(0.8 + 0.2 * d.fck / 80, 1); d.Ecs = d.alpha_i * d.Eci;
   d.fcj = Math.exp(0.38 * (1 - Math.sqrt(28 / d.t0))) * d.fck; d.Eci_j = 5600 * Math.sqrt(d.fcj); d.fctmj = 0.3 * Math.pow(d.fcj, 2 / 3);
   d.ft_els = 1.2 * d.fctkinf; d.ft_ato = 1.2 * d.fctmj;
-  d.Ap = d.n_cab * d.n_cord * d.Ap1 * 1e-4;
   d.fpyk = 0.9 * d.fptk; d.fpyd = d.fpyk / d.gs; d.fptd = d.fptk / d.gs; d.sig_j = d.rj * d.fptk;
+  /* cabo resultante (cabMode = 1): informa-se o nº de cabos e a força no macaco Pj; Ap = Pj/σpj e n_cord vira o nº equivalente de cordoalhas por cabo */
+  d.Ap = d.cabMode === 1 ? d.Pj_res / (d.sig_j * 1e3) : d.n_cab * d.n_cord * d.Ap1 * 1e-4;
+  if (d.cabMode === 1) d.n_cord = Math.max(1, Math.round(d.Ap / (d.n_cab * d.Ap1 * 1e-4)));
   d.fyd = d.fyk / d.gs; d.pbal = d.g + d.psi2 * d.qv[0]; d.pbalv = d.gv.map((g, i) => g + d.psi2 * d.qv[i]);
   return d;
 }
@@ -713,7 +736,7 @@ function analyse(D) {
 function minStrands(D) {
   const out = [];
   for (let n = 1; n <= 12; n++) {
-    const d = derive(Object.assign({}, D, {n_cord: n})), r = evaluate(d), lv = lvlChecks(d, r);
+    const d = derive(Object.assign({}, D, {n_cord: n, cabMode: 0})), r = evaluate(d), lv = lvlChecks(d, r);
     out.push({n, Ap: d.Ap * 1e4, Pj: r.Ls.Pj, N3: lv.N3, N2: lv.N2, N3d: lv.N3d, N3f: lv.N3f, N2d: lv.N2d, N2f: lv.N2f});
   }
   return out;
@@ -793,7 +816,7 @@ function chartDraw(host, cfg, all, hidden, setHidden, groups, ov, setScale){
     if (interactive){
       const names = all.map(o => o.n), gs = [{n: 'Todos', s: names}].concat(groups.filter(g => g.s.some(n => names.indexOf(n) >= 0)));
       const ctl = h('div', {class: 'lgctl'}); ctl.appendChild(h('span', null, 'Mostrar:'));
-      gs.forEach(g => { const on = names.every(n => (g.s.indexOf(n) >= 0) === (hidden.indexOf(n) < 0)); const b = h('button', {type: 'button', 'aria-pressed': String(on), title: g.s.join(' · ')}, g.n);
+      gs.forEach(g => { const on = names.every(n => (g.s.indexOf(n) >= 0) === (hidden.indexOf(n) < 0)); const b = h('button', {type: 'button', 'aria-pressed': String(on), title: g.s.join(' · '), class: g.cls || ''}, g.n);
         b.addEventListener('click', () => setHidden(names.filter(n => g.s.indexOf(n) < 0))); ctl.appendChild(b); });
       host.appendChild(ctl);
     }
@@ -893,11 +916,12 @@ const TIPOS = [
   {id: '2d', n: '2 vãos diferentes', s: '8 m + 12 m', ov: {nsp: 2, eqL: 0, L: 8, L2: 12}},
   {id: '3e', n: '3 vãos iguais', s: 'contínua, 10 m', ov: {nsp: 3, eqL: 1, L: 10}}
 ];
-const STRUCT = ['nsp', 'eqL', 'eqLoad', 'eqTr', 'perdaMode'];
+const STRUCT = ['nsp', 'eqL', 'eqLoad', 'eqTr', 'perdaMode', 'cabMode', 'nivel'];
 const OPTS = {
   nivel: [[3, '3 · completa'], [2, '2 · limitada'], [1, '1 · parcial']],
   nsp: [[1, '1 vão'], [2, '2 vãos'], [3, '3 vãos'], [4, '4 vãos'], [5, '5 vãos'], [6, '6 vãos']],
   perdaMode: [[0, 'calculada pelo modelo'], [1, 'estipulada (%)']],
+  cabMode: [[0, 'por cordoalhas'], [1, 'cabo resultante (Pj)']],
   eqL: [[1, 'iguais'], [0, 'diferentes']], eqLoad: [[1, 'iguais nos vãos'], [0, 'por vão']], eqTr: [[1, 'o mesmo em todos'], [0, 'por vão e por apoio']]
 };
 const nsOf = v => Math.max(1, Math.min(MAXSP, Math.round(v.nsp || 2)));
@@ -905,7 +929,7 @@ const supName = j => String.fromCharCode(66 + j);               /* apoio interno
 const spanName = k => A && A.d.n === 1 ? 'vão' : 'vão ' + (k + 1);
 function groupsFor(v){
   const n = nsOf(v), multi = n > 1, dL = multi && v.eqL === 0, dLoad = multi && v.eqLoad === 0, dTr = multi && v.eqTr === 0, G = [];
-  G.push({t: 'Nível de protensão alvo', o: true, f: [['nivel', 'Nível exigido no projeto', 'nível', '', 1, 1, 'nivel']]});
+  G.push({t: 'Nível de protensão alvo', o: true, cls: 'lv' + (v.nivel || 3), f: [['nivel', 'Nível exigido no projeto', 'nível', '', 1, 1, 'nivel']]});
   const vf = [['nsp', 'Número de vãos', 'n', '', 1, 1, 'nsp']];
   if (multi) vf.push(['eqL', 'Comprimentos dos vãos', '', '', 1, 1, 'eqL']);
   vf.push(['L', dL ? 'Vão 1' : (multi ? 'Vão de cada tramo' : 'Vão'), dL ? 'L1' : 'L', 'm', .5]);
@@ -915,10 +939,10 @@ function groupsFor(v){
     ['bw', 'Largura da seção', 'bw', 'm', .01], ['h', 'Altura da seção', 'h', 'm', .01],
     ['fck', 'Resistência do concreto', 'fck', 'MPa', 1], ['gc', 'Coeficiente do concreto', 'γc', '', .05], ['t0', 'Idade na protensão', 't0', 'dias', 1]]});
   const af = []; if (multi) af.push(['eqLoad', 'Cargas g e q', '', '', 1, 1, 'eqLoad']);
-  af.push(['g_add', dLoad ? 'Permanente adicional, vão 1' : 'Permanente adicional (adotada)', dLoad ? 'g1' : 'g adic.', 'kN/m', .25], ['q', dLoad ? 'Sobrecarga, vão 1' : 'Sobrecarga (adotada)', dLoad ? 'q1' : 'q', 'kN/m', 1]);
-  if (dLoad) for (let i = 2; i <= n; i++) af.push(['g' + i, 'Permanente adicional, vão ' + i, 'g' + i, 'kN/m', .25], ['q' + i, 'Sobrecarga, vão ' + i, 'q' + i, 'kN/m', 1]);
+  af.push(['g_add', dLoad ? 'Permanente adicional, vão 1 (além do peso próprio)' : 'Permanente adicional (além do peso próprio)', dLoad ? 'g1' : 'g adic.', 'kN/m', .25], ['q', dLoad ? 'Sobrecarga, vão 1' : 'Sobrecarga (adotada)', dLoad ? 'q1' : 'q', 'kN/m', 1]);
+  if (dLoad) for (let i = 2; i <= n; i++) af.push(['g' + i, 'Permanente adicional, vão ' + i + ' (além do peso próprio)', 'g' + i, 'kN/m', .25], ['q' + i, 'Sobrecarga, vão ' + i, 'q' + i, 'kN/m', 1]);
   af.push(['psi1', 'Fator ψ1', 'ψ1', '', .05], ['psi2', 'Fator ψ2', 'ψ2', '', .05]);
-  G.push({t: 'Ações', o: true, f: af});
+  G.push({t: 'Ações', o: true, f: af, note: 'gnote'});
   const tf = [['cnom', 'Cobrimento nominal', 'cnom', 'm', .005], ['phi_t', 'Estribo Ø', 'Øt', 'm', .0025], ['d_bain', 'Bainha, diâmetro externo', 'Øbainha', 'm', .001], ['e_end', 'Excentricidade na ancoragem', 'e_end', 'm', .01]];
   if (multi) tf.push(['eqTr', 'Traçado do cabo (e e λ)', '', '', 1, 1, 'eqTr']);
   tf.push(['e_span', dTr ? 'Excentricidade máx. no vão 1' : 'Excentricidade máx. no vão', dTr ? 'e1' : 'e_vão', 'm', .01]);
@@ -930,9 +954,10 @@ function groupsFor(v){
     if (dTr) for (let j = 1; j < n - 1; j++) tf.push(['lam' + (j + 1), 'Parábola reversa junto ao apoio ' + supName(j), 'λ' + supName(j), 'm', .1]);
   }
   G.push({t: 'Cobrimento e traçado do cabo', o: true, f: tf});
-  G.push({t: 'Armadura ativa', o: true, f: [
-    ['n_cab', 'Número de cabos', 'ncab', '', 1], ['n_cord', 'Cordoalhas por cabo', 'ncord', '', 1], ['Ap1', 'Área de uma cordoalha Ø12,7', 'Ap1', 'cm²', .001],
-    ['fptk', 'Resistência do aço', 'fptk', 'MPa', 10], ['Ep', 'Módulo do aço de protensão', 'Ep', 'MPa', 1000], ['rj', 'Tensão no macaco / fptk', 'σpj/fptk', '', .01], ['gs', 'Coeficiente do aço', 'γs', '', .05]]});
+  const cres = v.cabMode === 1;
+  G.push({t: 'Armadura ativa', o: true, note: 'anote', f: [['cabMode', 'Definição da protensão', '', '', 1, 1, 'cabMode'], ['n_cab', 'Número de cabos', 'ncab', '', 1]].concat(
+    cres ? [['Pj_res', 'Força no macaco, total dos cabos', 'Pj', 'kN', 10]] : [['n_cord', 'Cordoalhas por cabo', 'ncord', '', 1], ['Ap1', 'Área de uma cordoalha Ø12,7', 'Ap1', 'cm²', .001]],
+    [['fptk', 'Resistência do aço', 'fptk', 'MPa', 10], ['Ep', 'Módulo do aço de protensão', 'Ep', 'MPa', 1000], ['rj', 'Tensão no macaco / fptk', 'σpj/fptk', '', .01], ['gs', 'Coeficiente do aço', 'γs', '', .05]])});
   G.push({t: 'Perdas de protensão', o: false, f: [
     ['perdaMode', 'Perda total de protensão', '', '', 1, 1, 'perdaMode']].concat(v.perdaMode === 1 ? [['perdaTot', 'Perda total estipulada (de σp,j)', 'Δ', '%', 1]] : [], [
     ['mu', 'Atrito cordoalha-bainha', 'μ', '1/rad', .01], ['kk', 'Perda parasita', 'k', '1/m', .0005], ['slip', 'Cravação das cunhas', 'Δcrav', 'm', .001],
@@ -948,7 +973,7 @@ function groupsFor(v){
   G.push({t: 'Concreto armado (comparação)', o: false, f: cf});
   const nf = []; if (multi) nf.push(['nB1', 'Barras tracionadas nos apoios internos', 'nap', '', 1]);
   nf.push(['nV1', multi ? 'Barras tracionadas nos vãos' : 'Barras tracionadas no vão', 'nvão', '', 1], ['phiN1', 'Diâmetro das barras', 'Ø', 'mm', 2.5]);
-  G.push({t: 'Nível 1: armadura passiva', o: false, f: nf});
+  G.push({t: 'Nível 1: armadura passiva', o: false, cls: 'lv1', f: nf});
   return G;
 }
 const STORE = 'viga-cp-dados-v1';
@@ -960,6 +985,8 @@ function save(){ try { localStorage.setItem(STORE, JSON.stringify({inp, preset})
 let A = null, lastErr = null, tab = 'resumo';
 /* Vãos exibidos nas tabelas e nos gráficos de flecha: 1 = só o 1º vão; 2 = todos os vãos. */
 let spans = 1; try { spans = localStorage.getItem('viga-cp-vaos') === '2' ? 2 : 1; } catch (e) {}
+/* Limites exibidos: 'nivel' = só os do nível de protensão escolhido; 'all' = os dos três níveis (os de outros níveis aparecem esmaecidos e não entram na situação do projeto). */
+let limMode = 'nivel'; try { limMode = localStorage.getItem('viga-cp-limites') === 'all' ? 'all' : 'nivel'; } catch (e) {}
 const NR = () => !A || A.d.n === 1 || spans === 2 ? A.r.x.length : A.st.iSup[1] + 1;
 const secT = () => A && A.d.n === 1 ? 'Seções do vão' : (spans === 2 ? 'Seções de todos os vãos' : 'Seções do 1º vão');
 function compute(){
@@ -978,7 +1005,7 @@ function buildPresets(){
   const pr = $('#presets'); pr.innerHTML = '';
   const cd = LV ? [['base', 'Dados carregados', 'nível ' + base.nivel + ' · ' + base.n_cord + ' cord./cabo'], ['n3', 'Nível 3', LV.n3 ? LV.n3 + ' cord./cabo' : 'não atinge'], ['n2', 'Nível 2', LV.n2 ? LV.n2 + ' cord./cabo' : 'não atinge'], ['n1', 'Nível 1', LV.n1 ? LV.n1 + ' cord./cabo' : 'não atinge']]
     : [['base', 'Dados carregados', '—'], ['n3', 'Nível 3', '—'], ['n2', 'Nível 2', '—'], ['n1', 'Nível 1', '—']];
-  cd.forEach(([id, n, s]) => { const off = id !== 'base' && (!LV || !LV[id]); const b = h('button', {class: 'btn', type: 'button', 'aria-pressed': String(preset === id), 'data-p': id, title: id === 'base' ? 'Volta aos dados que foram carregados' : 'Menor nº de cordoalhas por cabo que atinge o nível, para a viga atual'}, n + '<small>' + s + '</small>'); if (off) b.disabled = true; pr.appendChild(b); });
+  cd.forEach(([id, n, s]) => { const off = id !== 'base' && (!LV || !LV[id]); const b = h('button', {class: 'btn' + (id === 'base' ? '' : ' lv' + id.slice(1)), type: 'button', 'aria-pressed': String(preset === id), 'data-p': id, title: id === 'base' ? 'Volta aos dados que foram carregados' : 'Menor nº de cordoalhas por cabo que atinge o nível, para a viga atual'}, n + '<small>' + s + '</small>'); if (off) b.disabled = true; pr.appendChild(b); });
 }
 function refreshLevels(){
   const ms = minStrands(inp), n3 = ms.find(r => r.N3), n2 = ms.find(r => r.N2);
@@ -988,6 +1015,7 @@ function refreshLevels(){
 function applyLevel(lv){
   const n = LV && LV['n' + lv]; if (!n) return;
   const v = Object.assign({}, inp, {n_cord: n, nivel: lv});
+  if (inp.cabMode === 1) v.Pj_res = Math.round(n * inp.n_cab * inp.Ap1 * 1e-4 * inp.rj * inp.fptk * 1e3);
   if (lv !== 3) {   /* níveis 2 e 1: passiva tracionada (Ø16) para o ELU nas seções mais exigidas */
     const a = analyse(Object.assign({}, v, {AscB: 0, AscV: 0, AstB: 0, AstV: 0})), nb = a.kSup >= 0 ? eluNeed(a.d, a.r, a.supIdx[a.kSup], true, 16) : null, nv = eluNeed(a.d, a.r, a.spIdx[a.kSpan], false, 16);
     v.AscB = 0; v.AscV = 0; v.AstB = nb ? +nb.As.toFixed(2) : 0; v.AstV = +nv.As.toFixed(2);
@@ -1002,7 +1030,7 @@ function buildSide(){
   TIPOS.forEach(p => { const b = h('button', {class: 'btn', type: 'button', 'aria-pressed': String(tipoOf() === p.id), 'data-tp': p.id}, p.n + '<small>' + p.s + '</small>'); tp.appendChild(b); });
   const fl = $('#fields'); fl.innerHTML = '';
   groupsFor(inp).forEach(g => {
-    const d = h('details', {class: 'grp'}); if (g.o) d.setAttribute('open', ''); d.appendChild(h('summary', null, g.t));
+    const d = h('details', {class: 'grp' + (g.cls ? ' ' + g.cls : '')}); if (g.o) d.setAttribute('open', ''); d.appendChild(h('summary', null, g.t));
     g.f.forEach(r => { const [k, lab, sym, u, st, sc, ok] = r, scale = sc || 1, id = 'in_' + k;
       const row = h('div', {class: 'fld'});
       row.appendChild(h('label', {for: id}, lab + (sym ? ' <b>' + sym + '</b>' : '')));
@@ -1012,17 +1040,51 @@ function buildSide(){
       else { i = h('input', {id, type: 'number', step: st, inputmode: 'decimal'}); i.value = +(inp[k] * scale).toPrecision(8);
         i.addEventListener('input', () => { const v = parseFloat(i.value); if (!isFinite(v)) return; inp[k] = v / scale; preset = ''; sched(); }); }
       w.appendChild(i); w.appendChild(h('span', {class: 'u'}, u)); row.appendChild(w); d.appendChild(row); });
+    if (g.note) d.appendChild(h('p', {class: 'foot', id: g.note, style: 'margin:6px 0 2px'}));
     fl.appendChild(d);
   });
+  updateGNote();
+}
+/* o peso próprio já entra no cálculo (g0 = 25·bw·h); g adicional vale só além dele */
+function updateGNote(){
+  const e = $('#gnote'), g0 = 25 * inp.bw * inp.h;
+  if (e) e.innerHTML = 'O <b>peso próprio já está incluído</b>: g<sub>0</sub> = 25·b<sub>w</sub>·h = ' + f(g0, 2) + ' kN/m. Com <b>g adic. = 0</b> atua somente o peso próprio.';
+  const a = $('#anote'); if (!a) return; let dd; try { dd = derive(inp); } catch (x) { return; }
+  a.innerHTML = inp.cabMode === 1 ? '<b>Cabo resultante</b>: A<sub>p</sub> = P<sub>j</sub>/σ<sub>pj</sub> = ' + f(inp.Pj_res, 0) + ' / ' + f(dd.sig_j, 0) + ' = <b>' + f(dd.Ap * 1e4, 2) + ' cm²</b> (≈ ' + dd.n_cord + ' cordoalhas Ø12,7 por cabo, em ' + inp.n_cab + ' cabos). Os ' + inp.n_cab + ' cabos seguem o mesmo traçado.'
+    : 'P<sub>j</sub> = A<sub>p</sub>·σ<sub>pj</sub> = ' + f(dd.Ap * 1e4, 2) + ' cm² × ' + f(dd.sig_j, 0) + ' MPa = <b>' + f(dd.Ap * dd.sig_j * 1e3, 0) + ' kN</b>. Para informar direto a força, use o cabo resultante.';
 }
 $('#presets').addEventListener('click', e => { const b = e.target.closest('button[data-p]'); if (!b || b.disabled) return;
   if (b.dataset.p === 'base') { inp = Object.assign({}, base); preset = 'base'; buildSide(); sched(); } else applyLevel(+b.dataset.p.slice(1)); });
 $('#tipos').addEventListener('click', e => { const b = e.target.closest('button[data-tp]'); if (!b) return; const p = TIPOS.find(x => x.id === b.dataset.tp);
   inp = Object.assign({}, inp, p.ov); preset = ''; buildSide(); sched(); });
+/* ---------- salvar e carregar todos os dados de entrada (arquivo .json) ---------- */
+function saveData(){
+  const dt = new Date(), pad = v => String(v).padStart(2, '0'), stamp = dt.getFullYear() + pad(dt.getMonth() + 1) + pad(dt.getDate()) + '_' + pad(dt.getHours()) + pad(dt.getMinutes());
+  const o = {app: 'viga-continua-protendida', versao: VERSION, salvoEm: dt.toISOString(), descricao: (A ? tipoDescr() : ''), dados: inp};
+  download('Viga_dados_' + nsOf(inp) + 'vaos_' + stamp + '.json', 'application/json', JSON.stringify(o, null, 1));
+  $('#datamsg').textContent = 'Dados salvos (' + Object.keys(inp).length + ' campos).';
+}
+function tipoDescr(){ const d = A.d; return d.n === 1 ? '1 vão' : d.n + ' vãos (' + d.Ls.map(l => f(l, l % 1 ? 1 : 0)).join(' + ') + ' m)'; }
+function loadData(file){
+  const msg = t => { $('#datamsg').textContent = t; }, rd = new FileReader();
+  rd.onload = () => {
+    let o; try { o = JSON.parse(rd.result); } catch (e) { msg('Arquivo inválido: não é um JSON.'); return; }
+    const src = o && o.dados && typeof o.dados === 'object' ? o.dados : o, clean = {}; let n = 0, ign = 0;
+    Object.keys(src || {}).forEach(k => { if (Object.prototype.hasOwnProperty.call(DEF, k) && typeof src[k] === 'number' && isFinite(src[k])) { clean[k] = src[k]; n++; } else ign++; });
+    if (!n) { msg('Arquivo sem dados reconhecidos desta viga.'); return; }
+    inp = Object.assign({}, DEF, clean); base = Object.assign({}, inp); preset = 'base'; buildSide(); sched();
+    msg('Dados carregados: ' + n + ' campos' + (ign ? ' (' + ign + ' ignorados)' : '') + (o.versao ? ' · salvo na v' + o.versao : '') + '.');
+  };
+  rd.onerror = () => msg('Não foi possível ler o arquivo.');
+  rd.readAsText(file);
+}
+$('#savedata').addEventListener('click', saveData);
+$('#loaddata').addEventListener('click', () => $('#loadfile').click());
+$('#loadfile').addEventListener('change', e => { const f0 = e.target.files && e.target.files[0]; if (f0) loadData(f0); e.target.value = ''; });
 $('#reset').addEventListener('click', () => { inp = Object.assign({}, DEF); base = Object.assign({}, DEF); preset = 'base'; buildSide(); sched(); });
 
 let pend = false;
-function sched(){ if (pend) return; pend = true; requestAnimationFrame(() => { pend = false; compute(); save(); renderStatus(); buildTabs(); renderPanel(); refreshLevels(); syncPresetButtons(); }); }
+function sched(){ if (pend) return; pend = true; requestAnimationFrame(() => { pend = false; compute(); save(); renderStatus(); buildTabs(); renderPanel(); refreshLevels(); syncPresetButtons(); updateGNote(); }); }
 function syncPresetButtons(){ document.querySelectorAll('#presets button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.p === preset))); document.querySelectorAll('#tipos button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.tp === tipoOf()))); }
 
 /* ---------- cabeçalho de situação ---------- */
@@ -1030,22 +1092,29 @@ function levelOf(){ return A.lv.N3 ? 3 : A.lv.N2 ? 2 : 1; }
 function spanDefl(a){   /* flecha quase permanente ×(1+φ) de cada vão, em mm, e o limite L/250 */
   return a.d.Ls.map((L, k) => ({k, L, dl: Math.max.apply(null, a.df.qp_inf.slice(a.st.iSup[k], a.st.iSup[k + 1] + 1).map(Math.abs)) * 1000, lim: L * 1000 / 250}));
 }
+function levelRows(nv, extra){   /* linhas de verificação específicas de um nível de protensão */
+  const a = A, d = a.d, lvc = a.lv, out = [], mk = o => { o.lv = nv; o.extra = !!extra; out.push(o); };
+  if (nv === 1){
+    let w = 0, cr = false;
+    a.supIdx.forEach(i => { const b1 = n1Section(d, a.r, i, true, d.nB1, d.phiN1); if (b1.cracked) cr = true; w = Math.max(w, b1.cracked && b1.wk ? b1.wk : 0); });
+    a.spIdx.forEach(i => { const v1 = n1Section(d, a.r, i, false, d.nV1, d.phiN1); if (v1.cracked) cr = true; w = Math.max(w, v1.cracked && v1.wk ? v1.wk : 0); });
+    mk({k: 'w', t: 'ELS-W · abertura de fissuras wk ≤ 0,2 mm (nível 1)', v: (cr ? 'wk = ' + f(w, 3) + ' mm (limite 0,2)' : 'seção não fissurada (limite wk 0,2 mm)'), s: w <= 0.2 ? 'ok' : 'bad', c: w <= 0.2 ? 'Atende' : 'Não atende'});
+  } else {
+    const dv = nv === 3 ? lvc.N3d : lvc.N2d, fv = nv === 3 ? lvc.N3f : lvc.N2f;
+    mk({k: 'd', t: 'ELS-D · descompressão, comb. ' + (nv === 3 ? 'frequente' : 'quase permanente'), v: 'σ máx = ' + f(-dv, 2) + ' MPa (limite 0)', s: dv >= 0 ? 'ok' : 'bad', c: dv >= 0 ? 'Atende' : 'Não atende'});
+    mk({k: 'f', t: 'ELS-F · formação de fissuras, comb. ' + (nv === 3 ? 'rara' : 'frequente'), v: 'σ máx = ' + f(lvc.ft - fv, 2) + ' MPa (limite ' + f(lvc.ft, 2) + ')', s: fv >= 0 ? 'ok' : 'bad', c: fv >= 0 ? 'Atende' : 'Não atende'});
+  }
+  return out;
+}
+function checksAll(){   /* verificações do nível escolhido + as dos outros níveis (extras, esmaecidas) */
+  const nv = A.d.nivel || 3; return checks().concat([3, 2, 1].filter(n => n !== nv).reduce((r, n) => r.concat(levelRows(n, true)), []));
+}
 function checks(){
   const a = A, m = a.r.margins, d = a.d, aatoMax = Math.max.apply(null, a.aato), out = [];
   const tr = Math.min(m['Ato: tração (fibra inf.)'], m['Ato: tração (fibra sup.)']);
   out.push({k: 'ato_t', t: 'Ato · tração ≤ 1,2·fct,m,j', v: 'σ = ' + f(d.ft_ato - tr, 2) + ' MPa (limite ' + f(d.ft_ato, 2) + ')', s: tr >= 0 ? 'ok' : 'warn', c: tr >= 0 ? 'Atende' : 'Passiva ' + f(aatoMax, 1) + ' cm²'});
   out.push({k: 'ato_c', t: 'Ato · compressão ≤ 0,7·fcj', v: 'σ = ' + f(m['Ato: compressão'] + a.r.lim.ato_c, 2) + ' MPa (limite ' + f(a.r.lim.ato_c, 2) + ')', s: m['Ato: compressão'] >= 0 ? 'ok' : 'bad', c: m['Ato: compressão'] >= 0 ? 'Atende' : 'Não atende'});
-  const nv = d.nivel || 3, lvc = a.lv;
-  if (nv === 1){
-    let w = 0, cr = false;
-    a.supIdx.forEach(i => { const b1 = n1Section(d, a.r, i, true, d.nB1, d.phiN1); if (b1.cracked) cr = true; w = Math.max(w, b1.cracked && b1.wk ? b1.wk : 0); });
-    a.spIdx.forEach(i => { const v1 = n1Section(d, a.r, i, false, d.nV1, d.phiN1); if (v1.cracked) cr = true; w = Math.max(w, v1.cracked && v1.wk ? v1.wk : 0); });
-    out.push({k: 'w', t: 'ELS-W · abertura de fissuras wk ≤ 0,2 mm (nível 1)', v: (cr ? 'wk = ' + f(w, 3) + ' mm (limite 0,2)' : 'seção não fissurada (limite wk 0,2 mm)'), s: w <= 0.2 ? 'ok' : 'bad', c: w <= 0.2 ? 'Atende' : 'Não atende'});
-  } else {
-    const dv = nv === 3 ? lvc.N3d : lvc.N2d, fv = nv === 3 ? lvc.N3f : lvc.N2f;
-    out.push({k: 'd', t: 'ELS-D · descompressão, comb. ' + (nv === 3 ? 'frequente' : 'quase permanente'), v: 'σ máx = ' + f(-dv, 2) + ' MPa (limite 0)', s: dv >= 0 ? 'ok' : 'bad', c: dv >= 0 ? 'Atende' : 'Não atende'});
-    out.push({k: 'f', t: 'ELS-F · formação de fissuras, comb. ' + (nv === 3 ? 'rara' : 'frequente'), v: 'σ máx = ' + f(lvc.ft - fv, 2) + ' MPa (limite ' + f(lvc.ft, 2) + ')', s: fv >= 0 ? 'ok' : 'bad', c: fv >= 0 ? 'Atende' : 'Não atende'});
-  }
+  levelRows(d.nivel || 3, false).forEach(r => out.push(r));
   const ce = m['ELS-CE compressão (CR)'];
   out.push({k: 'ce', t: 'ELS-CE · compressão excessiva', v: 'σ mín = ' + f(ce + a.r.lim.ce, 2) + ' MPa (limite ' + f(a.r.lim.ce, 2) + ')', s: ce >= 0 ? 'ok' : 'bad', c: ce >= 0 ? 'Atende' : 'Não atende'});
   const eluRow = (nm, e) => ({k: 'elu' + nm, t: 'ELU flexão · ' + nm, v: 'MRd/|Msd| = ' + f(e.ratio, 2) + ' (limite 1,00)' + (e.ductile ? '' : ' · x/d ' + f(e.xd, 2) + ' (limite 0,45)'), s: e.ok && e.yieldP ? (e.ductile ? 'ok' : 'warn') : 'bad', c: !e.ok ? 'Não atende' : !e.yieldP ? 'Aço não escoa' : e.ductile ? 'Atende' : 'Aumentar A′ (x/d > 0,45)'});
@@ -1062,7 +1131,7 @@ function renderStatus(){
   const lv = levelOf(), names = {3: 'completa', 2: 'limitada', 1: 'parcial'}, d = a.d;
   $('#ttl').textContent = d.n === 1 ? 'Viga protendida, 1 vão' : 'Viga contínua protendida, ' + d.n + ' vãos';
   const tipo = d.n === 1 ? 'Viga de 1 vão' : d.n + ' vãos ' + (d.Ls.every(l => Math.abs(l - d.Ls[0]) < 1e-9) ? 'iguais' : 'diferentes') + ' (' + d.Ls.map(l => f(l, l % 1 ? 1 : 0)).join(' + ') + ' m)';
-  $('#status').innerHTML = chip('info', tipo) + chip('info', 'Nível de protensão ' + lv + ' (' + names[lv] + ')') +
+  $('#status').innerHTML = chip('info', tipo) + '<span class="chip lvc' + lv + '">' + ICON.info + 'Nível de protensão ' + lv + ' (' + names[lv] + ')</span>' +
     (nBad ? chip('bad', nBad + (nBad > 1 ? ' verificações não atendem' : ' verificação não atende')) : chip('ok', 'Verificações atendem')) +
     (nWarn ? chip('warn', nWarn + (nWarn > 1 ? ' pontos pedem passiva' : ' ponto pede passiva')) : '') +
     chip('info', 'Pj ' + f(a.r.Ls.Pj, 0) + ' kN · P∞ ' + f(Math.min.apply(null, a.r.Ls.Pinf), 0) + ' kN');
@@ -1074,8 +1143,11 @@ const TABS = [['resumo', 'Resumo'], ['tracado', 'Traçado e fuso'], ['perdas', '
 function buildTabs(){
   const t = $('#tabs'); t.innerHTML = '';
   TABS.forEach(([id, n]) => { const b = h('button', {class: 'tab', role: 'tab', id: 'tab_' + id, 'aria-selected': String(id === tab), 'data-t': id}, n); t.appendChild(b); });
+  if (A) { const nv = A.d.nivel || 3, lw = h('div', {class: 'limsw', role: 'group', 'aria-label': 'Limites exibidos'}, '<span>Limites:</span><button type="button" data-l="nivel">Só do nível ' + nv + '</button><button type="button" data-l="all">Todos</button>'); t.appendChild(lw); syncLim(); }
   if (A && A.d.n > 1) { const sw = h('div', {class: 'spansw', role: 'group', 'aria-label': 'Vãos exibidos'}, '<span>Tabelas e flecha:</span><button type="button" data-v="1">1º vão</button><button type="button" data-v="2">Todos os vãos</button>'); t.appendChild(sw); syncSpans(); }
 }
+function syncLim(){ document.querySelectorAll('.limsw button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.l === limMode))); }
+$('#tabs').addEventListener('click', e => { const b = e.target.closest('.limsw button'); if (!b) return; limMode = b.dataset.l; try { localStorage.setItem('viga-cp-limites', limMode); } catch (x) {} syncLim(); renderPanel(); });
 function syncSpans(){ document.querySelectorAll('.spansw button').forEach(b => b.setAttribute('aria-pressed', String(+b.dataset.v === spans))); }
 $('#tabs').addEventListener('click', e => { const b = e.target.closest('.spansw button'); if (!b) return; spans = +b.dataset.v; try { localStorage.setItem('viga-cp-vaos', String(spans)); } catch (x) {} syncSpans(); renderPanel(); });
 $('#tabs').addEventListener('click', e => { const b = e.target.closest('button[data-t]'); if (!b) return; tab = b.dataset.t; document.querySelectorAll('.tab').forEach(x => x.setAttribute('aria-selected', String(x === b))); renderPanel(); });
@@ -1083,12 +1155,15 @@ document.addEventListener('keydown', e => { const b = e.target.closest && e.targ
   const i = TABS.findIndex(x => x[0] === b.dataset.t), j = (i + (e.key === 'ArrowRight' ? 1 : TABS.length - 1)) % TABS.length; tab = TABS[j][0]; document.querySelectorAll('.tab').forEach(x => x.setAttribute('aria-selected', String(x.dataset.t === tab))); $('#tab_' + tab).focus(); renderPanel(); });
 
 const C = {s1: 'var(--s1)', s2: 'var(--s2)', s3: 'var(--s3)', s4: 'var(--s4)'};
+const lvBadge = n => '<span class="lvb lv' + n + '" title="Só vale para o nível de protensão ' + n + '">N' + n + '</span>';
+const limNote = () => limMode === 'all' ? '' : '<p class="foot">Mostrando só os limites do nível escolhido (' + lvBadge(A.d.nivel || 3) + '). Em <b>Limites: Todos</b> aparecem os três níveis.</p>';
+const LV_LEGEND = '<p class="foot">Destaques por nível de protensão: ' + lvBadge(3) + ' só nível 3 (completa) · ' + lvBadge(2) + ' só nível 2 (limitada) · ' + lvBadge(1) + ' só nível 1 (parcial).</p>';
 const NUMRE = /^(<[^>]+>)*[−\-+]?\d[\d.]*(,\d+)?( ?(mm|MPa|kN|kN·m|cm²|m|rad|Hz|%|‰|1\/m|dias))?$|^—$/;
 function table(head, rows){
   const nc = head.length, isNum = [false];
   for (let j = 1; j < nc; j++) isNum[j] = rows.every(r => { const v = String(r.c[j]); return v === '' || NUMRE.test(v); });
   return '<div class="tw"><table><thead><tr>' + head.map((x, i) => '<th' + (isNum[i] ? ' class="n"' : '') + '>' + x + '</th>').join('') + '</tr></thead><tbody>' +
-    rows.map(r => '<tr' + (r.hl ? ' class="hl"' : '') + '>' + r.c.map((x, i) => '<td' + (isNum[i] ? ' class="n"' : '') + '>' + x + '</td>').join('') + '</tr>').join('') + '</tbody></table></div>';
+    rows.map(r => '<tr' + (r.hl || r.cls ? ' class="' + [r.hl ? 'hl' : '', r.cls || ''].filter(Boolean).join(' ') + '"' : '') + '>' + r.c.map((x, i) => '<td' + (isNum[i] ? ' class="n"' : '') + '>' + x + '</td>').join('') + '</tr>').join('') + '</tbody></table></div>';
 }
 function kv(items){ return '<dl class="kv">' + items.map(([k, v]) => '<div><dt>' + k + '</dt><dd>' + v + '</dd></div>').join('') + '</dl>'; }
 const xsOf = () => A.r.x;
@@ -1158,7 +1233,7 @@ function cutsCard(){
   const d = A.d, pp = profileParams(d), L = d.L, Lt = d.Ltot, multi = d.n > 1;
   const st = multi ? [[0, 'Ancoragem'], [L / 5, 'Vão 1'], [pp.x0, 'Vão 1 (vértice)'], [0.7 * L, 'Vão 1'], [L - 0.5, 'Junto ao apoio B'], [L, 'Apoio B']]
     : [[0, 'Ancoragem'], [L / 5, 'Vão'], [pp.x0, 'Vão (vértice)'], [0.7 * L, 'Vão'], [L, 'Ancoragem']];
-  return '<div class="card" id="cutsCard"><h2>Cortes na seção · cablagem e armadura passiva</h2><p class="lead">' + d.n_cab + ' cabos de ' + d.n_cord + ' cordoalhas Ø12,7 em bainhas de Ø' + f(d.d_bain * 1000, 0) + ' mm, vistos nas seções ao longo da viga. O cabo sai do CG na ancoragem, desce no vão' + (multi ? ' e sobe para a parte superior sobre os apoios internos (e negativo)' : '') + '. Em roxo, a armadura passiva (A′ comprimida, As,ato e armadura tracionada no ELU, conforme o nível; barras ampliadas para leitura). Cotas em cm; a linha tracejada verde é o estribo. Na região da ancoragem (menos de 1 m das extremidades) não se desenha passiva.</p>' +
+  return '<div class="card" id="cutsCard"><h2>Cortes na seção · cablagem e armadura passiva</h2><p class="lead">' + (d.cabMode === 1 ? d.n_cab + ' cabos (cabo resultante: Ap = ' + f(d.Ap * 1e4, 2) + ' cm², desenhados com ' + d.n_cord + ' cordoalhas equivalentes cada)' : d.n_cab + ' cabos de ' + d.n_cord + ' cordoalhas Ø12,7') + ' em bainhas de Ø' + f(d.d_bain * 1000, 0) + ' mm, vistos nas seções ao longo da viga. O cabo sai do CG na ancoragem, desce no vão' + (multi ? ' e sobe para a parte superior sobre os apoios internos (e negativo)' : '') + '. Em roxo, a armadura passiva (A′ comprimida, As,ato e armadura tracionada no ELU, conforme o nível; barras ampliadas para leitura). Cotas em cm; a linha tracejada verde é o estribo. Na região da ancoragem (menos de 1 m das extremidades) não se desenha passiva.</p>' +
     '<div class="cuts">' + st.map(a => cutBox(a[0], a[1])).join('') + '</div>' +
     '<div class="cutctl"><label for="cutx"><b>Corte em x =</b> <span id="cutxv">' + f(d.L / 2, 1) + '</span> m</label><input type="range" id="cutx" min="0" max="' + Lt + '" step="0.5" value="' + L / 2 + '"><span class="foot" style="margin:0">arraste para percorrer a viga (0 a ' + f(Lt, 0) + ' m)</span></div>' +
     '<div class="cuts" id="cutone" style="grid-template-columns:minmax(150px,220px);margin-top:10px">' + cutBox(L / 2, 'Corte escolhido', true) + '</div>' +
@@ -1198,7 +1273,7 @@ PANELS.resumo = function(){
   const pp = profileParams(d), lossFric = 1 - Math.min.apply(null, Ls.sig_fric.map((v, i) => v)) / d.sig_j;
   return {
     html: '<div class="grid2"><div class="card"><h2>Traçado do cabo e fuso limite</h2><p class="lead">Excentricidade positiva abaixo do centro de gravidade. O cabo deve ficar dentro do fuso em cada seção; a linha de pressões inclui o efeito hiperestático.</p><div id="c1"></div></div>' +
-      '<div class="card"><h2>Verificações</h2>' + table(['Verificação', 'Valor', 'Situação'], c.map(x => ({c: [x.t, x.v, chip(x.s, x.c)]}))) + '</div></div>' + cutsCard() +
+      '<div class="card"><h2>Verificações</h2>' + table(['Verificação', 'Valor', 'Situação'], (limMode === 'all' ? checksAll() : c).map(x => ({cls: (x.lv ? 'lv' + x.lv : '') + (x.extra ? ' xtra' : ''), c: [x.t + (x.lv ? lvBadge(x.lv) : ''), x.v, chip(x.s, x.c)]}))) + (limMode === 'all' ? '<p class="foot">Linhas esmaecidas: limites de outros níveis, só para consulta; não entram na situação do projeto.</p>' : limNote()) + LV_LEGEND + '</div></div>' + cutsCard() +
       '<div class="card"><h2>Valores principais</h2>' + kv([
         ['Carga a equilibrar g + ψ2·q' + (d.n > 1 ? ' (vão 1)' : ''), f(d.pbal, 2) + ' kN/m'], ['Peso próprio g0', f(d.g_pp, 2) + ' kN/m'], ['d′ do cabo', f(d.dpp, 3) + ' m'], ['e_max = h/2 − d′', f(d.e_max, 3) + ' m'],
         ['Vértice da parábola x0' + (d.n > 1 ? ' (vão 1)' : ''), f(pp.x0, 2) + ' m'], ['Ângulo total Σα', f(Ls.theta_tot, 3) + ' rad'], ['Comprimento do cabo', f(Ls.arc_tot, 2) + ' m'], ['Ap total', f(d.Ap * 1e4, 2) + ' cm²'],
@@ -1268,11 +1343,15 @@ PANELS.esforcos = function(){
 let tsel = 'cr';
 PANELS.tensoes = function(){
   const m = A.r.margins, d = A.d;
-  const rows = Object.keys(m).map(k => ({c: [k, f(m[k], 2) + ' MPa', ok(m[k] >= 0, 'Atende', k.indexOf('Ato: tração') === 0 ? 'Passiva' : 'Não atende')]}));
+  const lvSel = limMode === 'all' ? [3, 2, 1] : [d.nivel || 3], isLvK = k => /^ELS-[DF]/.test(k);
+  const rows = Object.keys(m).filter(k => !isLvK(k)).map(k => ({c: [k, f(m[k], 2) + ' MPa', ok(m[k] >= 0, 'Atende', k.indexOf('Ato: tração') === 0 ? 'Passiva' : 'Não atende')]})).concat(lvSel.reduce((r, n) => r.concat(
+    n === 3 ? Object.keys(m).filter(isLvK).map(k => ({cls: 'lv3', c: [k + lvBadge(3), f(m[k], 2) + ' MPa', ok(m[k] >= 0)]}))
+    : n === 2 ? [{cls: 'lv2', c: ['ELS-D (quase permanente)' + lvBadge(2), f(A.lv.N2d, 2) + ' MPa', ok(A.lv.N2d >= 0)]}, {cls: 'lv2', c: ['ELS-F (frequente)' + lvBadge(2), f(A.lv.N2f, 2) + ' MPa', ok(A.lv.N2f >= 0)]}]
+    : levelRows(1).map(q => ({cls: 'lv1', c: ['ELS-W · wk ≤ 0,2 mm' + lvBadge(1), q.v, chip(q.s, q.c)]}))), []));
   return {
     html: '<div class="card"><h2>Tensões nas fibras</h2><div class="src">Planilha: Tensoes</div><p class="lead">Tração positiva. σ1 é a fibra inferior e σ2 a superior. Combinações: frequente (ψ1), rara e quase permanente (ψ2).</p>' +
       '<div class="ctl"><label for="ts">Estado</label><select id="ts"><option value="ato">No ato (Pi + peso próprio)</option><option value="cqp">Quase permanente (ψ2)</option><option value="cf">ELS-D · frequente (ψ1)</option><option value="cr">ELS-F e ELS-CE · rara</option><option value="all">Todos os estados (agrupados)</option></select></div><div id="c1"></div></div>' +
-      '<div class="grid2"><div class="card"><h2>Margens aos limites</h2>' + table(['Verificação', 'Margem', 'Situação'], rows) + '<p class="foot">Margem positiva significa folga. No ato a tração acima do limite é absorvida por armadura passiva As,ato = ' + f(Math.max.apply(null, A.aato), 1) + ' cm².</p></div>' +
+      '<div class="grid2"><div class="card"><h2>Margens aos limites</h2>' + table(['Verificação', 'Margem', 'Situação'], rows) + limNote() + '<p class="foot">Margem positiva significa folga. No ato a tração acima do limite é absorvida por armadura passiva As,ato = ' + f(Math.max.apply(null, A.aato), 1) + ' cm².</p></div>' +
       '<div class="card"><h2>Limites adotados</h2>' + kv([['fct,m', f(d.fctm, 2) + ' MPa'], ['fctk,inf', f(d.fctkinf, 2) + ' MPa'], ['fcj em t0', f(d.fcj, 1) + ' MPa'], ['Tração no ato 1,2·fct,m,j', f(d.ft_ato, 2) + ' MPa'], ['Compressão no ato 0,7·fcj', f(-0.7 * d.fcj, 2) + ' MPa'], ['Tração em serviço 1,2·fctk,inf', f(d.ft_els, 2) + ' MPa'], ['Compressão em serviço 0,7·fck', f(-0.7 * d.fck, 2) + ' MPa'], ['Ecs', f(d.Ecs, 0) + ' MPa'], ['Núcleo central k', f(d.k, 3) + ' m']]) + '</div></div>',
     after(){ const sel = $('#ts'); sel.value = tsel; const x = xsOf(), ck = A.r.ck, lv = A.lv.t, d = A.d;
       const draw = () => { tsel = sel.value; let s1, s2, refs, ttl;
@@ -1343,11 +1422,11 @@ PANELS.niveis = function(){
   return {
     html: '<div class="card"><h2>Níveis de protensão da NBR 6118 (Tab. 13.4)</h2><div class="src">Planilha: Niveis e Niveis_Comparativo · pós-tração, CAA II</div>' +
       '<p class="lead">Nível 3 (completa): ELS-D na combinação frequente e ELS-F na rara. Nível 2 (limitada): ELS-D na quase permanente e ELS-F na frequente. Nível 1 (parcial): só ELS-W, com abertura de fissuras wk ≤ 0,2 mm. Para pós-tração em CAA II o mínimo é o nível 2.</p>' +
-      table(['Nível', 'Critério', 'Margem (MPa)', 'Situação'], [
-        {c: ['3 · completa', 'ELS-D: tração ≤ 0 na comb. frequente', f(lv.N3d, 2), ok(lv.N3d >= 0)]}, {c: ['', 'ELS-F: tração ≤ 1,2·fctk,inf na comb. rara', f(lv.N3f, 2), ok(lv.N3f >= 0)]},
-        {c: ['2 · limitada', 'ELS-D: tração ≤ 0 na comb. quase permanente', f(lv.N2d, 2), ok(lv.N2d >= 0)]}, {c: ['', 'ELS-F: tração ≤ 1,2·fctk,inf na comb. frequente', f(lv.N2f, 2), ok(lv.N2f >= 0)]},
-        {c: ['1 · parcial', 'ELS-W: wk ≤ 0,2 mm (seção fissurada, abaixo)', (anyCr ? f(wmax, 3) + ' mm' : 'não fissurada'), ok(wmax <= wlim, 'Atende', 'Não atende')]}]) +
-      '<p style="margin-top:10px">' + chip('info', 'Este projeto atinge o nível ' + levelOf()) + ' ' + chip('info', 'Cordoalhas mínimas: N3 = ' + (minN3 ? minN3.n * nc : '> ' + 12 * nc) + ', N2 = ' + (minN2 ? minN2.n * nc : '> ' + 12 * nc) + ' (' + nc + ' cabos)') + '</p></div>' +
+      table(['Nível', 'Critério', 'Margem (MPa)', 'Situação'], ([
+        {cls: 'lv3', c: ['3 · completa' + lvBadge(3), 'ELS-D: tração ≤ 0 na comb. frequente', f(lv.N3d, 2), ok(lv.N3d >= 0)]}, {cls: 'lv3', c: ['', 'ELS-F: tração ≤ 1,2·fctk,inf na comb. rara', f(lv.N3f, 2), ok(lv.N3f >= 0)]},
+        {cls: 'lv2', c: ['2 · limitada' + lvBadge(2), 'ELS-D: tração ≤ 0 na comb. quase permanente', f(lv.N2d, 2), ok(lv.N2d >= 0)]}, {cls: 'lv2', c: ['', 'ELS-F: tração ≤ 1,2·fctk,inf na comb. frequente', f(lv.N2f, 2), ok(lv.N2f >= 0)]},
+        {cls: 'lv1', c: ['1 · parcial' + lvBadge(1), 'ELS-W: wk ≤ 0,2 mm (seção fissurada, abaixo)', (anyCr ? f(wmax, 3) + ' mm' : 'não fissurada'), ok(wmax <= wlim, 'Atende', 'Não atende')]}]).filter(r => limMode === 'all' || r.cls === 'lv' + (d.nivel || 3))) +
+      '<p style="margin-top:10px">' + chip('info', 'Este projeto atinge o nível ' + levelOf()) + ' ' + chip('info', 'Cordoalhas mínimas: N3 = ' + (minN3 ? minN3.n * nc : '> ' + 12 * nc) + ', N2 = ' + (minN2 ? minN2.n * nc : '> ' + 12 * nc) + ' (' + nc + ' cabos)') + '</p>' + limNote() + LV_LEGEND + '</div>' +
       '<div class="card"><h2>Tração máxima por combinação</h2><p class="lead">Maior tração entre as fibras inferior e superior em cada seção. A linha tracejada de 0 é o limite de descompressão e a de 1,2·fctk,inf é o limite de fissuração.</p><div id="c1"></div></div>' +
       '<div class="card"><h2>Número de cordoalhas necessário</h2><p class="lead">Varredura com os demais dados fixos. Cada linha mostra a margem de ELS-D / ELS-F em MPa para o nível 3 e para o nível 2. A linha em destaque é o projeto atual.</p>' +
       table(['Cordoalhas por cabo', 'Ap (cm²)', 'Pj (kN)', 'Nível 3', 'Nível 2', 'Margens N3 (D / F)', 'Margens N2 (D / F)'], rows) + '</div>' +
@@ -1363,7 +1442,7 @@ PANELS.niveis = function(){
       '<p class="foot">Com protensão forte (nível 3) a passiva tracionada costuma ser zero, e o ELU é controlado pela passiva comprimida A′ da aba Ruptura.</p></div></div>',
     after(){ const t = lv.t; const mxS = a => x.map((_, i) => Math.max(a[0][i], a[1][i]));
       chart($('#c1'), {series: [{name: 'Quase permanente (ψ2)', x, y: mxS(t.cqp), color: C.s1, d: 2}, {name: 'Frequente (ψ1)', x, y: mxS(t.cf), color: C.s2, d: 2}, {name: 'Rara', x, y: mxS(t.cr), color: C.s3, d: 2}],
-        refs: [{y: 0, label: '0 (descompressão)'}, {y: lv.ft, label: '1,2·fctk,inf'}], groups: [{n: 'Nível 3 (frequente e rara)', s: ['Frequente (ψ1)', 'Rara']}, {n: 'Nível 2 (quase perm. e frequente)', s: ['Quase permanente (ψ2)', 'Frequente (ψ1)']}], height: 300, xlab: 'x (m)', ylab: 'σ de tração máx. (MPa)', yd: 1, vd: 2, unit: 'MPa', tx: x, title: 'Tração por combinação'}); }
+        refs: [{y: 0, label: '0 (descompressão)'}, {y: lv.ft, label: '1,2·fctk,inf'}], groups: [{n: 'Nível 3 (frequente e rara)', s: ['Frequente (ψ1)', 'Rara'], cls: 'lv3'}, {n: 'Nível 2 (quase perm. e frequente)', s: ['Quase permanente (ψ2)', 'Frequente (ψ1)'], cls: 'lv2'}], height: 300, xlab: 'x (m)', ylab: 'σ de tração máx. (MPa)', yd: 1, vd: 2, unit: 'MPa', tx: x, title: 'Tração por combinação'}); }
   };
 };
 
@@ -1408,7 +1487,7 @@ function inlineSvgs(root){
 /* Renderiza uma aba fora da tela, em tema claro, e devolve o HTML de cada bloco (com SVG autônomo). */
 function capture(id, o){
   o = o || {};
-  const de = document.documentElement, prev = de.getAttribute('data-theme'), saved = tsel; de.setAttribute('data-theme', 'light'); CAPTURING = true;
+  const de = document.documentElement, prev = de.getAttribute('data-theme'), saved = tsel, savedLim = limMode; de.setAttribute('data-theme', 'light'); CAPTURING = true; limMode = 'all';
   const st = h('div', {class: 'stage'}); st.style.cssText = 'position:absolute;left:-12000px;top:0;width:980px;visibility:hidden'; document.body.appendChild(st);
   try {
     if (o.tsel) tsel = o.tsel;
@@ -1417,7 +1496,7 @@ function capture(id, o){
     inlineSvgs(st);
     return Array.from(st.children).map(c => { let s = lightVars(c.outerHTML); const keep = {}; (s.match(/url\(#[^)]+\)/g) || []).forEach(u => { keep[u.slice(5, -1)] = 1; });
       const w = h('div', null, s); w.querySelectorAll('[id]').forEach(n => { if (!keep[n.id]) n.removeAttribute('id'); }); return w.innerHTML; });
-  } finally { CAPTURING = false; tsel = saved; st.remove(); if (prev === null) de.removeAttribute('data-theme'); else de.setAttribute('data-theme', prev); }
+  } finally { CAPTURING = false; limMode = savedLim; tsel = saved; st.remove(); if (prev === null) de.removeAttribute('data-theme'); else de.setAttribute('data-theme', prev); }
 }
 const tela = (titulo, blocos) => '<div class="tela"><div class="tela-h">Tela · ' + titulo + '</div>' + [].concat(blocos).join('') + '</div>';
 const Rw = (a, b, c, d) => '<tr><td>' + a + '</td><td class="fx">' + b + '</td><td class="sb">' + c + '</td><td class="n"><b>' + d + '</b></td></tr>';
@@ -1451,7 +1530,7 @@ function memorialBody(){
     Rw('Resistência no ato', em('f', 'cj') + ' = e^[0,38(1 − √(28/' + em('t', '0') + '))]·' + em('f', 'ck'), em('t', '0') + ' = ' + num(d.t0, 0) + ' dias', num(d.fcj, 1) + ' MPa'),
     Rw('Limites de tensão', 'ato: +1,2·' + em('f', 'ct,m,j') + ' e −0,7·' + em('f', 'cj') + ' ; serviço: +1,2·' + em('f', 'ctk,inf') + ' e −0,7·' + em('f', 'ck'),
       num(d.ft_ato, 2) + ' ; ' + num(-0.7 * d.fcj, 2) + ' ; ' + num(d.ft_els, 2) + ' ; ' + num(-0.7 * d.fck, 2), 'MPa'),
-    Rw('Armadura ativa', em('A', 'p') + ' = ' + em('n', 'cab') + '·' + em('n', 'cord') + '·' + em('A', 'p1'), num(d.n_cab, 0) + ' × ' + num(d.n_cord, 0) + ' × ' + num(d.Ap1, 3), num(d.Ap * 1e4, 2) + ' cm²'),
+    (d.cabMode === 1 ? Rw('Armadura ativa (cabo resultante)', em('A', 'p') + ' = ' + em('P', 'j') + ' / σ<sub>pj</sub>', num(d.Pj_res, 0) + ' kN / ' + num(d.sig_j, 0) + ' MPa ; ' + num(d.n_cab, 0) + ' cabos', num(d.Ap * 1e4, 2) + ' cm²') : Rw('Armadura ativa', em('A', 'p') + ' = ' + em('n', 'cab') + '·' + em('n', 'cord') + '·' + em('A', 'p1'), num(d.n_cab, 0) + ' × ' + num(d.n_cord, 0) + ' × ' + num(d.Ap1, 3), num(d.Ap * 1e4, 2) + ' cm²')),
     Rw('Resistências do aço de protensão', em('f', 'pyk') + ' = 0,9·' + em('f', 'ptk') + ' ;  ' + em('f', 'pyd') + ' = ' + em('f', 'pyk') + '/γ<sub>s</sub>', '0,9 × ' + num(d.fptk, 0) + ' ; / ' + num(d.gs, 2), num(d.fpyk, 0) + ' / ' + num(d.fpyd, 0) + ' MPa'),
     Rw('Tensão no macaco', 'σ<sub>pj</sub> = ' + em('r', 'j') + '·' + em('f', 'ptk'), num(d.rj, 2) + ' × ' + num(d.fptk, 0), num(d.sig_j, 0) + ' MPa'),
     Rw('Força no macaco', em('P', 'j') + ' = ' + em('A', 'p') + '·σ<sub>pj</sub>', num(d.Ap * 1e4, 2) + ' cm² × ' + num(d.sig_j, 0) + ' MPa', num(Ls.Pj, 0) + ' kN'),
@@ -1659,7 +1738,7 @@ const DOC_CSS = 'body{font-family:"Segoe UI",Calibri,Arial,sans-serif;font-size:
   '@media print{body{max-width:none;padding:0}.ms{page-break-inside:auto}h2{page-break-after:avoid}.tela{page-break-inside:avoid}tr{page-break-inside:avoid}}@page{size:A4;margin:16mm 14mm}';
 
 const LOGO_UNB = document.getElementById('logoUnb') ? document.getElementById('logoUnb').src : '';
-const VERSION = '2.4.0'; { const v = document.getElementById('ver'); if (v) v.textContent = 'v' + VERSION; }
+const VERSION = '2.7.0'; { const v = document.getElementById('ver'); if (v) v.textContent = 'v' + VERSION; }
 let MEM = null;
 function memorialDoc(){
   const sec = memorialBody(), d = A.d, tipoTxt = d.n === 1 ? 'viga protendida de 1 vão' : 'viga contínua protendida de ' + d.n + ' vãos', pn = PRESET_NAMES[preset] || 'dados personalizados', dt = new Date().toLocaleDateString('pt-BR');
