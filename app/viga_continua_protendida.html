@@ -122,6 +122,7 @@ h1{color:var(--accent)}
 .ver{display:inline-block;margin-left:8px;padding:1px 8px;border-radius:999px;background:var(--accent);color:var(--accent-ink);font-family:var(--mono);font-size:11.5px;vertical-align:1px}
 .tab[aria-selected="true"]{border-bottom-width:3px}
 .card{border-top:3px solid var(--accent)}
+.scl{margin:0 0 6px;font-size:12px}.scl>summary{cursor:pointer;color:var(--accent);width:max-content}.sclrow{display:flex;gap:8px 12px;flex-wrap:wrap;align-items:center;margin-top:6px}.sclrow label{display:flex;align-items:center;gap:5px;color:var(--ink2)}.sclrow input{width:84px;font:inherit;font-family:var(--mono);font-size:12px;padding:3px 5px;border:1px solid var(--axis);border-radius:5px;background:var(--plane);color:var(--ink);text-align:right}.sclrow .btn{padding:3px 10px;font-size:12px}
 .lgctl{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:6px;font-size:12px;color:var(--muted)}
 .lgctl button{font:inherit;font-size:12px;padding:2px 9px;border:1px solid var(--axis);border-radius:999px;background:var(--surface);color:var(--ink)}
 .lgctl button:hover{background:var(--accent-soft)}.lgctl button[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
@@ -145,7 +146,7 @@ h1{color:var(--accent)}
   <header class="top">
     <div>
       <h1>Viga contínua protendida, 2 vãos</h1>
-      <div class="credit">Produzido pelo Professor DSc. Li Chong Lee (Todos os direitos reservados) <span class="ver" id="ver" title="Versão do painel">v1.3.1</span></div>
+      <div class="credit">Produzido pelo Professor DSc. Li Chong Lee (Todos os direitos reservados) <span class="ver" id="ver" title="Versão do painel">v1.4.0</span></div>
       <div class="sub">Pós-tração aderente · NBR 6118 · mesma lógica da planilha de apoio, recalculada a cada alteração</div>
     </div>
     <div class="status" id="status"></div>
@@ -641,7 +642,7 @@ function lerp(xs, ys, x){
 }
 /* cfg: series[{name,x,y,color,dash,w,area,nolegend}], bands[{x,lo,up,name}], refs[{y,label,dash}], ylim, invertY, xlab, ylab, yd, tx, tcols */
 /* Cada gráfico deixa escolher quais efeitos mostrar (um a um ou por agrupamento, cfg.groups). A escolha é guardada por gráfico (HID) e vale até recarregar. */
-let CAPTURING = false; const HID = {};
+let CAPTURING = false; const HID = {}, SC = {};
 function chart(host, cfg){
   const key = cfg.key || cfg.title || 'g', hid = CAPTURING ? [] : (HID[key] || []);
   const all = cfg.series.filter(s => !s.nolegend).map(s => ({n: s.name, c: s.color, d: s.dash, k: 's'}))
@@ -652,9 +653,10 @@ function chart(host, cfg){
   if (sn.length && sn.every(n => hidden.indexOf(n) >= 0)) hidden = hidden.filter(n => sn.indexOf(n) < 0);
   const vis = Object.assign({}, cfg, {series: cfg.series.filter(s => hidden.indexOf(s.name) < 0), bands: (cfg.bands || []).filter(b => hidden.indexOf(b.name) < 0)});
   const setHidden = list => { const keepS = sn.filter(n => list.indexOf(n) < 0).length; if (sn.length && !keepS) return; HID[key] = list; chart(host, cfg); };
-  chartDraw(host, vis, all, hidden, setHidden, cfg.groups || []);
+  const sc = CAPTURING ? null : (SC[key] || null), setScale = o => { if (o) SC[key] = o; else delete SC[key]; chart(host, cfg); };
+  chartDraw(host, vis, all, hidden, setHidden, cfg.groups || [], sc, setScale);
 }
-function chartDraw(host, cfg, all, hidden, setHidden, groups){
+function chartDraw(host, cfg, all, hidden, setHidden, groups, ov, setScale){
   host.innerHTML = '';
   const W = Math.max(300, host.clientWidth || 640), H = cfg.height || 300, m = {l: 62, r: 16, t: 10, b: 38};
   const pw = W - m.l - m.r, ph = H - m.t - m.b;
@@ -665,8 +667,11 @@ function chartDraw(host, cfg, all, hidden, setHidden, groups){
   (cfg.refs || []).forEach(r => addY([r.y]));
   if (cfg.xlim){ x0 = cfg.xlim[0]; x1 = cfg.xlim[1]; }
   if (cfg.ylim){ y0 = cfg.ylim[0]; y1 = cfg.ylim[1]; } else { const pad = (y1 - y0) * 0.07 || 1; y0 -= pad; y1 += pad; }
-  const tk = niceTicks(y0, y1, Math.max(3, Math.round(ph / 48)));
+  let tk = niceTicks(y0, y1, Math.max(3, Math.round(ph / 48)));
   if (!cfg.ylim){ y0 = Math.min(y0, tk[0]); y1 = Math.max(y1, tk[tk.length - 1]); }
+  const auto = {x0, x1, y0, y1};   /* escala automática; ov = escala escolhida pelo usuário (X e Y mínimo e máximo) */
+  if (ov){ const a = isFinite(ov.x0) ? ov.x0 : x0, b = isFinite(ov.x1) ? ov.x1 : x1, c = isFinite(ov.y0) ? ov.y0 : y0, e = isFinite(ov.y1) ? ov.y1 : y1;
+    if (b > a){ x0 = a; x1 = b; } if (e > c){ y0 = c; y1 = e; tk = niceTicks(y0, y1, Math.max(3, Math.round(ph / 48))); } }
   const X = v => m.l + (v - x0) / (x1 - x0) * pw;
   const Y = v => cfg.invertY ? m.t + (v - y0) / (y1 - y0) * ph : m.t + ph - (v - y0) / (y1 - y0) * ph;
   const box = h('div', {class: 'cbox'});
@@ -683,6 +688,18 @@ function chartDraw(host, cfg, all, hidden, setHidden, groups){
       const i = h('i', {class: o.b ? 'b' : (o.d ? 'd' : '')}); if (o.b) i.style.background = o.c; else i.style.borderTopColor = o.c; sp.appendChild(i); sp.appendChild(document.createTextNode(o.n));
       if (interactive) sp.addEventListener('click', () => setHidden(off ? hidden.filter(n => n !== o.n) : hidden.concat(o.n))); lg.appendChild(sp); });
     host.appendChild(lg);
+  }
+  if (!CAPTURING && setScale){
+    const dt = h('details', {class: 'scl'}); if (ov) dt.setAttribute('open', '');
+    dt.appendChild(h('summary', null, 'Escala dos eixos' + (ov ? ' · personalizada' : '')));
+    const row = h('div', {class: 'sclrow'}), fld = [['x0', 'x mín.'], ['x1', 'x máx.'], ['y0', 'y mín.'], ['y1', 'y máx.']], ins = {};
+    const nice = v => String(+v.toPrecision(4));
+    fld.forEach(([k, lab]) => { const l = h('label', null, lab + ' '), i = h('input', {type: 'number', step: 'any', inputmode: 'decimal', placeholder: nice(auto[k])}); if (ov && isFinite(ov[k])) i.value = nice(ov[k]); ins[k] = i; l.appendChild(i); row.appendChild(l);
+      i.addEventListener('change', () => { const o = {}; fld.forEach(([kk]) => { const v = parseFloat(ins[kk].value); if (isFinite(v)) o[kk] = v; }); setScale(Object.keys(o).length ? o : null); }); });
+    const zoom = (f) => () => { const cx = (x0 + x1) / 2, cy = (y0 + y1) / 2, hx = (x1 - x0) / 2 * f, hy = (y1 - y0) / 2 * f; setScale({x0: cx - hx, x1: cx + hx, y0: cy - hy, y1: cy + hy}); };
+    const bA = h('button', {type: 'button', class: 'btn'}, 'Automática'), bI = h('button', {type: 'button', class: 'btn'}, 'Aproximar'), bO = h('button', {type: 'button', class: 'btn'}, 'Afastar');
+    bA.addEventListener('click', () => setScale(null)); bI.addEventListener('click', zoom(0.6)); bO.addEventListener('click', zoom(1.6));
+    row.appendChild(bI); row.appendChild(bO); row.appendChild(bA); dt.appendChild(row); host.appendChild(dt);
   }
   const svg = S('svg', {viewBox: '0 0 ' + W + ' ' + H, role: 'img', tabindex: 0, 'aria-label': cfg.title || 'gráfico'});
   const cid = 'c' + Math.random().toString(36).slice(2, 8);
@@ -1394,7 +1411,7 @@ const DOC_CSS = 'body{font-family:"Segoe UI",Calibri,Arial,sans-serif;font-size:
   '@media print{body{max-width:none;padding:0}.ms{page-break-inside:auto}h2{page-break-after:avoid}.tela{page-break-inside:avoid}tr{page-break-inside:avoid}}@page{size:A4;margin:16mm 14mm}';
 
 const LOGO_UNB = document.getElementById('logoUnb') ? document.getElementById('logoUnb').src : '';
-const VERSION = '1.3.1'; { const v = document.getElementById('ver'); if (v) v.textContent = 'v' + VERSION; }
+const VERSION = '1.4.0'; { const v = document.getElementById('ver'); if (v) v.textContent = 'v' + VERSION; }
 let MEM = null;
 function memorialDoc(){
   const sec = memorialBody(), d = A.d, pn = (PRESETS.find(p => p.id === preset) || {n: 'dados personalizados'}).n, dt = new Date().toLocaleDateString('pt-BR');
