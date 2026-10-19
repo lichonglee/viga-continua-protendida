@@ -114,7 +114,7 @@ details.tv .tw{max-height:320px;margin-top:6px}
 .cutctl input[type=range]{flex:1;min-width:160px;max-width:420px}
 .unbbar{background:var(--surface);border-top:4px solid #0095DB;border-bottom:1px solid var(--grid)}
 .unbin{max-width:1500px;margin-inline:auto;padding:9px 16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
-.unbin .wm{font-weight:800;font-size:22px;letter-spacing:-.02em;color:var(--accent);padding-right:12px;border-right:2px solid #0095DB;line-height:1}
+.unbin .logo{display:block;height:34px;width:auto;background:#fff;border-radius:6px;padding:3px 8px;border-right:0}.unbin .un{border-left:2px solid #0095DB;padding-left:12px}
 .unbin .un{font-size:12.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--ink2);font-weight:500}
 .unbin .dep{margin-left:auto;font-size:12.5px;color:var(--muted)}
 h1{color:var(--accent)}
@@ -135,17 +135,17 @@ h1{color:var(--accent)}
 .paper table.fmt td.fx{font-family:"Cambria Math",Cambria,Georgia,serif;font-size:13.5px}.paper table.fmt td.sb{color:var(--ink2);font-family:var(--mono);font-size:12px}.paper table.fmt td.n{white-space:normal}
 .paper .tela{border:1px solid var(--axis);border-radius:8px;padding:10px;margin:12px 0 16px}.paper .tela-h{font-size:11.5px;font-weight:600;color:#164194;text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px}
 .paper .tela .card{border:0;padding:0;box-shadow:none}.paper.no-tela .tela{display:none}
-.paper .unbl{color:#164194;font-size:12px;letter-spacing:.08em;text-transform:uppercase;margin-bottom:8px;border-top:4px solid #0095DB;padding-top:8px}.paper .unbl b{font-size:20px;letter-spacing:0;margin-right:10px}
+.paper .unbl{color:#164194;font-size:12px;letter-spacing:.08em;text-transform:uppercase;margin-bottom:8px;border-top:4px solid #0095DB;padding-top:8px}.paper .unbl img{height:34px;vertical-align:middle;margin-right:12px}
 @media (max-width:700px){.paper{padding:14px}.paper .toc{columns:1}}
 </style>
 
 
-<div class="unbbar"><div class="unbin"><span class="wm" aria-hidden="true">UnB</span><span class="un">Universidade de Brasília</span><span class="dep">Concreto Protendido · Engenharia Civil</span></div></div>
+<div class="unbbar"><div class="unbin"><img class="logo" id="logoUnb" alt="UnB, Universidade de Brasília" width="124" height="32" src="data:image/png;base64,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"><span class="un">Universidade de Brasília</span><span class="dep">Concreto Protendido · Engenharia Civil</span></div></div>
 <div class="app">
   <header class="top">
     <div>
       <h1>Viga contínua protendida, 2 vãos</h1>
-      <div class="credit">Produzido pelo Professor DSc. Li Chong Lee (Todos os direitos reservados) <span class="ver" id="ver" title="Versão do painel">v1.3.0</span></div>
+      <div class="credit">Produzido pelo Professor DSc. Li Chong Lee (Todos os direitos reservados) <span class="ver" id="ver" title="Versão do painel">v1.3.1</span></div>
       <div class="sub">Pós-tração aderente · NBR 6118 · mesma lógica da planilha de apoio, recalculada a cada alteração</div>
     </div>
     <div class="status" id="status"></div>
@@ -1381,7 +1381,7 @@ function memorialBody(){
 
 const DOC_CSS = 'body{font-family:"Segoe UI",Calibri,Arial,sans-serif;font-size:10.5pt;line-height:1.4;color:#0B0B0B;max-width:1000px;margin:0 auto;padding:18px}' +
   'h1{font-size:20pt;margin:0 0 4px}h2{font-size:14pt;margin:22px 0 8px;padding-bottom:4px;border-bottom:2px solid #164194;color:#164194}h3{font-size:11.5pt;margin:14px 0 6px}p{margin:0 0 8px}' +
-  '.capa{border-bottom:3px solid #164194;padding-bottom:10px;margin-bottom:14px}.capa .sub{color:#52514E}.unbl{color:#164194;font-size:10pt;letter-spacing:.08em;text-transform:uppercase;margin-bottom:6px;border-top:4px solid #0095DB;padding-top:6px}.unbl b{font-size:16pt;letter-spacing:0;margin-right:8px}.rodape{margin-top:24px;padding-top:8px;border-top:1px solid #D6D5CC;font-size:9pt;color:#6E6C67}.toc{margin:10px 0 18px;padding-left:18px;columns:2}.toc li{margin:2px 0}.toc a{color:#164194;text-decoration:none}' +
+  '.capa{border-bottom:3px solid #164194;padding-bottom:10px;margin-bottom:14px}.capa .sub{color:#52514E}.unbl{color:#164194;font-size:10pt;letter-spacing:.08em;text-transform:uppercase;margin-bottom:6px;border-top:4px solid #0095DB;padding-top:6px}.unbl img{height:30px;vertical-align:middle;margin-right:10px}.rodape{margin-top:24px;padding-top:8px;border-top:1px solid #D6D5CC;font-size:9pt;color:#6E6C67}.toc{margin:10px 0 18px;padding-left:18px;columns:2}.toc li{margin:2px 0}.toc a{color:#164194;text-decoration:none}' +
   '.lead{color:#52514E}.src{color:#6E6C67;font-size:9pt}.foot{color:#6E6C67;font-size:9pt}' +
   'table{border-collapse:collapse;width:100%;font-size:9.5pt;margin:6px 0 12px}th,td{border:1px solid #D6D5CC;padding:4px 7px;text-align:left;vertical-align:top}th{background:#E3EAF6;font-weight:600}' +
   'td.n,th.n{text-align:right;font-family:Consolas,"Courier New",monospace;white-space:nowrap}table.fmt td.fx{font-family:"Cambria Math",Cambria,"Times New Roman",serif;font-size:10pt}table.fmt td.sb{color:#52514E;font-family:Consolas,"Courier New",monospace;font-size:8.8pt}' +
@@ -1393,13 +1393,14 @@ const DOC_CSS = 'body{font-family:"Segoe UI",Calibri,Arial,sans-serif;font-size:
   '.cuts{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.cut{border:1px solid #E1E0D9;border-radius:6px;padding:6px}.cut .t{font-weight:600;font-size:9pt}.cut .m{font-size:8.5pt;color:#52514E}.tw{overflow:visible}' +
   '@media print{body{max-width:none;padding:0}.ms{page-break-inside:auto}h2{page-break-after:avoid}.tela{page-break-inside:avoid}tr{page-break-inside:avoid}}@page{size:A4;margin:16mm 14mm}';
 
-const VERSION = '1.3.0'; { const v = document.getElementById('ver'); if (v) v.textContent = 'v' + VERSION; }
+const LOGO_UNB = document.getElementById('logoUnb') ? document.getElementById('logoUnb').src : '';
+const VERSION = '1.3.1'; { const v = document.getElementById('ver'); if (v) v.textContent = 'v' + VERSION; }
 let MEM = null;
 function memorialDoc(){
   const sec = memorialBody(), d = A.d, pn = (PRESETS.find(p => p.id === preset) || {n: 'dados personalizados'}).n, dt = new Date().toLocaleDateString('pt-BR');
   const rows = []; GROUPS.forEach(g => g.f.forEach(fl => { const [k, lab, sym, u, , sc] = fl; if (k === 'nivel') { rows.push('<tr><td>' + g.t + '</td><td>' + lab + '</td><td>' + sym + '</td><td class="n">' + inp[k] + '</td><td></td></tr>'); return; }
     rows.push('<tr><td>' + g.t + '</td><td>' + lab + '</td><td>' + sym + '</td><td class="n">' + String(+(inp[k] * (sc || 1)).toPrecision(6)).replace('.', ',') + '</td><td>' + u + '</td></tr>'); }));
-  const capa = '<div class="capa"><div class="unbl"><b>UnB</b> Universidade de Brasília</div><h1>Memorial de cálculo · viga contínua protendida de 2 vãos</h1><div class="sub">Concreto protendido · pós-tração aderente · NBR 6118 · UnB · Prof. Li Chong Lee Bacelar de Castro</div>' +
+  const capa = '<div class="capa"><div class="unbl"><img alt="UnB" src="' + LOGO_UNB + '" height="32"> Universidade de Brasília</div><h1>Memorial de cálculo · viga contínua protendida de 2 vãos</h1><div class="sub">Concreto protendido · pós-tração aderente · NBR 6118 · UnB · Prof. Li Chong Lee Bacelar de Castro</div>' +
     '<div class="sub">Seção ' + f(d.bw * 100, 0) + ' × ' + f(d.h * 100, 0) + ' cm · C' + f(d.fck, 0) + ' · ' + d.n_cab + ' cabos × ' + d.n_cord + ' cordoalhas Ø12,7 · vão ' + f(d.L, 0) + ' m · ' + pn + ' · emitido em ' + dt + '</div><div class="sub">Produzido pelo Professor DSc. Li Chong Lee (Todos os direitos reservados) · painel v' + VERSION + '</div></div>';
   const toc = '<h2>Sumário</h2><ol class="toc">' + sec.map(s => '<li><a href="#ms' + s.n + '">' + s.titulo + '</a></li>').join('') + '</ol>';
   const dados = '<h2>Dados de entrada</h2><div class="tw"><table><thead><tr><th>Grupo</th><th>Dado</th><th>Símbolo</th><th class="n">Valor</th><th>Unid.</th></tr></thead><tbody>' + rows.join('') + '</tbody></table></div>';
