@@ -59,7 +59,9 @@ details.grp>summary::after{content:'+';color:var(--ink2)} details.grp[open]>summ
 .fld input{width:100%;min-width:0;font:inherit;font-family:var(--mono);font-size:12.5px;padding:4px 6px;border:1px solid var(--axis);border-radius:5px;background:var(--plane);color:var(--ink);text-align:right}
 .fld .u{font-size:11px;color:var(--muted);min-width:2.2em}
 .fld .note{grid-column:1/-1;font-size:11px;color:var(--muted)}
-.tabs{display:flex;gap:2px;flex-wrap:wrap;border-bottom:1px solid var(--axis);margin-bottom:14px}
+.spansw{margin-left:auto;display:flex;align-items:center;gap:4px;padding-bottom:4px;font-size:12px;color:var(--muted)}.spansw button{font:inherit;font-size:12px;padding:3px 10px;border:1px solid var(--axis);border-radius:999px;background:var(--surface);color:var(--ink)}.spansw button[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.tabs{display:flex;gap:2px;flex-wrap:wrap;border-bottom:1px solid var(--axis);margin-bottom:14px;position:sticky;top:0;z-index:20;background:var(--plane);padding-top:6px;box-shadow:0 6px 8px -8px rgba(0,0,0,.35)}
+@media (max-width:700px){.tabs{flex-wrap:nowrap;overflow-x:auto}.tab{white-space:nowrap;flex:none}}
 .tab{padding:8px 12px;border:0;background:none;color:var(--ink2);border-bottom:2px solid transparent;font-weight:500;font-size:13.5px}
 .tab:hover{color:var(--ink)}
 .tab[aria-selected="true"]{color:var(--accent);border-bottom-color:var(--accent)}
@@ -143,7 +145,7 @@ h1{color:var(--accent)}
   <header class="top">
     <div>
       <h1>Viga contínua protendida, 2 vãos</h1>
-      <div class="credit">Produzido pelo Professor DSc. Li Chong Lee (Todos os direitos reservados) <span class="ver" id="ver" title="Versão do painel">v1.2.0</span></div>
+      <div class="credit">Produzido pelo Professor DSc. Li Chong Lee (Todos os direitos reservados) <span class="ver" id="ver" title="Versão do painel">v1.3.0</span></div>
       <div class="sub">Pós-tração aderente · NBR 6118 · mesma lógica da planilha de apoio, recalculada a cada alteração</div>
     </div>
     <div class="status" id="status"></div>
@@ -790,6 +792,9 @@ try { const sv = JSON.parse(localStorage.getItem(STORE) || 'null'); if (sv && sv
 function save(){ try { localStorage.setItem(STORE, JSON.stringify({inp, preset})); } catch (e) {} }
 
 let A = null, lastErr = null, tab = 'resumo';
+/* Vãos exibidos nas tabelas e nos gráficos de flecha: 1 = só o 1º vão (x de 0 a L); 2 = os dois vãos (0 a 2L). */
+let spans = 1; try { spans = localStorage.getItem('viga-cp-vaos') === '2' ? 2 : 1; } catch (e) {}
+const NR = () => spans === 2 ? 41 : 21, secT = () => spans === 2 ? 'Seções dos dois vãos' : 'Seções do 1º vão';
 function compute(){
   try {
     const a = analyse(inp);
@@ -867,7 +872,10 @@ const TABS = [['resumo', 'Resumo'], ['tracado', 'Traçado e fuso'], ['perdas', '
 function buildTabs(){
   const t = $('#tabs'); t.innerHTML = '';
   TABS.forEach(([id, n]) => { const b = h('button', {class: 'tab', role: 'tab', id: 'tab_' + id, 'aria-selected': String(id === tab), 'data-t': id}, n); t.appendChild(b); });
+  const sw = h('div', {class: 'spansw', role: 'group', 'aria-label': 'Vãos exibidos'}, '<span>Vãos:</span><button type="button" data-v="1">1º vão</button><button type="button" data-v="2">Os dois vãos</button>'); t.appendChild(sw); syncSpans();
 }
+function syncSpans(){ document.querySelectorAll('.spansw button').forEach(b => b.setAttribute('aria-pressed', String(+b.dataset.v === spans))); }
+$('#tabs').addEventListener('click', e => { const b = e.target.closest('.spansw button'); if (!b) return; spans = +b.dataset.v; try { localStorage.setItem('viga-cp-vaos', String(spans)); } catch (x) {} syncSpans(); renderPanel(); });
 $('#tabs').addEventListener('click', e => { const b = e.target.closest('button[data-t]'); if (!b) return; tab = b.dataset.t; document.querySelectorAll('.tab').forEach(x => x.setAttribute('aria-selected', String(x === b))); renderPanel(); });
 document.addEventListener('keydown', e => { const b = e.target.closest && e.target.closest('.tab'); if (!b || (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft')) return;
   const i = TABS.findIndex(x => x[0] === b.dataset.t), j = (i + (e.key === 'ArrowRight' ? 1 : TABS.length - 1)) % TABS.length; tab = TABS[j][0]; document.querySelectorAll('.tab').forEach(x => x.setAttribute('aria-selected', String(x.dataset.t === tab))); $('#tab_' + tab).focus(); renderPanel(); });
@@ -974,7 +982,7 @@ PANELS.resumo = function(){
 
 PANELS.tracado = function(){
   const d = A.d, pp = profileParams(d), rows = [];
-  for (let i = 0; i <= 20; i++) { const x = A.r.x[i], inside = A.fu.elp[i] >= A.fu.lo[i] - 1e-6 && A.fu.elp[i] <= A.fu.up[i] + 1e-6;
+  for (let i = 0; i < NR(); i++) { const x = A.r.x[i], inside = A.fu.elp[i] >= A.fu.lo[i] - 1e-6 && A.fu.elp[i] <= A.fu.up[i] + 1e-6;
     rows.push({c: [f(x, 2), f(A.r.e[i], 3), f(A.fu.elp[i], 3), f(A.fu.lo[i], 3), f(A.fu.up[i], 3), inside ? 'dentro' : 'fora'], hl: !inside}); }
   const over = Math.abs(d.e_span) > d.e_max + 1e-9 || Math.abs(d.e_sup) > d.e_max + 1e-9;
   return {
@@ -983,7 +991,7 @@ PANELS.tracado = function(){
       (over ? '<p>' + chip('warn', 'Excentricidade acima de e_max = ' + f(d.e_max, 3) + ' m') + '</p>' : '') +
       '<div class="ctl"><label><input type="checkbox" id="lim"> Mostrar os 10 limites</label></div><div id="c1"></div></div>' + cutsCard() +
       '<div class="grid2"><div class="card"><h2>Parábolas</h2>' + kv([['Parábola A, de 0 a x_i', 'e = e_vão − aA·(x − x0)²'], ['aA', f(pp.aA, 5) + ' 1/m'], ['x0', f(pp.x0, 3) + ' m'], ['Parábola reversa, de x_i a L', 'e = −e_sup + aB·(L − x)²'], ['aB', f(pp.aB, 5) + ' 1/m'], ['x_i = L − λ', f(pp.xi, 2) + ' m']]) + '</div>' +
-      '<div class="card"><h2>Seções do 1º vão</h2>' + table(['x (m)', 'e cabo (m)', 'e_lp (m)', 'e mín. (m)', 'e máx. (m)', 'e_lp no fuso?'], rows) + '</div></div>',
+      '<div class="card"><h2>' + secT() + '</h2>' + table(['x (m)', 'e cabo (m)', 'e_lp (m)', 'e mín. (m)', 'e máx. (m)', 'e_lp no fuso?'], rows) + '</div></div>',
     after(){ initCuts(); const draw = () => { const t = traceSeries({lim: $('#lim').checked}); chart($('#c1'), {series: t.series, bands: t.bands, refs: t.refs, groups: t.groups, invertY: true, height: 380, ylim: [-0.5, 0.5], xlab: 'x (m)', ylab: 'e (m)  + abaixo do CG', yd: 2, vd: 3, tx: xsOf(), title: 'Traçado e fuso'}); };
       $('#lim').addEventListener('change', draw); draw(); }
   };
@@ -991,7 +999,7 @@ PANELS.tracado = function(){
 
 PANELS.perdas = function(){
   const Ls = A.r.Ls, d = A.d, rows = [];
-  for (let i = 0; i <= 20; i++) rows.push({c: [f(Ls.x[i], 2), f(Ls.theta[i], 4), f(Ls.sL[i], 1), f(Ls.sig_slip[i], 1), f(Ls.des[i], 1), f(Ls.sig_i[i], 1), f(Ls.dsig[i], 1), f(Ls.sig_inf[i], 1), f(Ls.Pinf[i], 0)]});
+  for (let i = 0; i < NR(); i++) rows.push({c: [f(Ls.x[i], 2), f(Ls.theta[i], 4), f(Ls.sL[i], 1), f(Ls.sig_slip[i], 1), f(Ls.des[i], 1), f(Ls.sig_i[i], 1), f(Ls.dsig[i], 1), f(Ls.sig_inf[i], 1), f(Ls.Pinf[i], 0)]});
   const iB = A.iB, pmin = Math.min.apply(null, Ls.Pinf);
   return {
     html: '<div class="card"><h2>Tensão no aço ao longo do cabo</h2><div class="src">Planilha: Tracado_Perdas e Alongamento</div>' +
@@ -1003,7 +1011,7 @@ PANELS.perdas = function(){
       '<div class="card"><h2>Alongamento dos cabos</h2>' + kv([
         ['Δl por extremidade (pré-cravação)', f(Ls.elong, 1) + ' mm'], ['Δl total do cabo (2 extremidades)', f(2 * Ls.elong, 1) + ' mm'], ['Tolerância −5 %', f(0.95 * Ls.elong, 1) + ' mm'], ['Tolerância +5 %', f(1.05 * Ls.elong, 1) + ' mm'],
         ['Cravação das cunhas', f(d.slip * 1000, 1) + ' mm'], ['Líquido por extremidade após cravação', f(Ls.elong - d.slip * 1000, 1) + ' mm'], ['Comprimento do cabo', f(Ls.arc_tot, 2) + ' m'], ['Ângulo total desviado Σα', f(Ls.theta_tot, 3) + ' rad']]) + '</div></div>' +
-      '<div class="card"><h2>Seções do 1º vão</h2>' + table(['x (m)', 'Σα (rad)', 'σ atrito (MPa)', 'após cravação', 'Δσ enc. elást.', 'σp,i (ato)', 'Δσ progress.', 'σp,∞', 'P∞ (kN)'], rows) + '</div>',
+      '<div class="card"><h2>' + secT() + '</h2>' + table(['x (m)', 'Σα (rad)', 'σ atrito (MPa)', 'após cravação', 'Δσ enc. elást.', 'σp,i (ato)', 'Δσ progress.', 'σp,∞', 'P∞ (kN)'], rows) + '</div>',
     after(){ const x = Ls.x; chart($('#c1'), {series: [
       {name: 'Atrito (da extremidade esquerda)', x, y: Ls.sL, color: C.s1, d: 1}, {name: 'Após a cravação', x, y: Ls.sig_slip, color: C.s2, d: 1},
       {name: 'No ato σp,i', x, y: Ls.sig_i, color: C.s3, d: 1}, {name: 'Em t∞ σp,∞', x, y: Ls.sig_inf, color: C.s4, d: 1}],
@@ -1013,11 +1021,11 @@ PANELS.perdas = function(){
 
 PANELS.esforcos = function(){
   const x = xsOf(), e = A.r.ext, rf = A.r.res.inf, ri = A.r.res.i, d = A.d, rows = [];
-  for (let i = 0; i <= 20; i++) rows.push({c: [f(x[i], 2), f(e.Mg[i], 1), f(e.Mq_max[i], 1), f(e.Mq_min[i], 1), f(rf.Miso[i], 1), f(rf.Mhip[i], 1), f(rf.MP[i], 1), f(e.Vg[i], 1)]});
+  for (let i = 0; i < NR(); i++) rows.push({c: [f(x[i], 2), f(e.Mg[i], 1), f(e.Mq_max[i], 1), f(e.Mq_min[i], 1), f(rf.Miso[i], 1), f(rf.Mhip[i], 1), f(rf.MP[i], 1), f(e.Vg[i], 1)]});
   return {
     html: '<div class="card"><h2>Momentos externos</h2><div class="src">Planilha: Esforcos</div><p class="lead">Momento positivo traciona a fibra inferior (eixo invertido: positivo para baixo). A sobrecarga q é posicionada nos dois vãos, só no vão do ponto ou só no outro.</p><div id="c1"></div></div>' +
       '<div class="card"><h2>Momentos da protensão em t∞</h2><div class="src">Planilha: Hiperestatico</div><p class="lead">M_iso = −P∞·cosα·e. O apoio central impede a deformação da protensão e gera a reação hiperestática R_B, que dá M_hip = −R_B·m. R_B(∞) = ' + f(rf.RB, 1) + ' kN; M_hip no apoio B = ' + f(rf.Mhip[A.iB], 1) + ' kN·m.</p><div id="c2"></div></div>' +
-      '<div class="card"><h2>Seções do 1º vão</h2>' + table(['x (m)', 'Mg', 'Mq,máx', 'Mq,mín', 'M_iso,∞', 'M_hip,∞', 'M_P,∞', 'Vg'], rows) + '<p class="foot">Momentos em kN·m, cortante em kN.</p></div>',
+      '<div class="card"><h2>' + secT() + '</h2>' + table(['x (m)', 'Mg', 'Mq,máx', 'Mq,mín', 'M_iso,∞', 'M_hip,∞', 'M_P,∞', 'Vg'], rows) + '<p class="foot">Momentos em kN·m, cortante em kN.</p></div>',
     after(){ chart($('#c1'), {series: [{name: 'Mg', x, y: e.Mg, color: C.s1, d: 1}, {name: 'Mg + Mq,máx', x, y: x.map((_, i) => e.Mg[i] + e.Mq_max[i]), color: C.s2, d: 1}, {name: 'Mg + Mq,mín', x, y: x.map((_, i) => e.Mg[i] + e.Mq_min[i]), color: C.s3, d: 1}],
         groups: [{n: 'Permanente', s: ['Mg']}, {n: 'Com sobrecarga', s: ['Mg + Mq,máx', 'Mg + Mq,mín']}, {n: 'Envoltória positiva', s: ['Mg', 'Mg + Mq,máx']}], invertY: true, height: 300, xlab: 'x (m)', ylab: 'M (kN·m)', yd: 0, vd: 1, unit: 'kN·m', tx: x, title: 'Momentos externos'});
       chart($('#c2'), {series: [{name: 'M_iso,∞', x, y: rf.Miso, color: C.s1, d: 1}, {name: 'M_hip,∞', x, y: rf.Mhip, color: C.s2, d: 1}, {name: 'M_P,∞ total', x, y: rf.MP, color: C.s4, d: 1}],
@@ -1063,25 +1071,25 @@ PANELS.elu = function(){
     R('M_hip,∞ (kN·m)', f(B.Mh, 1), f(V.Mh, 1)), R('Msd externo = 1,4(Mg+Mq) (kN·m)', f(B.Mext, 0), f(V.Mext, 0)), R('γp do hiperestático', f(B.gp, 1), f(V.gp, 1)), R('Msd (kN·m)', f(B.Msd, 0), f(V.Msd, 0), 1),
     R('|Msd| ≤ MRd?', ok(B.ok), ok(V.ok)), R('MRd/|Msd|', f(B.ratio, 2), f(V.ratio, 2), 1), R('Ductilidade x/dp ≤ 0,45?', ok(B.ductile, 'Atende', 'Aumentar A′'), ok(V.ductile, 'Atende', 'Aumentar A′')),
     R("A′ mínimo p/ x/dp ≤ 0,45 (cm²)", f(B.Ascmin, 2), f(V.Ascmin, 2)), R('Md,mín = 0,8·W·fctk,sup (kN·m)', f(B.Mdmin, 0), f(V.Mdmin, 0))];
-  const srows = []; for (let i = 0; i <= 20; i++) srows.push({c: [f(x[i], 2), f(sh.Vp[i], 1), f(sh.Vsd[i], 0), f(sh.beta[i], 2), f(sh.tau_cor[i], 2), f(sh.twd[i], 2), f(sh.asw_n[i], 2), f(sh.asw_calc[i], 2)]});
+  const srows = []; for (let i = 0; i < NR(); i++) srows.push({c: [f(x[i], 2), f(sh.Vp[i], 1), f(sh.Vsd[i], 0), f(sh.beta[i], 2), f(sh.tau_cor[i], 2), f(sh.twd[i], 2), f(sh.asw_n[i], 2), f(sh.asw_calc[i], 2)]});
   return {
     html: '<div class="card"><h2>Flexão no estado limite último</h2><div class="src">Planilha: ELU</div><p class="lead">Aço de protensão com pré-alongamento (neutralização) e patamar em fpyd; retângulo de tensões 0,8x·0,85·fcd. A′ é a armadura passiva comprimida e As a passiva tracionada (necessária nos níveis 1 e 2), ambas informadas nos dados.</p>' +
       table(['Grandeza', 'Apoio B (x = ' + f(B.x, 1) + ' m)', 'Vão (x = ' + f(V.x, 1) + ' m)'], rows) + '</div>' +
       '<div class="grid2"><div class="card"><h2>Força cortante Vsd e VRd2</h2><div class="src">Planilha: Cortante</div><p class="lead">Vp = −P∞·senα mais a parcela hiperestática; Vsd é o maior valor entre as combinações com γp = 0,9 e 1,2. VRd2 = ' + f(sh.Vu, 0) + ' kN, com bw reduzido = ' + f(sh.bwred, 3) + ' m.</p><div id="c1"></div></div>' +
       '<div class="card"><h2>Estribos por ramo</h2><p class="lead">asw/s por ramo, 2 ramos. Mínimo = ' + f(sh.asw_min_n, 2) + ' cm²/m (ρsw,mín = ' + f(sh.rho_min * 100, 3) + ' %).</p><div id="c2"></div></div></div>' +
-      '<div class="card"><h2>Seções do 1º vão</h2>' + table(['x (m)', 'Vp (kN)', 'Vsd (kN)', 'β', 'τc,cor (MPa)', 'τwd (MPa)', 'asw/n calc.', 'asw/n adotado'], srows) + '</div>',
+      '<div class="card"><h2>' + secT() + '</h2>' + table(['x (m)', 'Vp (kN)', 'Vsd (kN)', 'β', 'τc,cor (MPa)', 'τwd (MPa)', 'asw/n calc.', 'asw/n adotado'], srows) + '</div>',
     after(){ chart($('#c1'), {series: [{name: 'Vsd', x, y: sh.Vsd, color: C.s2, d: 0}], refs: [{y: sh.Vu, label: 'VRd2 = ' + f(sh.Vu, 0) + ' kN'}], height: 260, xlab: 'x (m)', ylab: 'V (kN)', yd: 0, unit: 'kN', tx: x, title: 'Cortante', ylim: [0, Math.max(sh.Vu, Math.max.apply(null, sh.Vsd)) * 1.1]});
       chart($('#c2'), {series: [{name: 'asw/n calculado', x, y: sh.asw_n, color: C.s1, d: 2}, {name: 'asw/n adotado', x, y: sh.asw_calc, color: C.s3, d: 2}], refs: [{y: sh.asw_min_n, label: 'mínimo'}], height: 260, xlab: 'x (m)', ylab: 'cm²/m por ramo', yd: 1, tx: x, title: 'Estribos'}); }
   };
 };
 
 PANELS.flecha = function(){
-  const df = A.df, d = A.d, x = xsOf().slice(0, 21), mm = a => a.slice(0, 21).map(v => v * 1000), lim = d.L * 1000 / 250;
+  const df = A.df, d = A.d, x = xsOf().slice(0, NR()), mm = a => a.slice(0, NR()).map(v => v * 1000), lim = d.L * 1000 / 250;
   const qp = mm(df.qp_net), inf = mm(df.qp_inf), cf = mm(df.cfq_net), P = mm(df.P), g = mm(df.g);
   const mx = a => a.reduce((m, v) => Math.abs(v) > Math.abs(m) ? v : m, 0);
   const dinf = Math.max.apply(null, inf.map(Math.abs));
   return {
-    html: '<div class="card"><h2>Deslocamentos verticais do 1º vão</h2><div class="src">Planilha: Flecha_PC</div><p class="lead">Seção não fissurada, rigidez Ecs·Ic, y″ = −M/EI integrado duas vezes. Positivo para baixo. Combinação quase permanente: Mg + ψ2·Mq + efeito da protensão P∞.</p><div id="c1"></div></div>' +
+    html: '<div class="card"><h2>Deslocamentos verticais ' + (spans === 2 ? 'dos dois vãos' : 'do 1º vão') + '</h2><div class="src">Planilha: Flecha_PC</div><p class="lead">Seção não fissurada, rigidez Ecs·Ic, y″ = −M/EI integrado duas vezes. Positivo para baixo. Combinação quase permanente: Mg + ψ2·Mq + efeito da protensão P∞.</p><div id="c1"></div></div>' +
       '<div class="card"><h2>Resultados</h2>' + kv([['Máx. |δ| do peso g', f(Math.abs(mx(g)), 1) + ' mm'], ['Máx. |δ| da protensão P∞', f(Math.abs(mx(P)), 1) + ' mm'], ['δ quase permanente (líquida)', f(mx(qp), 1) + ' mm'], ['δ quase permanente ×(1+φ)', f(mx(inf), 1) + ' mm'], ['Combinação frequente', f(mx(cf), 1) + ' mm'], ['Limite L/250', f(lim, 1) + ' mm'], ['Frequência f1 (modo antissimétrico)', f(df.f1, 1) + ' Hz']]) +
       '<p style="margin-top:10px">' + ok(dinf <= lim, 'Dentro de L/250', 'Acima de L/250') + (mx(inf) < 0 ? ' ' + chip('info', 'Contraflecha: a protensão levanta a viga') : '') + '</p></div>',
     after(){ chart($('#c1'), {series: [{name: 'Quase permanente líquida', x, y: qp, color: C.s1, d: 2}, {name: 'Quase permanente ×(1+φ)', x, y: inf, color: C.s2, d: 2}, {name: 'Frequente', x, y: cf, color: C.s3, d: 2}],
@@ -1137,12 +1145,12 @@ PANELS.ca = function(){
     {c: ['Flecha total (mm)', f(rc.defl_tot * 1000, 1), f(pcMax, 1) + ' (×(1+φ))']}, {c: ['Vsd no apoio B (kN)', f(rc.Vsd_B, 0), f(Math.max.apply(null, A.sh.Vsd), 0)]},
     {c: ['asw total no apoio B (cm²/m)', f(rc.asw_B, 1), f(2 * Math.max.apply(null, A.sh.asw_calc), 1)]}];
   function mm1(a){ return a.slice(0, 21).reduce((m, v) => Math.abs(v) > Math.abs(m) ? v : m, 0) * 1000; }
-  const x = xsOf().slice(0, 21);
+  const x = xsOf().slice(0, NR());
   return {
     html: '<div class="card"><h2>Concreto protendido × concreto armado</h2><div class="src">Planilha: CA e CA_Flecha · mesma seção e mesmas cargas</div><p class="lead">ELU pelo bloco retangular 0,8x·0,85·fcd, sem redistribuição. Abertura de fissuras pelo item 17.3.3.2 na comb. frequente. Flecha por Branson com integração ao longo do vão. Barras e altura útil vêm dos dados (Concreto armado).</p>' +
       table(['Grandeza', 'Concreto armado', 'Concreto protendido'], rows) + '</div>' +
       '<div class="card"><h2>Flecha imediata do concreto armado, quase permanente</h2><div id="c1"></div><p class="foot">As,mín = ' + f(rc.As_min, 1) + ' cm² · Mr = ' + f(rc.Mr, 0) + ' kN·m · α_f = ' + f(rc.alpha_f, 2) + '</p></div>',
-    after(){ chart($('#c1'), {series: [{name: 'CA, imediata', x, y: rc.yi.slice(0, 21).map(v => v * 1000), color: C.s2, d: 2}, {name: 'PC, líquida', x, y: A.df.qp_net.slice(0, 21).map(v => v * 1000), color: C.s1, d: 2}], groups: [{n: 'Só concreto armado', s: ['CA, imediata']}, {n: 'Só protendido', s: ['PC, líquida']}], invertY: true, height: 260, xlab: 'x (m)', ylab: 'δ (mm), + para baixo', yd: 0, vd: 2, unit: 'mm', tx: x, title: 'Flecha CA e PC'}); }
+    after(){ chart($('#c1'), {series: [{name: 'CA, imediata', x, y: rc.yi.slice(0, NR()).map(v => v * 1000), color: C.s2, d: 2}, {name: 'PC, líquida', x, y: A.df.qp_net.slice(0, NR()).map(v => v * 1000), color: C.s1, d: 2}], groups: [{n: 'Só concreto armado', s: ['CA, imediata']}, {n: 'Só protendido', s: ['PC, líquida']}], invertY: true, height: 260, xlab: 'x (m)', ylab: 'δ (mm), + para baixo', yd: 0, vd: 2, unit: 'mm', tx: x, title: 'Flecha CA e PC'}); }
   };
 };
 
@@ -1385,7 +1393,7 @@ const DOC_CSS = 'body{font-family:"Segoe UI",Calibri,Arial,sans-serif;font-size:
   '.cuts{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.cut{border:1px solid #E1E0D9;border-radius:6px;padding:6px}.cut .t{font-weight:600;font-size:9pt}.cut .m{font-size:8.5pt;color:#52514E}.tw{overflow:visible}' +
   '@media print{body{max-width:none;padding:0}.ms{page-break-inside:auto}h2{page-break-after:avoid}.tela{page-break-inside:avoid}tr{page-break-inside:avoid}}@page{size:A4;margin:16mm 14mm}';
 
-const VERSION = '1.2.0'; { const v = document.getElementById('ver'); if (v) v.textContent = 'v' + VERSION; }
+const VERSION = '1.3.0'; { const v = document.getElementById('ver'); if (v) v.textContent = 'v' + VERSION; }
 let MEM = null;
 function memorialDoc(){
   const sec = memorialBody(), d = A.d, pn = (PRESETS.find(p => p.id === preset) || {n: 'dados personalizados'}).n, dt = new Date().toLocaleDateString('pt-BR');
