@@ -1,0 +1,286 @@
+[0] ## Roteiro para reproduzir as planilhas da viga contínua protendida
+[1] byline
+[2] ## Objetivo e pré-requisitos
+[3] Você vai montar, do zero, a planilha de apoio da viga contínua protendida de 2 vãos de 10 m (seção 30 × 90 cm, C30, CAA II) em 14 abas, onde toda a cadeia de cálculo depende da aba Dados. Ao final, os valores devem bater com os da seção "Conferência final".
+[4] * Excel ou LibreOffice Calc; tempo estimado de 6 a 8 horas.
+[4] * Conhecimentos: perdas de protensão e efeito hiperestático (aulas de protensão), flexão no ELU e fissuração (NBR 6118).
+[4] * Dica de método: monte uma aba por vez, na ordem deste roteiro, e confira cada aba contra os valores de referência antes de seguir.
+[4] * Quatro abas (Esforcos, Tracado_Perdas, Hiperestatico, Tensoes) usam a mesma tabela de estações; as demais consultam linhas dessa tabela.
+[5] ## Convenções
+[6] Adote as mesmas convenções em todas as abas, senão as fórmulas deixam de conversar entre si.
+[7] TABLE
+   | Item | Convenção
+   | Unidades | kN, m, MPa; áreas de aço em cm²; aberturas em mm
+   | Cores | amarelo = entrada; verde = resultado; azul-escuro com texto branco = cabeçalho
+   | Estações | a cada 0,5 m, de x = 0 a 20 m: 41 linhas, da linha 8 (x = 0) à linha 48 (x = 20)
+   | Cabeçalho das abas de estações | título na linha 1, nota na linha 2, nomes na linha 6, unidades na linha 7
+   | Sinais | tração positiva, compressão negativa; momento positivo = tração embaixo; e positiva abaixo do CG
+   | Fibras | σ1 = fibra inferior; σ2 = fibra superior
+   | Referência a Dados | endereço absoluto, por exemplo Dados!$C$5, para todos os parâmetros
+[8] Sugestão: anote a tabela de endereços do passo 1 (ou dê nome às células de Dados); isso evita a maior parte dos erros de referência.
+[9] ## Passo 1: aba Dados
+[10] Crie a aba Dados com três colunas úteis: A (símbolo, em cinza), B (descrição), C (valor), D (unidade) e E (nota). Os valores ficam sempre na coluna C, a partir da linha 5, nos endereços abaixo. Entradas em amarelo; derivadas em verde.
+[11] TABLE
+   | Linha | Parâmetro | Valor ou fórmula em C
+   | 5 a 7 | L, bw, h | 10 m; 0,30 m; 0,90 m
+   | 8 a 11 | Ac, Ic, W, k | =C6*C7; =C6*C7^3/12; =C9/(C7/2); =C10/C8
+   | 12 a 14 | fck, γc, fcd | 30; 1,4; =C12/C13
+   | 15 a 17 | fct,m, fctk,inf, fctd | =0,3*C12^(2/3); =0,7*C15; =C16/C13
+   | 18 a 20 | Eci, αi, Ecs | =5600*RAIZ(C12); =MÍN(0,8+0,2*C12/80;1); =C19*C18
+   | 21 a 24 | t0, fcj, Eci,j, fct,m,j | 7 dias; =EXP(0,38*(1-RAIZ(28/C21)))*C12; =5600*RAIZ(C22); =0,3*C22^(2/3)
+   | 25 a 28 | limites de tensão | =1,2*C16 (tração em serviço); =1,2*C24 (tração no ato); =0,7*C22; =0,7*C12
+   | 30 a 36 | ações | g0 = =25*C8; g adicional 13,25; g = soma; q = 25; ψ1 = 0,4; ψ2 = 0,3; p_bal =C32+C35*C33
+   | 38 a 46 | cobrimento e traçado | cnom 0,035; Ø estribo 0,010; Ø bainha 0,061; d' =C38+C39+C40/2; e_max =C7/2-C41; e na ancoragem 0; e_vão 0,28; e_apoio 0,28; λ 1,0
+   | 47 a 54 | parâmetros da parábola | x_i =C5-C46; c =C44-C43; coeficientes A, B e C da equação de x0; x0 pela fórmula de Bhaskara; aA =C48/C52^2; aB =C53*(C47-C52)/C46
+   | 56 a 68 | armadura ativa | 2 cabos; 5 cordoalhas; Ap1 0,987 cm²; Ap =C56*C57*C58/10000; fptk 1900; fpyk, γs, fpyd, fptd; Ep 200000; σp,j = 0,74·fptk; Pj =C59*C67*1000
+   | 70 a 82 | perdas | μ 0,20; k 0,002; cravação 0,006 m; φ 2,9; εcs −0,00023; αp no ato e aos 28 dias; fator de encurtamento =C75*(C56-1)/(2*C56); ρp; alcance da cravação xa e σ(xa) (passo 3)
+   | 84 a 91 | passivas e cisalhamento | fyk 500; fyd; Es 210000; d = 0,9h; τc = 0,6·fctd; τu = 0,27(1−fck/250)fcd; ρsw,min =0,2*C15/C84; bw,red
+[12] As equações da parábola (linhas 47 a 54) vêm da geometria do cabo: parábola do vão com vértice em x0 e parábola reversa de comprimento λ sobre o apoio. Escreva-as assim:
+[13] CODE e(x)=e_{vão}-a_A\,(x-x_0)^2 \quad (x\le x_i), \qquad e(x)=-e_{apoio}+a_B\,(L-x)^2 \quad (x>x_i)
+[14] Os coeficientes A, B e C de x0 (linhas 49 a 51) são =C45+C43, =C48*(C47+C5) e =-C48*C47*C5, e x0 = (−B + RAIZ(B² − 4AC)) / (2A). Em seguida cada linha de perdas aponta para essas células.
+[15] Checagem: com os dados acima, Ap = 9,87 cm², p_bal = 27,5 kN/m, e_max = 37,45 cm e Pj = 1388 kN.
+[16] ## Passo 2: aba Esforcos
+[17] Monte a tabela das 41 estações (linhas 8 a 48) e as envoltórias de momento e cortante para a viga contínua de 2 vãos iguais. Coluna por coluna:
+[18] TABLE
+   | Col. | Conteúdo | Fórmula da linha 8 (copie até a 48)
+   | A | índice i | 0, 1, 2...
+   | B | x (m) | =A8*0,5
+   | C | s, abscissa espelhada | =SE(B8<=Dados!$C$5;B8;2*Dados!$C$5-B8)
+   | D | Mg0, só peso próprio | fórmula "ambos" com g0
+   | E | Mg, permanente total | fórmula "ambos" com g
+   | F | Mq,máx | =MÁXIMO(0;ambos;um;outro) com q
+   | G | Mq,mín | =MÍNIMO(0;ambos;um;outro) com q
+   | H, I | M CFQ,máx e mín | =E8+Dados!$C$34*F8; =E8+Dados!$C$34*G8
+   | J, K | M CR,máx e mín | =E8+F8; =E8+G8
+   | L a N | Vg, Vq,máx, Vq,mín | cortantes pelas mesmas três casos, com sinal trocado para x > L
+[19] As três parcelas usam as fórmulas de viga de dois vãos iguais carregada por w, com s = abscissa dentro do vão:
+[20] CODE M_{ambos}=\frac{3wLs}{8}-\frac{ws^2}{2},\qquad M_{um}=\frac{7wLs}{16}-\frac{ws^2}{2},\qquad M_{outro}=-\frac{wLs}{16}
+[21] CODE V_{ambos}=\frac{3wL}{8}-ws,\qquad V_{um}=\frac{7wL}{16}-ws,\qquad V_{outro}=-\frac{wL}{16}
+[22] "Ambos" = sobrecarga nos dois vãos; "um" = só no vão do ponto; "outro" = só no outro vão. A envoltória de Mq,máx é o maior valor entre os três casos e zero; a de Mq,mín é o menor.
+[23] Checagem: no apoio central (x = 10 m, linha 28), Mg = −250,0 kN·m (g = 20,0 kN/m; Mg = −g·L²/8), Mq,mín = −312,5 kN·m e M CR,mín = −562,5 kN·m. Em x = 4 m (linha 16): Mg = 140,0 kN·m e Mq,máx = 237,5 kN·m.
+[24] ## Passo 3: aba Tracado_Perdas
+[25] Esta é a aba mais longa: 30 colunas (A a AD) com o traçado do cabo e todas as perdas. Preencha as linhas 8 a 48 e inicialize na linha 8 os acumuladores (Δα, Σα, Δs, Σs, ∫σdx) com zero. As fórmulas abaixo são da linha 9 e usam a linha 8 como anterior.
+[26] 3.1 Geometria do cabo (colunas A a L)
+[27] TABLE
+   | Col. | Conteúdo | Fórmula
+   | B, C | x e s (espelho) | como em Esforcos
+   | D | e(x), + abaixo do CG | =SE(C9<=Dados!C47; Dados!C44-Dados!C53*(C9-Dados!C52)^2; -Dados!C45+Dados!C54*(Dados!C5-C9)^2)
+   | E | de/dx | mesma expressão derivada, com sinal −1 para x > L
+   | F, G, H | α, cos α, sen α | =ATAN(E9); =COS(F9); =SEN(F9)
+   | I, J | Δα e Σα | =ABS(F9-F8); =J8+I9
+   | K, L | Δs e Σs (comprimento do arco) | =RAIZ((B9-B8)^2+(D9-D8)^2); =L8+K9
+[28] 3.2 Atrito e cravação (colunas M a P)
+[29] CODE \sigma_p(x)=\sigma_{p,j}\,e^{-(\mu\sum\alpha+k\,s)}
+[30] TABLE
+   | Col. | Conteúdo | Fórmula
+   | M | σp pelo atrito | =Dados!C67*EXP(-Dados!C70*J9-Dados!C71*L9)
+   | N | integral da tensão | =N8+0,5*(M9+M8)*(B9-B8)
+   | O | Δ(x) = 2[∫σdx − σ·x]/Ep | =2*(N9-M9*B9)/Dados!C65
+   | P | σp após a cravação | =SE(B9<=Dados!C81; 2*Dados!C82-M9; M9)
+[31] O alcance xa da cravação fica em Dados: C79 conta as estações do trecho 0 a L com Δ menor que a cravação (=CONT.SE(O8:O28;"<"&C72)), C80 interpola a fração entre duas estações, C81 = xa e C82 = σ(xa) pelo atrito. Resultado esperado: xa = 9,23 m e σ(xa) = 1282,9 MPa.
+[32] 3.3 Perdas imediatas e progressivas (colunas Q a AD)
+[33] TABLE
+   | Col. | Conteúdo | Fórmula resumida
+   | Q | Δσ encurtamento elástico | =MÁXIMO(Dados!C77*(Dados!C59*(1/Dados!C8+D9^2/Dados!C9)*P9-Esforcos!D9*D9/Dados!C9/1000)/(1+Dados!C77*Dados!C59*(1/Dados!C8+D9^2/Dados!C9));0)
+   | R, S | σp,i e Pi no ato | =P9-Q9; =Dados!C59*R9*1000
+   | T | σcp0 no nível do cabo | =(-S9/Dados!C8-S9*D9^2/Dados!C9+Esforcos!D9*D9/Dados!C9)/1000
+   | U | σp,i/fptk | =R9/Dados!C60
+   | V | ψ1000 (relaxação, RB) | interpolação linear: 0 abaixo de 0,5; 1,3 % em 0,6; 2,5 % em 0,7; 3,5 % em 0,8
+   | W, X | ψ∞ e χ | =2,5*V9; =-LN(1-W9)
+   | Y | η = 1 + e²Ac/Ic | =1+D9^2*Dados!C8/Dados!C9
+   | Z | Δσp progressivas | fórmula da NBR 6118 abaixo
+   | AA, AB | σp,∞ e P∞ | =R9-Z9; =Dados!C59*AA9*1000
+   | AC, AD | Pi/Pj e P∞/Pi | =S9/Dados!C68; =AB9/S9
+[34] CODE \Delta\sigma_p=\frac{|\varepsilon_{cs}|E_p+\alpha_p|\sigma_{cp0}|\varphi+\sigma_{p0}\chi}{(1+\chi)+(1+0{,}5\varphi)\,\alpha_p\,\eta\,\rho_p}
+[35] Na planilha: =(ABS(Dados!C74)*Dados!C65+Dados!C76*ABS(T9)*Dados!C73+R9*X9)/((1+X9)+(1+0,5*Dados!C73)*Dados!C76*Y9*Dados!C78).
+[36] Conferência desta aba
+[37] TABLE
+   | Ponto | Valor esperado
+   | x = 4 m (linha 16) | e = 0,280 m; σ atrito = 1355,1 MPa; Pi = 1178,0 kN; P∞ = 941,7 kN
+   | x = 10 m (linha 28) | e = −0,280 m; σ atrito = 1245,3 MPa; Pi = 1212,8 kN; P∞ = 975,7 kN
+   | Σα no cabo inteiro | 1,013 rad; comprimento do arco 20,09 m
+[38] ## Passo 4: aba Hiperestatico
+[39] O momento secundário da protensão vem do método das forças: retire o apoio B, calcule o deslocamento causado pela protensão e imponha a reação R_B que o anula.
+[40] CODE M_{iso}=-P\cos\alpha\;e,\qquad R_B=\frac{6}{L^3}\int_0^{2L} M_{iso}\,m\,dx,\qquad M_{hip}(x)=-R_B\,m(x)
+[41] m(x) é o momento da carga unitária em B na viga isostática de 2L: m = x/2 para x ≤ L e (2L − x)/2 depois.
+[42] TABLE
+   | Col. | Conteúdo | Fórmula da linha 9
+   | A | x | =Tracado_Perdas!B9
+   | B | m(x) | =SE(A9<=Dados!C5; A9/2; (2*Dados!C5-A9)/2)
+   | C | M_iso no ato | =-Tracado_Perdas!S9*Tracado_Perdas!G9*Tracado_Perdas!D9
+   | D | M_iso·m no ato | =C9*B9
+   | E, F | M_iso e M_iso·m em t∞ | como C e D, com P∞ (coluna AB)
+   | G, H | M_hip no ato e em t∞ | =-$H$3*B9; =-$H$4*B9
+[43] Nas células de resumo, calcule a integral pela regra do trapézio com passo de 0,5 m:
+[44] * H3 (R_B no ato): =6*0,5*(SOMA(D8:D48)-0,5*(D8+D48))/Dados!C5^3
+[44] * H4 (R_B em t∞): =6*0,5*(SOMA(F8:F48)-0,5*(F8+F48))/Dados!C5^3
+[44] * J3 e J4 (M_hip em B): =-H3*Dados!C5/2 e =-H4*Dados!C5/2
+[45] Conferência: R_B(t∞) = −13,78 kN e M_hip em B(t∞) = +68,9 kN·m; no ato, R_B = −16,94 kN e M_hip,B = +84,7 kN·m. Teste de sanidade: com um cabo concordante (e igual à linha de momentos da carga) o hiperestático deve dar quase zero.
+[46] ## Passo 5: abas Tensoes e Fuso
+[47] 5.1 Tensoes (colunas A a W)
+[48] CODE \sigma_1=-\frac{N}{A_c}+\frac{M_P+M}{W},\qquad \sigma_2=-\frac{N}{A_c}-\frac{M_P+M}{W}
+[49] TABLE
+   | Col. | Conteúdo | Fórmula da linha 9
+   | A, B | x e e | =Tracado_Perdas!B9; =Tracado_Perdas!D9
+   | C, D | N_i e N∞ | =Tracado_Perdas!S9*Tracado_Perdas!G9; =Tracado_Perdas!AB9*Tracado_Perdas!G9
+   | E, F | M_P no ato e em t∞ | =Hiperestatico!C9+Hiperestatico!G9; =Hiperestatico!E9+Hiperestatico!H9
+   | G, H | σ1p e σ2p no ato | =-C9/Dados!C8/1000+E9/Dados!C10/1000; com sinal − no segundo termo
+   | I, J | σ1p e σ2p em t∞ | mesma fórmula com D9 e F9
+   | K, L | σ1 e σ2 no ato | soma de ± Esforcos!D9/Dados!C10/1000 (peso próprio)
+   | M, N | CFQ (ELS-D) | =I9+Esforcos!H9/Dados!C10/1000; =J9-Esforcos!I9/Dados!C10/1000
+   | O, P | CR (ELS-F) | =I9+Esforcos!J9/Dados!C10/1000; =J9-Esforcos!K9/Dados!C10/1000
+   | Q, R | CR para ELS-CE (compressão) | =J9-Esforcos!J9/Dados!C10/1000; =I9+Esforcos!K9/Dados!C10/1000
+   | S a V | verificações | =SE(E(K9<=Dados!C26;L9<=Dados!C26;K9>=-Dados!C27;L9>=-Dados!C27);"OK";"ARMAR"); ELS-D: ambos ≤ 0; ELS-F: ≤ Dados!C25; ELS-CE: ≥ −Dados!C28
+   | W | As,ato (σs = 250 MPa) | tração resultante do triângulo de tensões dividida por 250 MPa, em cm²
+[50] Na linha 4, calcule os extremos de cada coluna (máximo de tração e mínimo de compressão); a linha 5 guarda a compressão mínima do ato.
+[51] Conferência dos extremos: ato σ1 máx = 3,90 MPa (acima de 2,70, então "ARMAR" no apoio central); CFQ σ1 máx = −0,45 e σ2 máx = −0,50 MPa; CR σ1 máx = 0,07 e σ2 máx = 1,83 MPa (limite 2,43); compressão máxima em serviço = −9,06 MPa (σ1, M−) e −7,14 MPa (σ2, M+); compressão mínima no ato = −12,88 MPa.
+[52] 5.2 Fuso
+[53] O fuso limite é a faixa de e_lp em que todas as tensões respeitam os limites. Para cada limite isolando e_lp na fórmula das tensões:
+[54] CODE e_{lp}\ge\frac{M-\sigma_{lim}W}{N}-k,\qquad e_{lp}\le\frac{M+\sigma_{lim}W}{N}+k,\qquad e_{lp}=e-\frac{M_{hip}}{N},\quad k=\frac{W}{A_c}
+[55] TABLE
+   | Col. | Conteúdo | Fórmula da linha 9
+   | A, B | x e e (cabo) | =Tracado_Perdas!B9; =Tracado_Perdas!D9
+   | C | e_lp,∞ | =B9-Hiperestatico!H9/Tensoes!D9
+   | D a H | limites inferiores | ato tração; ato compressão; ELS-D; ELS-F; ELS-CE, cada um com a expressão de e_lp ≥ acima
+   | I a M | limites superiores | os cinco limites correspondentes com e_lp ≤
+   | N, O | fuso | N = =MÁXIMO(D9:H9); O = =MÍNIMO(I9:M9)
+   | P | verificação | =SE(E(C9>=N9;C9<=O9);"SIM";SE(E(C9>=MÁXIMO(F9:H9);C9<=MÍNIMO(K9:M9));"SIM c/ As,ato";"NÃO"))
+   | Q | limite de cobrimento | =Dados!C42
+[56] Os limites do ato usam N_i, Mg0 e os limites do ato (Dados!C26 e C27); os de serviço usam N∞ e as combinações CFQ e CR de Esforcos. Para exibir o fuso, trace e_lp, N e O em um gráfico de dispersão com x no eixo horizontal.
+[57] ## Passo 6: abas Cortante, ELU e Alongamento
+[58] 6.1 Cortante (colunas A a AB)
+[59] O cortante de cálculo inclui a componente vertical da protensão, Vp = −P senα, mais o hiperestático V_hip = ∓R_B/2 (sinal trocado entre os dois vãos).
+[60] TABLE
+   | Col. | Conteúdo | Fórmula
+   | B | Vp,iso | =-Tracado_Perdas!AB9*Tracado_Perdas!H9
+   | C, D | V_hip e Vp total | =SE(A9<=Dados!C5;-Hiperestatico!H4/2;Hiperestatico!H4/2); =B9+C9
+   | E a G | Vg, Vq+, Vq− | =Esforcos!L9, M9, N9
+   | H a M | seis combinações | 0,9Vp + 1,4Vg (+1,4Vq+) (+1,4Vq−); 1,2Vp + 1,0Vg (+1,4Vq+) (+1,4Vq−)
+   | N | Vsd | máximo do módulo das seis combinações
+   | O a R | Msd+, Msd−, módulo de Msd e esse módulo com o máximo entre seções adjacentes | 1,4·(Mg+Mq) em cada sinal; máximo do módulo com as seções vizinhas
+   | S | M0 de descompressão | 0,9·(N·k ∓ M_P), conforme o lado tracionado
+   | T | β | =MÍNIMO(1+S9/MÁXIMO(R9;0,000001);2)
+   | U | τc,cor | =T9*Dados!C88
+   | V a X | τwd; τd; asw/n | =N9/(Dados!C91*Dados!C87)/1000; =(V9-U9)/0,9; =MÁXIMO(W9;0)/(Dados!C84/Dados!C62)*Dados!C91*10000/2
+   | Y, Z | asw,mín/n e asw,calc/n | =Dados!C90*Dados!C6*10000/2; =MÁXIMO(X9;Y9)
+   | AA, AB | VRd2 e verificação | =Dados!C89*1000*Dados!C91*Dados!C87; =SE(N9<=AA9;"OK";"NÃO")
+[61] Conferência: Vsd máximo (apoio B) = 388 kN; VRd2 = 986 kN; estribos Ø8 c/25 de 2 ramos (4,02 cm²/m) contra 3,96 cm²/m necessários junto a B e 3,48 cm²/m de mínimo. A bainha reduz a largura útil para 23,9 cm.
+[62] 6.2 ELU (duas colunas: apoio B na linha 28 e vão em x = 4 m na linha 16)
+[63] Monte a aba na vertical, uma grandeza por linha, nas colunas B (apoio B) e C (vão). Equilíbrio com pré-alongamento e aço bilinear:
+[64] CODE \varepsilon_{p0}=\frac{\sigma_{p\infty}}{E_p}+\frac{P_\infty}{A_cE_{cs}}\left(1+\frac{e^2A_c}{I_c}\right),\qquad x=\frac{T_p-C_s}{0{,}85f_{cd}\cdot0{,}8b_w},\qquad M_{Rd}=C_c(d_p-0{,}4x)+C_s(d_p-d')
+[65] TABLE
+   | Linha | Grandeza | Fórmula em B (apoio B)
+   | 7 | e do cabo | =Tracado_Perdas!D28
+   | 8 | dp, cabo até a face comprimida | B: =Dados!C7/2-B7; C: =Dados!C7/2+C7
+   | 9, 10 | P∞ e σp,∞ | =Tracado_Perdas!AB28; =Tracado_Perdas!AA28
+   | 11 | εp0 | fórmula acima
+   | 12, 13 | A' e d' (entradas) | 4,91 cm² e 0,05 m em B; 2,45 cm² e 0,05 m no vão
+   | 14, 15 | Tp e Cs | =Dados!C59*Dados!C63*1000; =B12*0,0001*Dados!C84/Dados!C62*1000
+   | 16, 17 | x e x/dp | =(B14-B15)/(0,85*Dados!C14*1000*0,8*Dados!C6); =B16/B8
+   | 18 a 20 | εp, escoamento de Ap e de A' | =B11+0,0035*(B8-B16)/B16 e testes εp ≥ fpyd/Ep e ε's ≥ fyd/Es
+   | 21, 22 | Cc e MRd | =B14-B15; =B21*(B8-0,4*B16)+B15*(B8-B13)
+   | 23 a 26 | M_hip, γp, Msd | M_hip = =Hiperestatico!H28; γp = 0,9 se favorável e 1,2 se desfavorável; Msd = externo + γp·M_hip
+   | 27 a 30 | verificações | módulo de Msd ≤ MRd; MRd/módulo de Msd; x/dp ≤ 0,45; Md,mín = 0,8·W·1,3·fct,m
+[66] Conferência: no apoio B, εp0 = 5,23‰, x/dp = 0,39, MRd = 917 kN·m contra Msd = 725 kN·m (1,26); no vão, εp0 = 5,05‰, x/dp = 0,43, MRd = 896 kN·m contra 562 kN·m (1,60).
+[67] 6.3 Alongamento
+[68] CODE \Delta l=\int_0^{L}\frac{\sigma_p(s)}{E_p}\,ds\approx\sum\frac{\sigma_i+\sigma_{i+1}}{2}\frac{\Delta s}{E_p}
+[69] * B4 (por extremidade): =SOMARPRODUTO((Tracado_Perdas!M9:M28+Tracado_Perdas!M8:M27)/2;Tracado_Perdas!K9:K28)/Dados!C65*1000
+[69] * B5: =2*B4; B6 e B7: =0,95*B4 e =1,05*B4; B8: cravação em mm; B9: =B4-B8; B10: comprimento total do arco =Tracado_Perdas!L48; B11: Σα.
+[70] Conferência: 67,4 mm por extremidade (134,8 mm no total), tolerância de 64,0 a 70,7 mm e 61,4 mm líquidos após a cravação; comprimento do cabo 20,09 m e Σα = 1,013 rad.
+[71] ## Passo 7: abas Flecha_PC, CA e CA_Flecha
+[72] 7.1 Flecha_PC (seção não fissurada, colunas A a R)
+[73] Integre duas vezes a curvatura, com y(0) = y(L) = 0, para três casos: peso permanente Mg, protensão M_P,∞ e a combinação quase permanente.
+[74] CODE y''=\kappa=-\frac{M}{E_{cs}I_c},\qquad \theta_i=\theta_{i-1}+\tfrac12(\kappa_i+\kappa_{i-1})\Delta x,\qquad y_i=y_{i-1}+\tfrac12(\theta_i+\theta_{i-1})\Delta x
+[75] TABLE
+   | Col. | Conteúdo | Fórmula da linha 9
+   | B, C, D | Mg; ψ2·Mq (ambos os vãos); M_P,∞ | =Esforcos!E9; =Dados!C35*(3*Dados!C33*Dados!C5*Esforcos!C9/8-Dados!C33*Esforcos!C9^2/2); =Tensoes!F9
+   | E | M_qp líquido | =B9+C9+D9
+   | F, G, H | κ de g, de P e da combinação | =-B9/(Dados!C20*1000*Dados!C9) e análogas
+   | I a K | θ_g, y_g bruto, δ_g (mm) | trapézio; =(J9-J$28*A9/Dados!C5)*1000 (corrige o apoio em x = L)
+   | L a N | o mesmo para a protensão | θ_P, y_P, δ_P
+   | O a Q | o mesmo para a combinação | θ_qp, y_qp, δ_qp
+   | R | δ com fluência | =Q9*(1+Dados!C73)
+[76] Resumo (linhas 3 e 4): máx |δ_g|, máx |δ_P|, δ_qp,∞ mínimo =MÍNIMO(R8:R28) e o limite L/250 = 40 mm. Conferência: δ_qp,∞ = −2,8 mm (contraflecha), muito abaixo de 40 mm.
+[77] 7.2 CA (concreto armado, mesma seção)
+[78] Monte a aba na vertical, com as colunas B (apoio B) e C (vão), no mesmo molde do ELU.
+[79] TABLE
+   | Linha | Grandeza | Fórmula em B
+   | 5, 6 | d (0,82 m, duas camadas) e Md | =1,4*ABS(Esforcos!K28); no vão =1,4*Esforcos!J16
+   | 7, 8 | Kmd e x/d | =B6/(Dados!C6*B5^2*Dados!C14*1000); =1,25*(1-RAIZ(1-2*B7/0,85))
+   | 9, 10 | x e As,calc | =B8*B5; =B6/(Dados!C84/Dados!C62*1000*(B5-0,4*B9))*10000
+   | 11, 12 | n de Ø20 e As,adot | 8 (B) e 6 (C); =B11*3,1416
+   | 14 | Mr = 1,5·fct,m·Ic/yt | =1,5*Dados!C15*1000*Dados!C9/(Dados!C7/2)
+   | 15 a 19 | Ma, αe, x_II, I_II, σs | Ma = módulo de (Mg + ψ1·Mq); αe = Es/Ecs; x_II pela equação do 2º grau; σs = αe·Ma·(d − x_II)/I_II
+   | 20 a 23 | ρri, wk1, wk2, wk | =B12/10000/(Dados!C6*(0,055+7,5*0,02)); expressões da NBR 6118 17.3.3.2; wk = mínimo
+   | 24 a 27 | Vsd, Vc, asw/s total, asw,mín | =1,4*ABS(Esforcos!L28+Esforcos!N28); =0,6*Dados!C17*1000*Dados!C6*B5; =MÁXIMO(B24-B25;0)/(0,9*B5*Dados!C84/Dados!C62*1000)*10000; =Dados!C90*Dados!C6*10000
+[80] CODE w_k=\min\left\{\frac{\phi}{12{,}5\eta_1}\frac{\sigma_s}{E_s}\frac{3\sigma_s}{f_{ct,m}},\ \frac{\phi}{12{,}5\eta_1}\frac{\sigma_s}{E_s}\left(\frac{4}{\rho_{ri}}+45\right)\right\}
+[81] Conferência: As,calc = 25,1 cm² em B (8 Ø20) e 18,9 cm² no vão (6 Ø20); wk ≈ 0,10 mm (limite 0,3 mm).
+[82] 7.3 CA_Flecha (Branson com rigidez variável)
+[83] Colunas: M_qp = Mg + ψ2·Mq; As (8Ø20 sobre B, 6Ø20 no vão); x_II; I_II; Ie de Branson; κ = −M/(Ecs·Ie); depois θ, y bruto e δ em mm com a mesma integração da Flecha_PC. Multiplique por (1 + αf), com αf = (2 − 0,68·0,996)/(1 + 50·0) = 1,32. Conferência: δ total ≈ +7,4 mm (para baixo).
+[84] ## Passo 8: abas Niveis e Niveis_Comparativo
+[85] A NBR 6118 (Tab. 13.4) define três níveis de protensão. Para pós-tração em CAA II o mínimo é o nível 2.
+[86] TABLE
+   | Nível | ELS-D (descompressão) | ELS-F (formação de fissuras) | ELS-W (abertura)
+   | 3, completa | comb. frequente, σ ≤ 0 | comb. rara, σ ≤ 1,2·fctk,inf | não exigido
+   | 2, limitada | comb. quase permanente, σ ≤ 0 | comb. frequente, σ ≤ 1,2·fctk,inf | não exigido
+   | 1, parcial | não exigido | não exigido | comb. frequente, wk ≤ 0,2 mm
+[87] 8.1 Aba Niveis (verifica o projeto que está em Dados)
+[88] Use a mesma tabela de 41 estações (linhas 8 a 48) com estas colunas:
+[89] TABLE
+   | Col. | Conteúdo | Fórmula da linha 9
+   | A | x | =Tracado_Perdas!B9
+   | B, C | σ1 e σ2 na quase permanente | =Tensoes!I9+(Esforcos!E9+Dados!C35*Esforcos!F9)/Dados!C10/1000; =Tensoes!J9-(Esforcos!E9+Dados!C35*Esforcos!G9)/Dados!C10/1000
+   | D, E | σ1 e σ2 na frequente | =Tensoes!M9; =Tensoes!N9
+   | F, G | σ1 e σ2 na rara | =Tensoes!O9; =Tensoes!P9
+   | H, I | nível 3: ELS-D e ELS-F | =SE(E(D9<=0;E9<=0);"OK";"NÃO"); =SE(E(F9<=Dados!C25;G9<=Dados!C25);"OK";"NÃO")
+   | J, K | nível 2: ELS-D e ELS-F | =SE(E(B9<=0;C9<=0);"OK";"NÃO"); =SE(E(D9<=Dados!C25;E9<=Dados!C25);"OK";"NÃO")
+   | L | nível 1: situação da seção | =SE(MÁXIMO(D9;E9)>Dados!C25;"fissurada: verificar wk";"não fissurada")
+[90] Na linha 3, resuma cada critério com =SE(CONT.SE(H8:H48;"NÃO")=0;"ATENDE";"NÃO ATENDE"); na linha 4, o máximo de cada coluna de tensão.
+[91] 8.2 Como reproduzir os níveis 2 e 1
+[92] O nível de protensão muda só o número de cordoalhas e o diâmetro da bainha. Para cada nível, altere em Dados C57 (cordoalhas por cabo) e C40 (Ø da bainha) e leia a aba Niveis:
+[93] TABLE
+   |  | Nível 3 | Nível 2 | Nível 1
+   | C57, cordoalhas por cabo | 5 | 4 | 2
+   | C40, Ø da bainha (m) | 0,061 | 0,055 (adotado) | 0,045 (adotado)
+   | Atende ao nível 3? | sim | não: ELS-F rara fica 1,49 MPa acima | não
+   | Atende ao nível 2? | sim | sim | não: ELS-D quase permanente
+   | Tração máxima na frequente (MPa) | −0,45 | −1,04 | +3,94, fissura em B
+[94] Para o ELU dos níveis 2 e 1, a armadura passiva passa a ser tracionada em vez de comprimida: no nível 2, 2 Ø16 sobre B; no nível 1, 4 Ø20 sobre B e 2 Ø20 no vão. Na aba ELU, substitua A' por As tracionada, com ds = h − 0,06 m, Ts = As·fyd e esta equação de equilíbrio:
+[95] CODE x=\frac{T_p+T_s}{0{,}85f_{cd}\cdot0{,}8b_w},\qquad M_{Rd}=T_p(d_p-0{,}4x)+T_s(d_s-0{,}4x)
+[96] Confira o escoamento da armadura passiva (εs ≥ fyd/Es) e que x/dp ≤ 0,45.
+[97] 8.3 Fissuração no nível 1
+[98] A abertura wk usa as fórmulas do passo 7.2, com σs da seção fissurada sob a força de protensão N∞ e o momento M = Mext + M_P na combinação frequente. Esta análise não está numa aba da planilha entregue (foi feita em Python); para reproduzi-la, monte uma tabela pequena e use Atingir meta (Goal Seek). Despreze o acréscimo de tensão do cabo aderente, o que fica a favor da segurança.
+[99] CODE N_\infty=C_c-T_s,\qquad M=M_{ext}+M_P
+[100] Passos: (1) arbitre x; (2) calcule a deformação do concreto por εc = N∞ / (0,5·Ecs·bw·x − Es·As·(ds − x)/x); (3) Cc = 0,5·Ecs·εc·bw·x e Ts = Es·As·εc·(ds − x)/x; (4) M_calc = Cc·(h/2 − x/3) + Ts·(ds − h/2); (5) use Atingir meta para fazer M_calc igual a M variando x; (6) σs = Es·εc·(ds − x)/x e wk pelas fórmulas do 7.2, com Ø = 20 mm e Acri = bw·(0,05 + 7,5Ø). Se a tensão de tração em serviço ficar abaixo de 1,2·fctk,inf, a seção não fissura e não há wk a calcular.
+[101] Conferência no nível 1: σs = 94 MPa em B com 4 Ø20 e wk = 0,03 mm (limite 0,2 mm). No vão a seção não fissura na frequente (1,68 MPa).
+[102] 8.4 Aba Niveis_Comparativo
+[103] Tabela de 3 colunas (níveis 3, 2 e 1) com as entradas amarelas (cordoalhas por cabo) e fórmulas para Ap (=C9*Dados!C58), Pj (=0,74*Dados!C60*C10/10), carga equilibrada 8·f·P∞,mín/L² e sua fração de g + ψ2·q, além da massa de aço ativo (cordoalhas × 20,09 m × 0,793 kg/m). Margens ELS, P∞, armaduras passivas, MRd/Msd, wk e flecha são valores que você obtém rodando cada nível (passo 8.2) e digita como resultado.
+[104] ## Conferência final, valores de referência e erros comuns
+[105] Se todos os valores abaixo baterem, a planilha está correta. Quando um falhar, volte à aba que o produz e use a tabela de erros mais abaixo.
+[106] TABLE
+   | Aba | Grandeza | Valor de referência
+   | Dados | Ap; p_bal; e_max; Pj | 9,87 cm²; 27,5 kN/m; 37,45 cm; 1388 kN
+   | Esforcos | Mg e Mq,mín em B (x = 10 m) | −250,0 e −312,5 kN·m
+   | Tracado_Perdas | alcance xa; Σα; comprimento do cabo | 9,23 m; 1,013 rad; 20,09 m
+   | Tracado_Perdas | P∞ em x = 4 m e em B | 941,7 kN e 975,7 kN
+   | Hiperestatico | R_B e M_hip,B em t∞ | −13,78 kN e +68,9 kN·m
+   | Tensoes | σ1 máx no ato; As,ato | 3,90 MPa ("ARMAR" em B); 4,9 cm²
+   | Tensoes | CFQ máx; CR máx | −0,45 MPa; 1,83 MPa (limite 2,43)
+   | Cortante | Vsd máx; VRd2 | 388 kN; 986 kN
+   | ELU | MRd/Msd em B e no vão | 1,26 e 1,60
+   | Alongamento | por extremidade; total; líquido | 67,4 mm; 134,8 mm; 61,4 mm
+   | Flecha_PC | δ_qp,∞ mínimo | −2,8 mm (contraflecha)
+   | CA | As em B e no vão; wk | 25,1 cm² (8 Ø20) e 18,9 cm² (6 Ø20); 0,10 mm
+   | CA_Flecha | δ total | +7,4 mm
+   | Niveis | com C57 = 5, 4 e 2 | com 5 cordoalhas atende aos níveis 3 e 2; com 4, ao nível 2; com 2, só ao nível 1 (fissura em B)
+[107] Erros mais comuns
+[108] TABLE
+   | Sintoma | Causa provável
+   | Hiperestático com sinal trocado | sinal de e: positivo abaixo do CG, e o apoio central tem e negativo
+   | Σα maior que 1,013 rad | usou α em vez do módulo de Δα entre estações consecutivas
+   | xa errado ou #N/D | alcance da cravação: conferir a contagem em Dados!C79 e que Tracado_Perdas!O8:O28 cresça com x
+   | σ das tensões fora da ordem de grandeza | falta dividir por 1000 (kN/m² para MPa) ou usou W em vez de Ac
+   | Resultados diferentes do XLSX original em linhas fora do vão | referência relativa em vez de absoluta para Dados
+   | ELU com x/dp > 0,45 | esquecer A' em B (4,91 cm²) e no vão (2,45 cm²)
+   | Funções não reconhecidas | idioma do Excel: troque SE/E/MÁXIMO/RAIZ pelos nomes em inglês IF/AND/MAX/SQRT ou vice-versa
+[109] Dica de entrega: ao terminar, trave as células de fórmulas, deixe só as células amarelas editáveis e anote no topo de Dados que g adicional (13,25 kN/m) e q (25 kN/m) são valores adotados, a substituir pelos da viga biapoiada.

@@ -1,0 +1,210 @@
+[0] ## Roteiro para reproduzir a viga contínua protendida de 2 vãos
+[1] byline
+[2] Este roteiro leva o aluno, em 8 passos, do enunciado ao projeto completo da viga contínua protendida de 2 vãos de 10 m, com a seção 30 × 90 cm em C30. Ao final, ele deve reproduzir os valores do gabarito (seção "Gabarito") com tolerância de 1 %.
+[3] ## Objetivo e pré-requisitos
+[4] * Objetivo: dimensionar a protensão (nível 3, completa), verificar ELS e ELU e comparar com os níveis 2 e 1 e com o concreto armado.
+[4] * Pré-requisitos: método das forças para viga contínua, NBR 6118 (cap. 9, 13, 17 e 19), perdas de protensão, momento hiperestático.
+[4] * Ferramentas: planilha ou Python/Excel. O aluno monta tudo a partir de uma aba de dados, sem números fixos nas fórmulas.
+[4] * Convenção de sinais: tração positiva e compressão negativa; M positivo traciona a fibra inferior; excentricidade e positiva abaixo do CG.
+[5] Como trabalhar: cada passo termina com um "confira" de 1 a 3 números. Só avance quando bater; se não bater, o erro está naquele passo.
+[6] ## Fluxograma BPMN do roteiro
+[7] embed
+[8] O professor entrega o enunciado e o aluno percorre os passos 1 a 8, repetindo cada um até bater o "confira". Se o ELS não atende, aumenta as cordoalhas e volta ao passo 2; se o ELU não atende, acrescenta armadura passiva e refaz o passo 7.
+[9] ## Dados do problema
+[10] Monte uma aba "Dados" com os valores abaixo; as demais abas só referenciam essas células.
+[11] TABLE
+   | Grandeza | Valor
+   | Vãos | 2 × 10,0 m, apoios simples nos três pontos
+   | Seção | 30 × 90 cm; Ac = 0,270 m²; Ic = 0,01823 m⁴; W = 0,0405 m³; k = W/Ac = 0,15 m
+   | Concreto | C30, CAA II; fck = 30 MPa; fcd = 21,43 MPa; Eci = 30.672 MPa; Ecs = 26.838 MPa
+   | Resistências no ato (7 dias) | fcj = 20,5 MPa; fct,m,j = 2,25 MPa
+   | Resistências em serviço | fct,m = 2,90 MPa; fctk,inf = 2,03 MPa; 1,2·fctk,inf = 2,43 MPa
+   | Aço ativo | CP190 RB Ø12,7; Ap1 = 0,987 cm²; fptk = 1900 MPa; Ep = 200 GPa
+   | Tensão na protensão | σp,j = 0,74·fptk = 1406 MPa; atrito μ = 0,20 e k = 0,002 /m; cravação 6 mm
+   | Cobrimento | c = 3,5 cm; estribo Ø10 mm; bainha Ø61 mm (5 cordoalhas)
+   | Cargas | g0 = 6,75 kN/m (peso próprio); g adicional = 13,25 kN/m; g = 20,00 kN/m; q = 25,00 kN/m
+   | Combinações | ψ1 = 0,4; ψ2 = 0,3; γg = γq = 1,4; γp = 1,2 (desfavorável) e 0,9 (favorável)
+   | Fluência e retração | φ = 2,9; εcs = −0,23 ‰ (UR 75 %)
+[12] Atenção: g adicional, q, φ e εcs são valores adotados; o aluno deve substituí-los pelos do enunciado da viga biapoiada de referência (30 × 90, L = 10 m, 12 CP190, e = 35 cm). Mantenha a planilha parametrizada para recalcular tudo.
+[13] Confira: d' = 3,5 + 1,0 + 6,1/2 = 7,55 cm e e_max = 45 − 7,55 = 37,45 cm.
+[14] ## Passo 1: esforços da viga contínua
+[15] O apoio central B é a redundante: resolva por flexibilidade com EI constante e monte as envoltórias com três padrões de sobrecarga (os dois vãos, só o vão 1, só o vão 2).
+[16] CODE M_B = -\frac{wL^2}{8}, \qquad R_A = \frac{3wL}{8}, \qquad M(x) = R_A\,x - \frac{w x^2}{2}
+[17] * Divida cada vão em 20 trechos de 0,5 m (41 seções de 0 a 20 m).
+[17] * Calcule Mg0 (peso próprio), Mg (g total) e Mq para cada padrão de sobrecarga.
+[17] * Obtenha Mq,max e Mq,min por seção (máximo e mínimo entre os padrões).
+[17] * Monte as combinações: frequente (Mg + ψ1·Mq), quase permanente (Mg + ψ2·Mq), rara (Mg + Mq) e última (1,4·(Mg + Mq)).
+[18] Confira (g = 20, q = 25 kN/m):
+[19] TABLE
+   | Seção | Mg (kN·m) | Mq,max (kN·m) | Mq,min (kN·m)
+   | Apoio B (x = 10 m) | −250,0 | −156,3 | −312,5
+   | Vão, x = 4 m | +140,0 | +237,5 | −
+   | Vão, x = 3,75 m (máx. de Mg) | +140,6 | − | −
+[20] No apoio B, Vsd,max = 388 kN no ELU (será usado no cortante).
+[21] ## Passo 2: nível de protensão e força P
+[22] O projeto principal usa o nível 3 (protensão completa); para pós-tração em CAA II a NBR 6118 indica no mínimo o nível 2. Escreva os critérios na planilha como células que o aluno pode trocar de nível.
+[23] TABLE
+   | Nível | ELS-D (descompressão) | ELS-F (formação de fissuras) | ELS-W
+   | 3 – completa | comb. frequente: σ ≤ 0 | comb. rara: σ ≤ 1,2·fctk,inf | —
+   | 2 – limitada | comb. quase permanente: σ ≤ 0 | comb. frequente: σ ≤ 1,2·fctk,inf | —
+   | 1 – parcial | — | — | comb. frequente: wk ≤ 0,2 mm
+[24] Estimativa por balanceamento. A protensão equilibra g + ψ2·q e a flecha do cabo por tramo é a corda entre a ancoragem e o apoio:
+[25] CODE p_{bal} = g + \psi_2 q = 20{,}00 + 0{,}3\cdot 25{,}00 = 27{,}50\ \text{kN/m}
+[26] CODE f \approx e_{vão} + \frac{e_{sup}}{2} = 0{,}28 + 0{,}14 = 0{,}42\ \text{m}, \qquad P_\infty = \frac{p_{bal} L^2}{8 f} = \frac{27{,}50\cdot 10^2}{8\cdot 0{,}42} = 818\ \text{kN}
+[27] Esse é só o ponto de partida: o valor final vem das verificações de ELS (Passo 6) e do ELU. Aumente o número de cordoalhas até as margens ficarem não negativas; o resultado é o mínimo de cordoalhas do nível.
+[28] Adotado (nível 3): 2 cabos de 5 cordoalhas = 10 cordoalhas, Ap = 9,87 cm².
+[29] CODE P_j = A_p\,\sigma_{p,j} = 9{,}87\cdot 10^{-4}\cdot 1406\cdot 10^{3} = 1388\ \text{kN}
+[30] Confira: P∞ fica entre 939 e 1050 kN ao longo da viga; carga equilibrada por P∞,min = 31,6 kN/m, 115 % de g + ψ2·q.
+[31] ## Passo 3: traçado do cabo e fuso limite
+[32] O cabo é formado por duas parábolas por tramo, espelhadas no segundo tramo: uma parábola de vértice em x0 no vão e uma parábola reversa de comprimento λ = 1,0 m junto ao apoio central. Adote e = 0 nas ancoragens (CG), e_vão = +28 cm e e_sup = −28 cm (acima do CG) sobre B, abaixo do limite e_max = 37,45 cm.
+[33] CODE e(x) = e_{vão} - a_A (x-x_0)^2 \quad (0\le x\le L-\lambda), \qquad e(x) = -e_{sup} + a_B (L-x)^2 \quad (L-\lambda\le x\le L)
+[34] CODE a_A = \frac{e_{vão}}{x_0^2}, \qquad a_B = \frac{a_A\,(x_i - x_0)}{\lambda}, \qquad x_i = L-\lambda
+[35] O valor de x0 sai de impor valor e inclinação iguais em x_i (equação do 2º grau em x0).
+[36] Confira: x0 = 3,926 m; aA = 0,01817 m⁻¹; aB = 0,0922 m⁻¹. Excentricidades: x = 2 m → 0,213 m; x = 4 m → 0,280 m; x = 6 m → 0,202 m; x = 8 m → −0,022 m; x = 10 m → −0,280 m.
+[37] Fuso limite. Em cada seção calcule cinco limites inferiores e cinco superiores para a linha de pressões, com N = P·cosα e k = W/Ac = 0,15 m:
+[38] CODE e_{lp} \ge \frac{M - \sigma_{lim} W}{N} - k \ \ (\text{inferior}), \qquad e_{lp} \le \frac{M + \sigma_{lim} W}{N} + k \ \ (\text{superior})
+[39] * Inferiores: ato (tração na fibra inferior), ato (compressão na fibra superior), ELS-D, ELS-F (fibra inferior) e ELS-CE (fibra superior); o fuso usa o maior deles.
+[39] * Superiores: ato (compressão na fibra inferior), ato (tração na fibra superior), ELS-D e ELS-F (fibra superior) e ELS-CE (fibra inferior); o fuso usa o menor.
+[39] * No ato use Mg0 e Pi; em serviço use P∞ e as combinações do nível escolhido (Passo 2).
+[39] * Compare a linha de pressão e_lp = e − M_hip/N com o fuso, não a excentricidade e (o hiperestático do Passo 5 desloca a linha); isso evita falsas violações.
+[40] TABLE
+   | x (m) | e (m) | Limite inferior (m) | Limite superior (m)
+   | 0 | 0,000 | −0,150 | +0,150
+   | 2 | 0,213 | +0,039 | +0,252
+   | 4 | 0,280 | +0,146 | +0,272
+   | 6 | 0,202 | +0,050 | +0,203
+   | 8 | −0,022 | −0,160 | +0,063
+   | 10 (apoio B) | −0,280 | −0,310 | −0,326
+[41] No apoio B (9,5 a 10,5 m) o limite inferior passa do superior: a tração no ato não fecha só com o cabo e exige armadura passiva As,ato (Passo 6). O aluno deve plotar o fuso e o cabo nos 41 pontos.
+[42] ## Passo 4: perdas de protensão e alongamento
+[43] Calcule as perdas seção a seção (41 estações, Δx = 0,5 m), protendendo pelas duas extremidades. A sequência importa: cada perda usa a tensão que sobrou da anterior.
+[44] * Atrito. α é a inclinação do cabo, Σα o ângulo acumulado e s o comprimento de arco acumulado:
+[45] CODE \sigma_p(x) = \sigma_{p,j}\; e^{-(\mu \sum\alpha + k\,s)}
+[46] * Cravação das cunhas (6 mm). Ache o alcance xa onde a área entre a curva de atrito e a curva espelhada iguala Ep · 6 mm; dentro de xa a tensão vale 2·σ(xa) − σ_atrito(x).
+[46] * Encurtamento elástico (cabos protendidos em sequência, n = 2 cabos):
+[47] CODE \Delta\sigma_{ES} = \alpha_p \frac{n-1}{2n}\,\sigma_{cp0}, \qquad \alpha_p = \frac{E_p}{E_{ci,j}}, \qquad \sigma_{cp0} = -\frac{P_i}{A_c} - \frac{P_i e^2}{I_c} + \frac{M_{g0}\, e}{I_c}
+[48] Como σcp0 depende de Pi, que depende de ΔσES, resolva em forma fechada ou itere até convergir. Etapa 4: Perdas progressivas (fluência, retração e relaxação, NBR 6118 9.6.3.4.2), com ψ∞ = 2,5·ψ1000 (ψ1000 interpolado em σp,i/fptk: 0,6 → 1,3 %; 0,7 → 2,5 %; 0,8 → 3,5 %):
+[49] CODE \Delta\sigma_{prog} = \frac{|\varepsilon_{cs}|E_p + \alpha_p \sigma_{cp0}\varphi + \sigma_{p,i}\chi}{\chi_p + \chi_c\,\alpha_p\,\eta\,\rho_p}
+[50] CODE \chi = -\ln(1-\psi_\infty), \quad \chi_p = 1+\chi, \quad \chi_c = 1+0{,}5\varphi, \quad \eta = 1 + \frac{e^2 A_c}{I_c}, \quad \rho_p = \frac{A_p}{A_c}
+[51] Aqui αp usa Ecs (não Eci,j) e |σcp0| entra em módulo. Etapa 5: Alongamento por extremidade: Δl = ∫ σp,atrito(s)/Ep ds ao longo do meio cabo, antes da cravação.
+[52] Confira:
+[53] TABLE
+   | Grandeza | Valor
+   | Σα e comprimento do arco até B | 0,5064 rad; 10,05 m
+   | σp com atrito em B | 1245,3 MPa
+   | Alcance da cravação xa (por extremidade) | 9,23 m
+   | ΔσES em B (σcp0 = −8,41 MPa; αp = 7,88) | 16,6 MPa
+   | Δσ progressiva em B | 240,2 MPa
+   | Perda total em B / a 4 m da extremidade | 29,7 % / 32,1 %
+   | Alongamento por extremidade | 67,4 mm
+   | Pj / Pi,min / P∞,min / P∞,max | 1388 / 1136 / 939 / 1050 kN
+[54] A tabela completa em x = 0, 2, ..., 10 m está no memorial (aba Tracado_Perdas da planilha).
+[55] ## Passo 5: hiperestático de protensão e linha de pressão
+[56] Na viga contínua a protensão gera uma reação hiperestática em B porque o cabo deforma a viga e o apoio central impede o deslocamento. Resolva pelo método das forças, com o momento isostático da protensão como carregamento.
+[57] CODE M_{iso}(x) = P(x)\, e(x)\cos\alpha, \qquad \delta_{10} = \int \frac{M_{iso}\, m}{EI}\,dx, \qquad \delta_{11} = \int \frac{m^2}{EI}\,dx = \frac{L^3}{6EI}, \qquad R_B = -\frac{\delta_{10}}{\delta_{11}}
+[58] m(x) é o momento da carga unitária em B (m = x/2 em cada tramo). O hiperestático é linear em cada tramo, nulo nas extremidades e máximo em B. O momento total da protensão numa seção e a linha de pressão são:
+[59] CODE M_P = -N e + M_{hip}, \qquad e_{lp} = e - \frac{M_{hip}}{N}, \qquad N = P\cos\alpha
+[60] Faça a integração numérica nas 41 seções (regra do trapézio ou Simpson), uma vez com Pi (ato) e outra com P∞ (serviço).
+[61] Verificação obrigatória: com um cabo concordante (e proporcional ao diagrama de momentos de uma carga uniforme da viga contínua) o hiperestático tem de dar zero (|M_hip| < 0,4 kN·m) e ΣR = 0. Se não der, há erro de sinal em m ou na integral.
+[62] Confira:
+[63] TABLE
+   | Grandeza | Serviço (P∞) | Ato (Pi)
+   | R_B | −13,78 kN | −16,94 kN
+   | M_hip,B | +68,91 kN·m | —
+[64] ## Passo 6: verificações no ELS
+[65] Calcule as tensões normais nas fibras inferior (σ1) e superior (σ2) em cada seção, em quatro situações: ato (Mg0 e Pi), combinação frequente, rara e a compressão máxima em serviço, as três últimas com P∞.
+[66] CODE \sigma_1 = -\frac{N}{A_c} + \frac{M_{ext} + M_P}{W}, \qquad \sigma_2 = -\frac{N}{A_c} - \frac{M_{ext} + M_P}{W}, \qquad M_P = -N e + M_{hip}
+[67] Confira em x = 4 m, no ato: σ1 = −10,50 MPa e σ2 = +1,78 MPa; em B: σ1 = +3,90 MPa e σ2 = −12,88 MPa.
+[68] Limites e resultado (nível 3):
+[69] TABLE
+   | Verificação | Valor (MPa) | Limite (MPa) | Situação
+   | Ato, tração (1,2·fct,m,j) | +3,90 | ≤ 2,70 | não atende: armar (As,ato)
+   | Ato, compressão (0,7·fcj) | −12,88 | ≥ −14,36 | OK
+   | ELS-D, comb. frequente, σ1 e σ2 | −0,45 e −0,50 | ≤ 0 | OK (margem 0,45)
+   | ELS-F, comb. rara, σ1 e σ2 | +0,07 e +1,83 | ≤ 2,43 | OK (margem 0,60)
+   | ELS-CE, compressão máxima | −9,06 | ≥ −21,0 | OK
+[70] Armadura passiva no ato. Onde a tração passa do limite (9,5 a 10,5 m, face superior de B), equilibre a força de tração do bloco tracionado com σs = 250 MPa: As,ato = 4,90 cm², ou seja 4 Ø12,5 mm (4,91 cm²), prolongados além da zona 9 a 11 m com o comprimento de ancoragem.
+[71] Flecha. Integre duas vezes a curvatura da seção não fissurada, com apoios em x = 0, 10 e 20 m, para a combinação quase permanente com o efeito de P∞:
+[72] CODE y'' = -\frac{M_g + \psi_2 M_q + M_P}{E_{cs} I_c}, \qquad \delta_\infty = \delta\,(1+\varphi), \qquad \delta_{lim} = \frac{L}{250} = 40\ \text{mm}
+[73] Confira: δ_qp,∞ = −2,76 mm (contraflecha), muito abaixo do limite. A frequência do 1º modo (antissimétrico, como viga biapoiada) é f1 ≈ 7,7 Hz, acima da faixa do passo (1,6 a 2,4 Hz); o conforto dos pedestres deve ser verificado à parte.
+[74] ## Passo 7: ELU de flexão e cortante
+[75] Solicitação de cálculo. Combine as ações com γ = 1,4 e some o hiperestático com γp = 1,2 se ele for desfavorável ou 0,9 se for favorável:
+[76] CODE M_{sd} = 1{,}4\,(M_g + M_q) + \gamma_p M_{hip}
+[77] Em B o hiperestático (+68,9 kN·m) reduz o momento negativo, logo γp = 0,9: Msd = 1,4·(−250 − 312,5) + 0,9·68,9 = −725,5 kN·m. No vão (x = 4 m) o hiperestático soma, γp = 1,2: Msd = 1,4·(140 + 237,5) + 1,2·27,6 = +561,6 kN·m.
+[78] Resistência à flexão. Equilíbrio de seção retangular, com bloco 0,8x, tensão 0,85·fcd e diagrama do aço com patamar em fpyd = 1487 MPa. O pré-alongamento é
+[79] CODE \varepsilon_{p0} = \frac{\sigma_{p\infty}}{E_p} + \frac{P_\infty}{A_c E_{cs}}\left(1 + \frac{e^2 A_c}{I_c}\right), \qquad \varepsilon_p = \varepsilon_{p0} + \varepsilon_{cu}\,\frac{d_p - x}{x}, \ \ \varepsilon_{cu}=3{,}5\,‰
+[80] CODE x = \frac{T_p + T_s - C_s}{0{,}85\, f_{cd}\, 0{,}8\, b_w}, \qquad M_{Rd} = T_p(d_p - 0{,}4x) + T_s(d_s - 0{,}4x) + C_s(0{,}4x - d')
+[81] Intere em x até o equilíbrio de forças (método da bissecção). Em B a face comprimida é a inferior, com d_p = 0,73 m; no vão, a superior. A armadura passiva comprimida (A' = 4,91 cm² em B e 2,45 cm² no vão, Ø12,5 mm) entra como C_s e garante x/d ≤ 0,45.
+[82] TABLE
+   | Grandeza | Apoio B (M−) | Vão, x = 4 m (M+)
+   | εp0 | 0,00523 | 0,00505
+   | x (m) | 0,287 | 0,311
+   | x/dp | 0,393 | 0,427
+   | εp | 0,01064 | 0,00976
+   | MRd (kN·m) | 916,8 | 896,4
+   | Msd (kN·m) | −725,5 | +561,6
+   | MRd/∣Msd∣ | 1,26 | 1,60
+[83] Verifique também o momento mínimo 0,8·W·fctk,sup = 122 kN·m.
+[84] Cisalhamento (modelo I). Use a largura reduzida pela bainha e desconte a componente vertical da protensão:
+[85] CODE b_{w,red} = b_w - \tfrac{1}{2}\sum\phi_{bainha} = 0{,}239\ \text{m}, \qquad V_p = -P\sin\alpha, \qquad \tau_{wd} = \frac{V_{sd}}{b_{w,red}\, d}
+[86] CODE \frac{a_{sw}}{s} = \frac{\tau_{wd} - \tau_{c,cor}}{0{,}9\, f_{ywd}}\, b_{w,red}, \qquad \tau_{c,cor} = \beta\,(0{,}6 f_{ctd}), \ \ \beta = 1 + \frac{M_0}{M_{sd}} \le 2
+[87] Confira: Vsd,max = 388 kN em B ≤ VRd2 = 986 kN (biela). Estribos Ø8 c/25 cm de 2 ramos (4,02 cm²/m) cobrem 3,96 cm²/m necessário junto a B e o mínimo de 3,48 cm²/m, em todo o comprimento.
+[88] ## Passo 8: níveis 2 e 1 e comparação com concreto armado
+[89] Repita os passos 4 a 7 mudando só o número de cordoalhas por cabo e o nível-alvo na aba Dados; o traçado (e = 28 cm) permanece. Para cada nível procure o menor número de cordoalhas que atende às verificações, complete com passiva para o ato e para o ELU e, no nível 1, calcule a abertura de fissuras wk com a seção fissurada (protensão como carga externa, η1 = 2,25, ρri = As/Acri, Acri = bw(c + 7,5φ)).
+[90] TABLE
+   | Item | Nível 3 (completa) | Nível 2 (limitada) | Nível 1 (parcial)
+   | Cordoalhas totais (2 cabos) | 10 (2 × 5) | 8 (2 × 4) | 4 (2 × 2)
+   | Ap (cm²) / Pj (kN) | 9,87 / 1388 | 7,90 / 1110 | 3,95 / 555
+   | P∞ mín a máx (kN) | 939 a 1050 | 776 a 853 | 411 a 442
+   | Margem ELS-D do nível (MPa) | +0,45 | +1,04 | —
+   | Margem ELS-F do nível (MPa) | +0,60 | +3,14 | —
+   | Passiva no ato (cm²) | 4,9 | 3,2 | 0
+   | MRd/Msd em B / vão | 1,26 / 1,60 | 1,14 / 1,31 | 1,01 / 1,09
+   | wk em B, comb. frequente | não fissura | não fissura | 0,03 mm (≤ 0,2)
+   | Flecha final quase-permanente (mm) | −2,8 | −0,2 | +5,7
+   | Aço ativo (kg) | ≈ 159 | ≈ 127 | ≈ 64
+[91] Leitura: com 8 cordoalhas a viga atende ao nível 2, mas não ao nível 3 (a tração rara excede o limite em 1,49 MPa). No nível 1 a viga fissura em B e depende da armadura passiva (4 Ø20 mm em B e 2 Ø20 mm no vão) para o ELU. Cisalhamento, ancoragens e armadura mínima não foram reverificados para os níveis 2 e 1.
+[92] Concreto armado (mesma seção, mesmas ações). Dimensione com Md = 1,4·(Mg + Mq), fyd = 500/1,15 MPa e Kmd, e compare:
+[93] TABLE
+   | Item | Protendido, nível 3 | Concreto armado
+   | Flexão principal | Ap = 9,87 cm² + passiva 4,9 cm² | As = 25,1 cm² (8 Ø20) em B; 18,8 cm² (6 Ø20) no vão
+   | Flecha quase-permanente | −2,8 mm (contraflecha) | +7,4 mm (Branson com fluência)
+   | Fissuração em serviço | não fissura | wk ≈ 0,10 mm (< 0,3 mm)
+   | Estribos em B (Vsd ≈ 390 kN) | 3,96 cm²/m | 5,6 cm²/m
+   | Aço passivo longitudinal (estimativa) | ≈ 12 kg | ≈ 420 kg
+[94] ## Gabarito
+[95] Com os dados da seção "Dados do problema" e o projeto de nível 3 (2 cabos de 5 cordoalhas, e = 28 cm), o aluno deve chegar a estes valores. Tolerância: 1 % (0,05 MPa nas tensões).
+[96] TABLE
+   | Passo | Grandeza | Valor
+   | 1 | Mg em B / Msd em B | −250,0 kN·m / −725,5 kN·m
+   | 2 | p_bal; P∞ de balanceamento | 27,50 kN/m; 818 kN
+   | 2 | Pj | 1388 kN
+   | 3 | x0; aA; aB | 3,926 m; 0,01817; 0,0922
+   | 4 | σp em B após atrito; xa | 1245,3 MPa; 9,23 m
+   | 4 | Perda total em B | 29,7 %
+   | 4 | Alongamento por extremidade | 67,4 mm
+   | 5 | R_B(∞); M_hip,B | −13,78 kN; +68,91 kN·m
+   | 6 | Tração no ato em B | +3,90 MPa (excede 2,70: As,ato = 4,90 cm²)
+   | 6 | Margens ELS-D / ELS-F | +0,45 / +0,60 MPa
+   | 6 | Flecha quase-permanente | −2,76 mm
+   | 7 | MRd/Msd em B / vão | 1,26 / 1,60
+   | 7 | Vsd,max em B | 388 kN
+   | 8 | Cordoalhas mínimas: nível 3 / nível 2 | 10 / 8
+[97] O app de apoio (a planilha em forma de app) recalcula tudo a partir dos mesmos dados e serve de segunda conferência.
+[98] ## Entregáveis, avaliação e erros comuns
+[99] O aluno entrega três arquivos: a planilha parametrizada, o memorial de cálculo e a prancha de forma e cabos.
+[100] TABLE
+   | Entregável | O que deve conter | Peso
+   | Planilha | Aba Dados única, 41 seções, fórmulas vivas (nada digitado nos cálculos), gráfico do fuso com o cabo | 40 %
+   | Memorial | Passos 1 a 8, fórmulas com números, tabela de verificações e hipóteses adotadas | 40 %
+   | Prancha | Forma, traçado do cabo, cotas de e, ancoragens e quadro de alongamento | 20 %
+[101] Erros comuns, na ordem em que costumam aparecer:
+[102] * Comparar o fuso com a excentricidade e em vez da linha de pressão e_lp = e − M_hip/N: aparecem violações que não existem.
+[102] * Sinal do hiperestático trocado: o teste do cabo concordante (|M_hip| < 0,4 kN·m) pega o erro.
+[102] * Usar P∞ no ato ou Pi em serviço.
+[102] * Esquecer o fator (n − 1)/(2n) no encurtamento elástico, ou não repetir a iteração com Pi.
+[102] * Aplicar γp = 1,2 em B: o hiperestático ali é favorável, vale 0,9.
+[102] * Medir dp a partir da fibra errada no ELU (em B a face comprimida é a inferior).
+[102] * Ignorar a armadura passiva do ato sobre B e dar o projeto como concluído.
+[102] * Entregar com g, q, φ e εcs adotados sem avisar: troque pelos valores do enunciado e registre no memorial.
+[103] Pendências para o professor: valores reais de g e q, conferência de φ e εcs (Tab. 8.2, UR 75 %), diâmetro da bainha e reverificação de cisalhamento, ancoragens e armadura mínima nos níveis 2 e 1.

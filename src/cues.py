@@ -1,0 +1,18 @@
+CUES = [
+ (0.4, 3.4, "Traçado do cabo e fuso limite da viga contínua."),
+ (3.8, 7.8, "A viga tem dois vãos de dez metros, apoiada em A, B e C."),
+ (8.2, 10.9, "A excentricidade máxima é de trinta e sete e meio centímetros."),
+ (11.1, 19.7, "Primeiro, os cinco limites inferiores de e: tração e compressão no ato, e os estados limites de descompressão, de formação de fissuras e de compressão excessiva."),
+ (19.9, 22.1, "A envoltória é o maior deles."),
+ (22.3, 30.7, "Depois, os cinco limites superiores de e, com as mesmas verificações nas fibras opostas da seção."),
+ (30.9, 32.9, "A envoltória é o menor deles."),
+ (33.1, 35.8, "Entre as duas fica o fuso limite."),
+ (36.0, 38.2, "O cabo parte do centro de gravidade."),
+ (38.4, 45.9, "A parábola A desce até vinte e oito centímetros abaixo do centro de gravidade, em x igual a três vírgula noventa e três metros."),
+ (46.1, 50.9, "Em B, uma parábola reversa leva o cabo ao topo, a menos vinte e oito centímetros."),
+ (51.1, 55.6, "O segundo vão repete o traçado, de forma simétrica."),
+ (56.1, 59.3, "Agora, a linha de pressões, deslocada pelo momento hiperestático."),
+ (59.6, 63.1, "Ela fica dentro do fuso em quase todas as seções."),
+ (63.3, 69.6, "Só junto ao apoio B a tração no ato excede o limite e exige armadura passiva."),
+ (70.3, 77.5, "Em resumo: o cabo desce no vão, sobe ao topo no apoio B, e a linha de pressões respeita o fuso."),
+]
