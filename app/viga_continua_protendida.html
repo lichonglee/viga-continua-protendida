@@ -1,5 +1,6 @@
 <!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
 <title>Viga Contínua Protendida</title>
+<script>try{var __t=localStorage.getItem('viga-cp-tema');if(__t==='light'||__t==='dark')document.documentElement.setAttribute('data-theme',__t)}catch(e){}</script>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
 /* Layout: cabeçalho fixo com situação do projeto; à esquerda os dados de entrada (a antiga aba Dados), à direita uma aba por assunto da planilha. */
@@ -72,6 +73,12 @@ tr.xtra td{opacity:.78}
 .lgctl button.lv3[aria-pressed="true"]{background:var(--n3);color:var(--n-ink)}.lgctl button.lv2[aria-pressed="true"]{background:var(--n2);color:var(--n-ink)}.lgctl button.lv1[aria-pressed="true"]{background:var(--n1);color:var(--n-ink)}
 details.grp.lv3{border-left:3px solid var(--n3);padding-left:6px}details.grp.lv2{border-left:3px solid var(--n2);padding-left:6px}details.grp.lv1{border-left:3px solid var(--n1);padding-left:6px}
 details.grp.lv3>summary{color:var(--n3)}details.grp.lv2>summary{color:var(--n2)}details.grp.lv1>summary{color:var(--n1)}
+.unbin .tools{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.tb{font:inherit;font-size:12px;padding:4px 10px;border:1px solid var(--axis);border-radius:6px;background:var(--surface);color:var(--ink)}
+.tb:hover{background:var(--accent-soft)}.tb.danger{color:var(--bad);border-color:var(--bad)}.tb.danger:hover{background:var(--bad-soft)}
+.unbin .dep{margin-left:auto}
+#toast{position:fixed;right:16px;bottom:16px;max-width:min(380px,calc(100vw - 32px));padding:10px 14px;border-radius:8px;background:var(--ink);color:var(--plane);font-size:13px;box-shadow:0 4px 18px rgba(0,0,0,.3);z-index:60}
+#toast[hidden]{display:none}
 .datasave{display:grid;grid-template-columns:repeat(2,1fr);gap:6px;margin-bottom:6px}.datasave .btn{text-align:center}
 .tiposl{font-size:11.5px;color:var(--muted);margin:2px 0 4px}
 .presets{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:10px}
@@ -162,7 +169,7 @@ h1{color:var(--accent)}
 .legend button.lg{font:inherit;font-size:12.5px;display:inline-flex;align-items:center;gap:0;padding:1px 8px 1px 6px;border:1px solid transparent;border-radius:6px;background:none;color:var(--ink2)}
 .legend button.lg:hover{background:var(--accent-soft)}.legend button.lg[aria-pressed="false"]{opacity:.45;text-decoration:line-through}
 .rodape{margin:26px 0 0;padding-top:10px;border-top:1px solid var(--grid);font-size:12px;color:var(--muted)}
-.paper{--n3:#D9660A;--n3-soft:#FDEBD8;--n2:#1F6FEB;--n2-soft:#E1EDFE;--n1:#7A4FB5;--n1-soft:#EEE6F8;--n-ink:#FFFFFF;--ink:#0B0B0B;--ink2:#4F5868;--muted:#6E6C67;--grid:#E1E0D9;--axis:#C3C2B7;--surface:#FFFFFF;--plane:#EDF1F6;--accent:#164194;--accent-soft:#E3EAF6;--ring:rgba(11,11,11,.10);--s1:#164194;--s2:#EA5950;--s3:#1E9B5B;--s4:#0095DB;
+.paper{--good:#0CA30C;--warn:#FAB219;--bad:#D03B3B;--warn-soft:#FFF3D6;--bad-soft:#FBE5E5;--good-soft:#E3F4E3;--band:rgba(22,65,148,.13);--accent-ink:#FFFFFF;--n3:#D9660A;--n3-soft:#FDEBD8;--n2:#1F6FEB;--n2-soft:#E1EDFE;--n1:#7A4FB5;--n1-soft:#EEE6F8;--n-ink:#FFFFFF;--ink:#0B0B0B;--ink2:#4F5868;--muted:#6E6C67;--grid:#E1E0D9;--axis:#C3C2B7;--surface:#FFFFFF;--plane:#EDF1F6;--accent:#164194;--accent-soft:#E3EAF6;--ring:rgba(11,11,11,.10);--s1:#164194;--s2:#EA5950;--s3:#1E9B5B;--s4:#0095DB;
   background:#fff;color:#0B0B0B;border:1px solid var(--ring);border-radius:8px;padding:22px 26px}
 .paper h1{font-size:22px}.paper h2{font-size:17px;margin:26px 0 8px;padding-bottom:4px;border-bottom:2px solid #164194;color:#164194}.paper .card h2{font-size:14px;border:0;color:#0B0B0B;margin:0 0 8px;padding:0}
 .paper .capa{border-bottom:3px solid #164194;padding-bottom:10px;margin-bottom:12px}.paper .capa .sub{color:var(--ink2)}.paper .toc{columns:2;padding-left:20px}.paper .toc a{color:#164194;text-decoration:none}
@@ -174,12 +181,13 @@ h1{color:var(--accent)}
 </style>
 
 
-<div class="unbbar"><div class="unbin"><img class="logo" id="logoUnb" alt="UnB, Universidade de Brasília" width="124" height="32" src="data:image/png;base64,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"><span class="un">Universidade de Brasília</span><span class="dep">Concreto Protendido · Engenharia Civil</span></div></div>
+<div id="toast" role="status" aria-live="polite" hidden></div>
+<div class="unbbar"><div class="unbin"><img class="logo" id="logoUnb" alt="UnB, Universidade de Brasília" width="124" height="32" src="data:image/png;base64,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"><span class="un">Universidade de Brasília</span><span class="dep">Concreto Protendido · Engenharia Civil</span><span class="tools" role="toolbar" aria-label="Ferramentas"><button class="tb" id="themebtn" type="button" title="Alterna entre tema automático, claro e escuro">Tema: automático</button><button class="tb" id="savedata" type="button" title="Baixa um arquivo .json com todos os dados de entrada, para carregar em outra oportunidade">Salvar dados</button><button class="tb" id="loaddata" type="button" title="Carrega um arquivo .json salvo antes">Carregar dados</button><button class="tb danger" id="cleardata" type="button" title="Apaga os dados guardados neste navegador e volta ao projeto padrão">Limpar tudo</button><input type="file" id="loadfile" accept=".json,application/json" hidden></span></div></div>
 <div class="app">
   <header class="top">
     <div>
       <h1 id="ttl">Viga contínua protendida, 2 vãos</h1>
-      <div class="credit">Produzido pelo Professor DSc. Li Chong Lee (Todos os direitos reservados) <span class="ver" id="ver" title="Versão do painel">v2.7.0</span></div>
+      <div class="credit">Produzido pelo Professor DSc. Li Chong Lee (Todos os direitos reservados) <span class="ver" id="ver" title="Versão do painel">v2.8.0</span></div>
       <div class="sub">Pós-tração aderente · 1 a 6 vãos, iguais ou diferentes · NBR 6118 · mesma lógica da planilha de apoio, recalculada a cada alteração</div>
     </div>
     <div class="status" id="status"></div>
@@ -189,7 +197,6 @@ h1{color:var(--accent)}
   <div class="shell">
     <aside class="side" id="dados" aria-label="Dados de entrada">
       <h2>Dados <button class="btn" id="reset" type="button" style="padding:3px 8px">Restaurar</button></h2>
-      <div class="datasave"><button class="btn" id="savedata" type="button" title="Baixa um arquivo .json com todos os dados de entrada">Salvar dados</button><button class="btn" id="loaddata" type="button" title="Carrega um arquivo .json salvo antes">Carregar dados</button><input type="file" id="loadfile" accept=".json,application/json" hidden></div><div class="foot" id="datamsg" role="status" style="margin:0 0 6px"></div>
       <div class="tiposl">Dados carregados e níveis de protensão (da viga atual)</div><div class="presets" id="presets" style="grid-template-columns:repeat(2,1fr)"></div>
       <div class="tiposl">Tipo de viga</div><div class="presets" id="tipos" style="grid-template-columns:repeat(2,1fr)"></div>
       <div id="fields"></div>
@@ -1057,16 +1064,38 @@ $('#presets').addEventListener('click', e => { const b = e.target.closest('butto
   if (b.dataset.p === 'base') { inp = Object.assign({}, base); preset = 'base'; buildSide(); sched(); } else applyLevel(+b.dataset.p.slice(1)); });
 $('#tipos').addEventListener('click', e => { const b = e.target.closest('button[data-tp]'); if (!b) return; const p = TIPOS.find(x => x.id === b.dataset.tp);
   inp = Object.assign({}, inp, p.ov); preset = ''; buildSide(); sched(); });
+/* ---------- aviso rápido, tema e "limpar tudo" ---------- */
+let toastT = null;
+function toast(t){ const e = $('#toast'); e.textContent = t; e.hidden = false; clearTimeout(toastT); toastT = setTimeout(() => { e.hidden = true; }, 6000); }
+const TEMAS = ['auto', 'light', 'dark'], TEMA_TXT = {auto: 'automático', light: 'claro', dark: 'escuro'};
+let tema = 'auto'; try { const t = localStorage.getItem('viga-cp-tema'); if (TEMAS.indexOf(t) >= 0) tema = t; } catch (e) {}
+function applyTheme(){
+  const de = document.documentElement; if (tema === 'auto') de.removeAttribute('data-theme'); else de.setAttribute('data-theme', tema);
+  const b = $('#themebtn'); if (b) b.textContent = 'Tema: ' + TEMA_TXT[tema];
+  try { localStorage.setItem('viga-cp-tema', tema); } catch (e) {}
+}
+$('#themebtn').addEventListener('click', () => { tema = TEMAS[(TEMAS.indexOf(tema) + 1) % TEMAS.length]; applyTheme(); toast('Tema ' + TEMA_TXT[tema] + '.'); });
+applyTheme();
+function clearAll(){
+  if (!confirm('Limpar tudo?\n\nApaga os dados guardados neste navegador (dados de entrada, cartões recolhidos, escalas e escolhas dos gráficos) e volta ao projeto padrão.\nSe quiser guardar os dados atuais, use antes "Salvar dados".')) return;
+  try { Object.keys(localStorage).filter(k => k.indexOf('viga-cp-') === 0 && k !== 'viga-cp-tema').forEach(k => localStorage.removeItem(k)); } catch (e) {}
+  Object.keys(HID).forEach(k => { delete HID[k]; }); Object.keys(SC).forEach(k => { delete SC[k]; }); coll = {};
+  inp = Object.assign({}, DEF); base = Object.assign({}, DEF); preset = 'base'; limMode = 'nivel'; spans = 1; tab = 'resumo'; tsel = 'cr';
+  buildSide(); sched(); toast('Tudo limpo: voltou ao projeto padrão.');
+}
+$('#cleardata').addEventListener('click', clearAll);
+
 /* ---------- salvar e carregar todos os dados de entrada (arquivo .json) ---------- */
 function saveData(){
   const dt = new Date(), pad = v => String(v).padStart(2, '0'), stamp = dt.getFullYear() + pad(dt.getMonth() + 1) + pad(dt.getDate()) + '_' + pad(dt.getHours()) + pad(dt.getMinutes());
   const o = {app: 'viga-continua-protendida', versao: VERSION, salvoEm: dt.toISOString(), descricao: (A ? tipoDescr() : ''), dados: inp};
-  download('Viga_dados_' + nsOf(inp) + 'vaos_' + stamp + '.json', 'application/json', JSON.stringify(o, null, 1));
-  $('#datamsg').textContent = 'Dados salvos (' + Object.keys(inp).length + ' campos).';
+  const nomeArq = 'Viga_dados_' + nsOf(inp) + 'vaos_' + stamp + '.json';
+  download(nomeArq, 'application/json', JSON.stringify(o, null, 1));
+  toast('Dados salvos (' + Object.keys(inp).length + ' campos) em ' + nomeArq + '. Use "Carregar dados" para abrir de novo.');
 }
 function tipoDescr(){ const d = A.d; return d.n === 1 ? '1 vão' : d.n + ' vãos (' + d.Ls.map(l => f(l, l % 1 ? 1 : 0)).join(' + ') + ' m)'; }
 function loadData(file){
-  const msg = t => { $('#datamsg').textContent = t; }, rd = new FileReader();
+  const msg = t => toast(t), rd = new FileReader();
   rd.onload = () => {
     let o; try { o = JSON.parse(rd.result); } catch (e) { msg('Arquivo inválido: não é um JSON.'); return; }
     const src = o && o.dados && typeof o.dados === 'object' ? o.dados : o, clean = {}; let n = 0, ign = 0;
@@ -1738,7 +1767,7 @@ const DOC_CSS = 'body{font-family:"Segoe UI",Calibri,Arial,sans-serif;font-size:
   '@media print{body{max-width:none;padding:0}.ms{page-break-inside:auto}h2{page-break-after:avoid}.tela{page-break-inside:avoid}tr{page-break-inside:avoid}}@page{size:A4;margin:16mm 14mm}';
 
 const LOGO_UNB = document.getElementById('logoUnb') ? document.getElementById('logoUnb').src : '';
-const VERSION = '2.7.0'; { const v = document.getElementById('ver'); if (v) v.textContent = 'v' + VERSION; }
+const VERSION = '2.8.0'; { const v = document.getElementById('ver'); if (v) v.textContent = 'v' + VERSION; }
 let MEM = null;
 function memorialDoc(){
   const sec = memorialBody(), d = A.d, tipoTxt = d.n === 1 ? 'viga protendida de 1 vão' : 'viga contínua protendida de ' + d.n + ' vãos', pn = PRESET_NAMES[preset] || 'dados personalizados', dt = new Date().toLocaleDateString('pt-BR');
