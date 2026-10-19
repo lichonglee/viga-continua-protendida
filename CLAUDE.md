@@ -27,6 +27,7 @@ Níveis: N3 = 5 cord./cabo; N2 = 4 (frequente −0,70, QP −1,04 MPa, As,ato 3,
 - src/content.py, build_manual.py, shots.py: manual da planilha com telas (LibreOffice + python-docx).
 - rot/: roteiros (viga.txt, plan.txt = texto dos Claude Docs) e build.py que gera o Word UnB.
 - app/viga_continua_protendida.html: app interativo (HTML único, motor em JS). Artefato publicado no claude.ai.
+  Desde a v2.0.0 o motor é geral: 1 a 6 vãos, iguais ou diferentes, com g, q, excentricidades e λ por vão/apoio (campos eqL, eqLoad, eqTr = 1 repetem os valores do vão 1). Para 2 vãos iguais reproduz o motor anterior (conferido em 5 casos). Hiperestático pelo método das forças com flexibilidades analíticas; esforços externos pela equação dos três momentos, com sobrecarga alternada por vão.
 - deck/: slides HTML (project/slides, deck.json), imagens (blob/) e render_slides.py (Playwright → PNG).
 - entregas/: últimas versões dos arquivos gerados (xlsx, docx, pdf, dxf, legendas).
 

@@ -42,6 +42,7 @@ p{margin:0 0 8px}
 @media (max-width:980px){.side{position:static;max-height:none;order:2}.jump{display:inline-flex!important}}
 .jump{display:none;text-decoration:none;color:var(--accent);font-size:13px}
 .side h2{display:flex;justify-content:space-between;align-items:center}
+.tiposl{font-size:11.5px;color:var(--muted);margin:2px 0 4px}
 .presets{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:10px}
 button{font:inherit;cursor:pointer}
 .btn{padding:6px 8px;border:1px solid var(--axis);background:var(--surface);color:var(--ink);border-radius:6px;font-size:12.5px;line-height:1.25;text-align:left}
@@ -145,9 +146,9 @@ h1{color:var(--accent)}
 <div class="app">
   <header class="top">
     <div>
-      <h1>Viga contínua protendida, 2 vãos</h1>
-      <div class="credit">Produzido pelo Professor DSc. Li Chong Lee (Todos os direitos reservados) <span class="ver" id="ver" title="Versão do painel">v1.4.0</span></div>
-      <div class="sub">Pós-tração aderente · NBR 6118 · mesma lógica da planilha de apoio, recalculada a cada alteração</div>
+      <h1 id="ttl">Viga contínua protendida, 2 vãos</h1>
+      <div class="credit">Produzido pelo Professor DSc. Li Chong Lee (Todos os direitos reservados) <span class="ver" id="ver" title="Versão do painel">v2.0.0</span></div>
+      <div class="sub">Pós-tração aderente · 1 a 6 vãos, iguais ou diferentes · NBR 6118 · mesma lógica da planilha de apoio, recalculada a cada alteração</div>
     </div>
     <div class="status" id="status"></div>
     <a class="jump" href="#dados">Ir aos dados de entrada</a>
@@ -157,6 +158,7 @@ h1{color:var(--accent)}
     <aside class="side" id="dados" aria-label="Dados de entrada">
       <h2>Dados <button class="btn" id="reset" type="button" style="padding:3px 8px">Restaurar</button></h2>
       <div class="presets" id="presets"></div>
+      <div class="tiposl">Tipo de viga</div><div class="presets" id="tipos" style="grid-template-columns:repeat(2,1fr)"></div>
       <div id="fields"></div>
       <p class="foot">Valores em kN, m e MPa, como na planilha. Cargas g adicional e q são adotadas e provisórias.</p>
     </aside>
@@ -169,11 +171,19 @@ h1{color:var(--accent)}
 
 <script>
 'use strict';
-/* Motor de cálculo — viga contínua protendida de 2 vãos iguais (kN, m, MPa). Porte do motor Python/planilha. */
+/* Motor de cálculo — viga contínua protendida de 1 a 6 vãos, iguais ou diferentes (kN, m, MPa). Porte do motor Python/planilha, generalizado. */
+const MAXSP = 6;
 const DEF = {
-  L: 10, bw: 0.30, h: 0.90, fck: 30, gc: 1.4, gs: 1.15,
-  g_add: 13.25, q: 25, psi1: 0.4, psi2: 0.3,
-  cnom: 0.035, phi_t: 0.010, d_bain: 0.061, e_end: 0, e_span: 0.28, e_sup: 0.28, lam: 1.0,
+  nsp: 2, eqL: 1, eqLoad: 1, eqTr: 1,
+  L: 10, L2: 10, L3: 10, L4: 10, L5: 10, L6: 10,
+  bw: 0.30, h: 0.90, fck: 30, gc: 1.4, gs: 1.15,
+  g_add: 13.25, g2: 13.25, g3: 13.25, g4: 13.25, g5: 13.25, g6: 13.25,
+  q: 25, q2: 25, q3: 25, q4: 25, q5: 25, q6: 25,
+  psi1: 0.4, psi2: 0.3,
+  cnom: 0.035, phi_t: 0.010, d_bain: 0.061, e_end: 0,
+  e_span: 0.28, ev2: 0.28, ev3: 0.28, ev4: 0.28, ev5: 0.28, ev6: 0.28,
+  e_sup: 0.28, es2: 0.28, es3: 0.28, es4: 0.28, es5: 0.28,
+  lam: 1.0, lam2: 1.0, lam3: 1.0, lam4: 1.0, lam5: 1.0,
   n_cab: 2, n_cord: 5, Ap1: 0.987, fptk: 1900, Ep: 200000, rj: 0.74,
   mu: 0.20, kk: 0.002, slip: 0.006, t0: 7, phi_cr: 2.9, eps_cs: -0.00023,
   fyk: 500, Es: 210000,
@@ -198,11 +208,35 @@ function bisect(f, a, b, it) {
   for (let i = 0; i < (it || 90); i++) { const m = 0.5 * (a + b), fm = f(m); if (Math.sign(fm) === Math.sign(fa)) { a = m; fa = fm; } else { b = m; fb = fm; } }
   return 0.5 * (a + b);
 }
+function solveLin(Mx, b) {   /* eliminação de Gauss com pivotamento (sistemas pequenos) */
+  const n = b.length, a = Mx.map((r, i) => r.concat([b[i]]));
+  for (let c = 0; c < n; c++) {
+    let p = c; for (let r = c + 1; r < n; r++) if (Math.abs(a[r][c]) > Math.abs(a[p][c])) p = r;
+    [a[c], a[p]] = [a[p], a[c]];
+    for (let r = c + 1; r < n; r++) { const f = a[r][c] / a[c][c]; for (let k = c; k <= n; k++) a[r][k] -= f * a[c][k]; }
+  }
+  const x = new Array(n).fill(0);
+  for (let r = n - 1; r >= 0; r--) { let s = a[r][n]; for (let k = r + 1; k < n; k++) s -= a[r][k] * x[k]; x[r] = s / a[r][r]; }
+  return x;
+}
 
+/* ---------- vãos: dados efetivos (iguais ou diferentes) ---------- */
+function spanData(D) {
+  const n = Math.max(1, Math.min(MAXSP, Math.round(D.nsp || 2)));
+  const eqL = D.eqL !== 0, eqLoad = D.eqLoad !== 0, eqTr = D.eqTr !== 0;
+  const pick = (base, pref, eq, i) => (eq || i === 0 || D[pref + (i + 1)] === undefined) ? D[base] : D[pref + (i + 1)];
+  const arr = (base, pref, eq, m) => Array.from({length: m}, (_, i) => pick(base, pref, eq, i));
+  return {n, Ls: arr('L', 'L', eqL, n), gadd: arr('g_add', 'g', eqLoad, n), qv: arr('q', 'q', eqLoad, n), ev: arr('e_span', 'ev', eqTr, n),
+    es: arr('e_sup', 'es', eqTr, n - 1), lamv: arr('lam', 'lam', eqTr, n - 1)};
+}
 function derive(D) {
-  const d = Object.assign({}, D);
+  const d = Object.assign({}, D), sp = spanData(D);
+  d.n = sp.n; d.Ls = sp.Ls; d.gadd = sp.gadd; d.qv = sp.qv; d.ev = sp.ev; d.es = sp.es; d.lamv = sp.lamv;
+  d.xSup = [0]; sp.Ls.forEach(l => d.xSup.push(d.xSup[d.xSup.length - 1] + l)); d.Ltot = d.xSup[d.n];
+  d.L = d.Ls[0]; d.Lmax = maxA(d.Ls); d.eq2 = d.n === 2 && Math.abs(d.Ls[0] - d.Ls[1]) < 1e-9 && Math.abs(d.gadd[0] - d.gadd[1]) < 1e-9 && Math.abs(d.qv[0] - d.qv[1]) < 1e-9;
+  d.g_add = d.gadd[0]; d.q = d.qv[0];
   d.Ac = d.bw * d.h; d.Ic = d.bw * Math.pow(d.h, 3) / 12; d.W = d.Ic / (d.h / 2); d.k = d.W / d.Ac;
-  d.g_pp = 25 * d.Ac; d.g = d.g_pp + d.g_add;
+  d.g_pp = 25 * d.Ac; d.g = d.g_pp + d.gadd[0]; d.gv = d.gadd.map(g => d.g_pp + g);
   d.dpp = d.cnom + d.phi_t + d.d_bain / 2; d.e_max = d.h / 2 - d.dpp;
   d.fcd = d.fck / d.gc; d.fctm = 0.3 * Math.pow(d.fck, 2 / 3); d.fctkinf = 0.7 * d.fctm; d.fctksup = 1.3 * d.fctm; d.fctd = d.fctkinf / d.gc;
   d.Eci = 5600 * Math.sqrt(d.fck); d.alpha_i = Math.min(0.8 + 0.2 * d.fck / 80, 1); d.Ecs = d.alpha_i * d.Eci;
@@ -210,79 +244,122 @@ function derive(D) {
   d.ft_els = 1.2 * d.fctkinf; d.ft_ato = 1.2 * d.fctmj;
   d.Ap = d.n_cab * d.n_cord * d.Ap1 * 1e-4;
   d.fpyk = 0.9 * d.fptk; d.fpyd = d.fpyk / d.gs; d.fptd = d.fptk / d.gs; d.sig_j = d.rj * d.fptk;
-  d.fyd = d.fyk / d.gs; d.pbal = d.g + d.psi2 * d.q;
+  d.fyd = d.fyk / d.gs; d.pbal = d.g + d.psi2 * d.qv[0]; d.pbalv = d.gv.map((g, i) => g + d.psi2 * d.qv[i]);
   return d;
 }
+/* estações: a cada ~0,5 m, com estação em cada apoio; devolve x, índice dos apoios e vão de cada estação */
+function stations(d) {
+  const x = [], iSup = [], span = [];
+  for (let i = 0; i < d.n; i++) {
+    const m = 20;   /* 20 divisões por vão, como na planilha de apoio */
+    iSup.push(x.length);
+    for (let k = 0; k < m; k++) { x.push(d.xSup[i] + d.Ls[i] * k / m); span.push(i); }
+  }
+  iSup.push(x.length); x.push(d.Ltot); span.push(d.n - 1);
+  for (let j = 1; j < d.n; j++) span[iSup[j]] = j - 1;   /* o apoio interno pertence ao vão da esquerda */
+  return {x, iSup, span};
+}
 
-/* ---------- traçado ---------- */
-function profileParams(d) {
-  const L = d.L, lam = d.lam, em = d.e_span, es = d.e_sup, ee = d.e_end, xi = L - lam;
-  const c = em - ee, A = (em + es) - c, B = c * (xi + L), C = -c * xi * L;
-  const x0 = (-B + Math.sqrt(B * B - 4 * A * C)) / (2 * A);
-  const aA = c / (x0 * x0), aB = aA * (xi - x0) / lam;
-  return {x0, aA, aB, xi};
+/* ---------- traçado: um cabo contínuo, parábola principal e parábolas reversas junto aos apoios internos ---------- */
+function spanProfile(d, i) {
+  const n = d.n, L = d.Ls[i], em = d.ev[i];
+  const eL = i === 0 ? d.e_end : -d.es[i - 1], eR = i === n - 1 ? d.e_end : -d.es[i];
+  const lL = i === 0 ? 0 : Math.min(d.lamv[i - 1], 0.45 * L), lR = i === n - 1 ? 0 : Math.min(d.lamv[i], 0.45 * L);
+  const cL = em - eL, cR = em - eR;
+  const A = cR - cL, B = cL * (2 * L - lR) - cR * lL, C = -cL * L * (L - lR);
+  let x0;
+  if (Math.abs(A) < 1e-12) x0 = -C / B;
+  else {
+    const disc = Math.sqrt(Math.max(B * B - 4 * A * C, 0)), r1 = (-B + disc) / (2 * A), r2 = (-B - disc) / (2 * A);
+    const ok = r => r > lL - 1e-9 && r < L - lR + 1e-9;
+    x0 = ok(r1) ? r1 : (ok(r2) ? r2 : r1);
+  }
+  const a = cL / ((x0 - lL) * x0 || 1e-12);
+  const aL = lL > 0 ? a * (x0 - lL) / lL : 0, aR = lR > 0 ? a * (L - lR - x0) / lR : 0;
+  return {L, em, eL, eR, lL, lR, x0, a, aL, aR, xi: L - lR};
+}
+function profileParams(d) {   /* 1º vão: compatível com o painel (aA, aB, x0, xi) */
+  const p = spanProfile(d, 0);
+  return {x0: p.x0, aA: p.a, aB: p.aR, xi: p.xi};
 }
 function cable(d, xs) {
-  const L = d.L, pp = profileParams(d), em = d.e_span, es = d.e_sup;
-  const e = [], de = [];
+  const pr = d.xSup.slice(0, d.n).map((_, i) => spanProfile(d, i)), e = [], de = [];
   for (const x of xs) {
-    const s = x <= L ? x : 2 * L - x, sg = x <= L ? 1 : -1;
+    let i = 0; while (i < d.n - 1 && x > d.xSup[i + 1] + 1e-9) i++;
+    const p = pr[i], s = Math.max(0, Math.min(p.L, x - d.xSup[i]));
     let ev, dv;
-    if (s <= pp.xi) { ev = em - pp.aA * (s - pp.x0) ** 2; dv = -2 * pp.aA * (s - pp.x0); }
-    else { ev = -es + pp.aB * (L - s) ** 2; dv = -2 * pp.aB * (L - s); }
-    e.push(ev); de.push(dv * sg);
+    if (p.lL > 0 && s < p.lL) { ev = p.eL + p.aL * s * s; dv = 2 * p.aL * s; }
+    else if (p.lR > 0 && s > p.L - p.lR) { ev = p.eR + p.aR * (p.L - s) ** 2; dv = -2 * p.aR * (p.L - s); }
+    else { ev = p.em - p.a * (s - p.x0) ** 2; dv = -2 * p.a * (s - p.x0); }
+    e.push(ev); de.push(dv);
   }
   return {e, de};
 }
 
-/* ---------- esforços externos ---------- */
-function twoSpan(w1, w2, L, x) {
-  const MB = -(w1 + w2) * L * L / 16, RA = w1 * L / 2 + MB / L, RC = w2 * L / 2 + MB / L;
-  const M = [], V = [];
-  x.forEach((xx, i) => {
-    if (xx <= L + 1e-9) { M[i] = RA * xx - w1 * xx * xx / 2; V[i] = RA - w1 * xx; }
-    else { const xr = 2 * L - xx; M[i] = RC * xr - w2 * xr * xr / 2; V[i] = -(RC - w2 * xr); }
+/* ---------- esforços externos: viga contínua de EI constante (equação dos três momentos) ---------- */
+function supportMoments(Ls, w) {
+  const n = Ls.length; if (n < 2) return [0, 0];
+  const m = n - 1, Mx = Array.from({length: m}, () => new Array(m).fill(0)), b = new Array(m).fill(0);
+  for (let j = 1; j <= m; j++) {
+    const r = j - 1, L1 = Ls[j - 1], L2 = Ls[j];
+    Mx[r][r] = 2 * (L1 + L2); if (j > 1) Mx[r][r - 1] = L1; if (j < m) Mx[r][r + 1] = L2;
+    b[r] = -(w[j - 1] * L1 ** 3 + w[j] * L2 ** 3) / 4;
+  }
+  return [0].concat(solveLin(Mx, b), [0]);
+}
+function beamField(d, st, w) {
+  const Ms = supportMoments(d.Ls, w), M = [], V = [];
+  st.x.forEach((xx, i) => {
+    const k = st.span[i], L = d.Ls[k], s = xx - d.xSup[k], Ml = Ms[k], Mr = Ms[k + 1];
+    M[i] = w[k] * s * (L - s) / 2 + Ml * (1 - s / L) + Mr * (s / L);
+    V[i] = w[k] * (L / 2 - s) + (Mr - Ml) / L;
   });
   return [M, V];
 }
-function extActions(d, x) {
-  const L = d.L, g = d.g, q = d.q, g0 = d.g_pp;
-  const [Mg, Vg] = twoSpan(g, g, L, x), [Mg0, Vg0] = twoSpan(g0, g0, L, x);
-  const pats = [[q, q], [q, 0], [0, q]].map(p => twoSpan(p[0], p[1], L, x));
-  const n = x.length, o = {Mg, Vg, Mg0, Vg0, Mq_max: [], Mq_min: [], Vq_max: [], Vq_min: []};
-  for (let i = 0; i < n; i++) {
-    const ms = pats.map(p => p[0][i]), vs = pats.map(p => p[1][i]);
-    o.Mq_max.push(Math.max(maxA(ms), 0)); o.Mq_min.push(Math.min(minA(ms), 0));
-    o.Vq_max.push(Math.max(maxA(vs), 0)); o.Vq_min.push(Math.min(minA(vs), 0));
+function extActions(d, st) {
+  const n = d.n, zero = new Array(n).fill(0);
+  const [Mg, Vg] = beamField(d, st, d.gv), [Mg0, Vg0] = beamField(d, st, new Array(n).fill(d.g_pp));
+  const N = st.x.length, o = {Mg, Vg, Mg0, Vg0, Mq_max: new Array(N).fill(0), Mq_min: new Array(N).fill(0), Vq_max: new Array(N).fill(0), Vq_min: new Array(N).fill(0)};
+  for (let k = 0; k < n; k++) {
+    if (!(d.qv[k] > 0)) continue;
+    const w = zero.slice(); w[k] = d.qv[k]; const [M, V] = beamField(d, st, w);
+    for (let i = 0; i < N; i++) { if (M[i] > 0) o.Mq_max[i] += M[i]; else o.Mq_min[i] += M[i]; if (V[i] > 0) o.Vq_max[i] += V[i]; else o.Vq_min[i] += V[i]; }
   }
   return o;
 }
 
 /* ---------- perdas ---------- */
 function relaxPsi1000(r) { return interp(r, [0.5, 0.6, 0.7, 0.8], [0, 1.3, 2.5, 3.5]) / 100; }
+function slipZone(xs, sig, slip, Lmax, Ep) {   /* alcance da cravação a partir de uma extremidade */
+  const n = xs.length, cum = [0]; for (let i = 1; i < n; i++) cum[i] = cum[i - 1] + 0.5 * (sig[i] + sig[i - 1]) * (xs[i] - xs[i - 1]);
+  const dk = cum.map((c, i) => 2 * (c - sig[i] * xs[i]) / Ep);
+  let last = 0; while (last + 1 < n && xs[last + 1] <= Lmax + 1e-9) last++;
+  let k = -1; for (let i = 0; i <= last; i++) if (dk[i] >= slip) { k = i; break; }
+  if (k < 0) return {xa: xs[last], sfa: sig[last], dk};
+  if (k === 0) return {xa: 0, sfa: sig[0], dk};
+  const f = (slip - dk[k - 1]) / (dk[k] - dk[k - 1]);
+  return {xa: xs[k - 1] + f * (xs[k] - xs[k - 1]), sfa: sig[k - 1] + f * (sig[k] - sig[k - 1]), dk};
+}
 function losses(d) {
-  const L = d.L, n = 41, dx = L / 20, x = Array.from({length: n}, (_, i) => i * dx);
+  const st = stations(d), x = st.x, n = x.length, Ltot = d.Ltot;
   const {e, de} = cable(d, x);
   const alpha = de.map(Math.atan);
   const dtheta = alpha.map((a, i) => i ? Math.abs(a - alpha[i - 1]) : 0);
   const theta = []; dtheta.reduce((s, v, i) => (theta[i] = s + v), 0);
-  const darc = e.map((v, i) => i ? Math.sqrt(dx * dx + (v - e[i - 1]) ** 2) : 0);
+  const darc = e.map((v, i) => i ? Math.sqrt((x[i] - x[i - 1]) ** 2 + (v - e[i - 1]) ** 2) : 0);
   const arc = []; darc.reduce((s, v, i) => (arc[i] = s + v), 0);
   const sj = d.sig_j, mu = d.mu, kk = d.kk, Ep = d.Ep;
   const sL = x.map((_, i) => sj * Math.exp(-mu * theta[i] - kk * arc[i]));
   const Th = theta[n - 1], S = arc[n - 1];
   const sR = x.map((_, i) => sj * Math.exp(-mu * (Th - theta[i]) - kk * (S - arc[i])));
   const sf = sL.map((v, i) => Math.max(v, sR[i]));
-  const cum = [0]; for (let i = 1; i < n; i++) cum[i] = cum[i - 1] + 0.5 * (sL[i] + sL[i - 1]) * dx;
-  const delta_k = cum.map((c, i) => 2 * (c - sL[i] * x[i]) / Ep);
-  const dk = delta_k.slice(0, 21), slip = d.slip;
-  let k = dk.findIndex(v => v >= slip), xa, sfa;
-  if (k < 0) { xa = L; sfa = sL[20]; }
-  else if (k === 0) { xa = 0; sfa = sL[0]; }
-  else { const f = (slip - dk[k - 1]) / (dk[k] - dk[k - 1]); xa = x[k - 1] + f * (x[k] - x[k - 1]); sfa = sL[k - 1] + f * (sL[k] - sL[k - 1]); }
-  const half = []; for (let i = 0; i <= 20; i++) half.push(x[i] <= xa ? 2 * sfa - sL[i] : sL[i]);
-  const sas = half.concat(half.slice(0, 20).reverse());
-  const ext = extActions(d, x), Mg0 = ext.Mg0;
+  /* xc: seção onde as curvas de atrito das duas extremidades se cruzam; cada extremidade comanda o seu lado */
+  let xc = Ltot; for (let i = 1; i < n; i++) { const d0 = sL[i - 1] - sR[i - 1], d1 = sL[i] - sR[i]; if (d1 < -1e-9) { xc = x[i - 1] + (x[i] - x[i - 1]) * (d0 / (d0 - d1)); break; } }
+  const zl = slipZone(x, sL, d.slip, xc, Ep);
+  const xr = x.map((_, j) => Ltot - x[n - 1 - j]), sr = x.map((_, j) => sR[n - 1 - j]);
+  const zr = slipZone(xr, sr, d.slip, Ltot - xc, Ep);
+  const sas = x.map((xx, i) => xx <= xc + 1e-9 ? (xx <= zl.xa ? 2 * zl.sfa - sL[i] : sL[i]) : (Ltot - xx <= zr.xa ? 2 * zr.sfa - sR[i] : sR[i]));
+  const ext = extActions(d, st), Mg0 = ext.Mg0;
   const ap = Ep / d.Eci_j, ncab = d.n_cab, Ac = d.Ac, Ic = d.Ic, Ap = d.Ap;
   const cES = ncab > 1 ? ap * (ncab - 1) / (2 * ncab) : 0;
   const des = [], sig_i = [], Pi = [], scp0 = [];
@@ -301,28 +378,39 @@ function losses(d) {
     psi1000.push(p1000); chi.push(ch); eta.push(et); dsig.push(ds); sig_inf.push(sig_i[i] - ds);
   }
   const Pinf = sig_inf.map(s => Ap * s * 1e3);
-  let elong = 0; for (let i = 1; i <= 20; i++) elong += (sL[i] + sL[i - 1]) / 2 * darc[i] / Ep * 1000;
-  return {x, dx, e, de, alpha, theta, arc, darc, dtheta, sL, sig_fric: sf, delta_k, sig_slip: sas, xa, sfa, sig_i, sig_inf, des, dsig,
-    Pj: Ap * sj * 1e3, Pi, Pinf, scp0, psi1000, chi, eta, theta_tot: Th, arc_tot: S, ap, ap28, elong, Mg0};
+  let elong = 0, elongR = 0;
+  for (let i = 1; i < n; i++) { const v = (sL[i] + sL[i - 1]) / 2 * darc[i] / Ep * 1000, w = (sR[i] + sR[i - 1]) / 2 * darc[i] / Ep * 1000; if (x[i] <= xc + 1e-9) elong += v; else elongR += w; }
+  return {x, st, dx: d.Ls[0] / 20, e, de, alpha, theta, arc, darc, dtheta, sL, sR, sig_fric: sf, delta_k: zl.dk, sig_slip: sas, xa: zl.xa, sfa: zl.sfa, xaR: zr.xa, xc, sig_i, sig_inf, des, dsig,
+    Pj: Ap * sj * 1e3, Pi, Pinf, scp0, psi1000, chi, eta, theta_tot: Th, arc_tot: S, ap, ap28, elong, elongR, Mg0};
 }
 
-/* ---------- hiperestático e avaliação ---------- */
+/* ---------- hiperestático (método das forças: apoios internos liberados) e avaliação ---------- */
+function unitMoment(d, k, x) { const xk = d.xSup[k], Lt = d.Ltot; return x <= xk ? x * (Lt - xk) / Lt : xk * (Lt - x) / Lt; }
+function unitShear(d, k, x) { const xk = d.xSup[k], Lt = d.Ltot; return x <= xk + 1e-9 ? (Lt - xk) / Lt : -xk / Lt; }
+function flexib(d, EI) {   /* δ_jk da viga simples com carga unitária nos apoios internos j e k */
+  const m = d.n - 1, Lt = d.Ltot, F = Array.from({length: m}, () => new Array(m).fill(0));
+  for (let j = 1; j <= m; j++) for (let k = 1; k <= m; k++) { const a = Math.min(d.xSup[j], d.xSup[k]), b = d.xSup[Math.max(j, k)]; F[j - 1][k - 1] = a * (Lt - b) * (Lt * Lt - a * a - (Lt - b) ** 2) / (6 * Lt * EI); }
+  return F;
+}
 function hyperstatic(d, x, e, P, cosa) {
-  const L = d.L, EI = d.Ecs * 1e3 * d.Ic;
+  const EI = d.Ecs * 1e3 * d.Ic, m = d.n - 1;
   const Miso = P.map((p, i) => -p * cosa[i] * e[i]);
-  const m = x.map(xx => xx <= L + 1e-9 ? xx / 2 : (2 * L - xx) / 2);
-  const delta = trapz(Miso.map((v, i) => v * m[i]), x) / EI;
-  const RB = delta / (L ** 3 / (6 * EI));
-  return {Miso, Mhip: m.map(v => -RB * v), RB};
+  if (m < 1) return {Miso, Mhip: x.map(() => 0), Vhip: x.map(() => 0), RB: 0, R: []};
+  const ms = []; for (let k = 1; k <= m; k++) ms.push(x.map(xx => unitMoment(d, k, xx)));
+  const delta = ms.map(mk => trapz(Miso.map((v, i) => v * mk[i]), x) / EI);
+  const R = solveLin(flexib(d, EI), delta);
+  const Mhip = x.map((_, i) => -sum(R.map((r, k) => r * ms[k][i])));
+  const Vhip = x.map((xx, i) => -sum(R.map((r, k) => r * unitShear(d, k + 1, xx))));
+  return {Miso, Mhip, Vhip, RB: R[0], R};
 }
 function evaluate(d) {
-  const Ls = losses(d), x = Ls.x, e = Ls.e, n = x.length;
+  const Ls = losses(d), st = Ls.st, x = Ls.x, e = Ls.e, n = x.length;
   const cosa = Ls.de.map(v => Math.cos(Math.atan(v)));
-  const ext = extActions(d, x), Ac = d.Ac, W = d.W, res = {};
+  const ext = extActions(d, st), Ac = d.Ac, W = d.W, res = {};
   for (const [tag, P] of [['i', Ls.Pi], ['inf', Ls.Pinf]]) {
     const h = hyperstatic(d, x, e, P, cosa);
     const N = P.map((p, i) => p * cosa[i]), MP = h.Miso.map((v, i) => v + h.Mhip[i]);
-    res[tag] = {N, Miso: h.Miso, Mhip: h.Mhip, RB: h.RB, MP,
+    res[tag] = {N, Miso: h.Miso, Mhip: h.Mhip, Vhip: h.Vhip, RB: h.RB, R: h.R, MP,
       s1p: N.map((v, i) => -v / Ac / 1e3 + MP[i] / W / 1e3), s2p: N.map((v, i) => -v / Ac / 1e3 - MP[i] / W / 1e3)};
   }
   const ri = res.i, rf = res.inf, Mg0 = ext.Mg0, Mg = ext.Mg;
@@ -344,7 +432,7 @@ function evaluate(d) {
     'ELS-F fibra inf. (CR)': lim.ft - maxA(ck.cr_s1), 'ELS-F fibra sup. (CR)': lim.ft - maxA(ck.cr_s2),
     'ELS-CE compressão (CR)': Math.min(minA(ck.ce_s1), minA(ck.ce_s2)) - lim.ce
   };
-  return {d, Ls, res, ext, ck, lim, margins: mg, x, e, cosa, Mcfq_max, Mcfq_min, Mcr_max, Mcr_min};
+  return {d, Ls, st, res, ext, ck, lim, margins: mg, x, e, cosa, Mcfq_max, Mcfq_min, Mcr_max, Mcr_min};
 }
 
 /* ---------- fuso limite ---------- */
@@ -401,9 +489,10 @@ function eluSimple(d, r, i, hog, Asc, Ast) {
     yieldAsc: epsAs >= d.fyd / d.Es, yieldT: Ts === 0 || epsT >= d.fyd / d.Es, MRd, Mh, Mext, gp, Msd, ratio: MRd / Math.abs(Msd), ok: Math.abs(Msd) <= MRd, ductile: x / dp <= 0.45,
     Mdmin: 0.8 * d.W * d.fctksup * 1e3, Ascmin: Math.max(0, (Tp + Ts - 0.85 * d.fcd * 1e3 * 0.8 * d.bw * 0.45 * dp) / (d.fyd * 1e3) * 1e4)};
 }
-function spanStation(d, r) {
-  let bi = 1, bv = -Infinity;
-  for (let i = 1; i <= 19; i++) { const v = r.ext.Mg[i] + r.ext.Mq_max[i]; if (v > bv) { bv = v; bi = i; } }
+function spanStation(d, r, k) {
+  const st = r.st, a = st.iSup[k || 0], b = st.iSup[(k || 0) + 1];
+  let bi = Math.min(a + 1, b), bv = -Infinity;
+  for (let i = a + 1; i < b; i++) { const v = r.ext.Mg[i] + r.ext.Mq_max[i]; if (v > bv) { bv = v; bi = i; } }
   return bi;
 }
 
@@ -438,10 +527,10 @@ function eluNeed(d, r, i, hog, bar) {
 
 /* ---------- cortante ---------- */
 function shear(d, r) {
-  const x = r.x, Ls = r.Ls, ext = r.ext, L = d.L, n = x.length;
-  const N = r.res.inf.N, MP = r.res.inf.MP, RB = r.res.inf.RB, k = d.k;
+  const x = r.x, Ls = r.Ls, ext = r.ext, n = x.length;
+  const N = r.res.inf.N, MP = r.res.inf.MP, k = d.k;
   const Vp_iso = Ls.Pinf.map((p, i) => -p * Math.sin(Ls.alpha[i]));
-  const Vhip = x.map(xx => xx <= L + 1e-9 ? -RB / 2 : RB / 2);
+  const Vhip = r.res.inf.Vhip;
   const Vp = Vp_iso.map((v, i) => v + Vhip[i]);
   const Msag = ext.Mg.map((v, i) => 1.4 * (v + ext.Mq_max[i])), Mhog = ext.Mg.map((v, i) => 1.4 * (v + ext.Mq_min[i]));
   const use_sag = Msag.map((v, i) => Math.abs(v) >= Math.abs(Mhog[i]));
@@ -468,23 +557,24 @@ function shear(d, r) {
 }
 
 /* ---------- flecha ---------- */
-function integrateDefl(x, kappa, L) {
+function integrateDefl(x, kappa, iSup) {   /* y'' = κ integrada duas vezes; flecha nula em todos os apoios (correção linear por trecho) */
   const n = x.length, slope = [0], y = [0];
   for (let i = 1; i < n; i++) slope[i] = slope[i - 1] + 0.5 * (kappa[i] + kappa[i - 1]) * (x[i] - x[i - 1]);
   for (let i = 1; i < n; i++) y[i] = y[i - 1] + 0.5 * (slope[i] + slope[i - 1]) * (x[i] - x[i - 1]);
-  const iL = Math.round(L / (x[1] - x[0]));
-  return y.map((v, i) => v - y[iL] * x[i] / L);
+  const out = y.slice();
+  for (let k = 0; k + 1 < iSup.length; k++) { const a = iSup[k], b = iSup[k + 1]; for (let i = a; i <= b; i++) out[i] = y[i] - (y[a] + (y[b] - y[a]) * (x[i] - x[a]) / (x[b] - x[a])); }
+  return out;
 }
 function deflectionPC(d, r) {
-  const x = r.x, L = d.L, EI = d.Ecs * 1e3 * d.Ic;
-  const U = (w) => twoSpan(w, w, L, x)[0];
-  const Mg = U(d.g), Mpsi = U(d.psi2 * d.q), Mfreq = U(d.psi1 * d.q), MP = r.res.inf.MP;
-  const yOf = M => integrateDefl(x, M.map(m => -m / EI), L);
+  const x = r.x, Lt = d.Ltot, EI = d.Ecs * 1e3 * d.Ic, st = r.st, n = d.n;
+  const U = w => beamField(d, st, w)[0];
+  const Mg = U(d.gv), Mpsi = U(d.qv.map(q => d.psi2 * q)), Mfreq = U(d.qv.map(q => d.psi1 * q)), MP = r.res.inf.MP;
+  const yOf = M => integrateDefl(x, M.map(m => -m / EI), st.iSup);
   const sumM = (...a) => a[0].map((_, i) => a.reduce((s, v) => s + v[i], 0));
   const out = {g: yOf(Mg), P: yOf(MP), qp_net: yOf(sumM(Mg, Mpsi, MP)), cfq_net: yOf(sumM(Mg, Mfreq, MP))};
   out.qp_inf = out.qp_net.map(v => v * (1 + d.phi_cr));
   const m = d.g / 9.81 * 1000, EIn = d.Ecs * 1e6 * d.Ic;
-  out.f1 = Math.PI / (2 * L * L) * Math.sqrt(EIn / m);
+  out.f1 = Math.PI / (2 * d.Lmax * d.Lmax) * Math.sqrt(EIn / m);
   return out;
 }
 
@@ -496,12 +586,15 @@ function rcFlexure(d, Md, dd) {
   return {Kmd, xd, x, As: Md / (fyd * (dd - 0.4 * x)) * 1e4};
 }
 function rcDesign(d, r) {
-  const x = r.x, ext = r.ext, L = d.L, dd = d.ddCA, ae = d.Es / d.Ecs, fctm = d.fctm;
-  const iB = 20;
-  const Md_neg = 1.4 * Math.abs(ext.Mg[iB] + ext.Mq_min[iB]);
-  let ipos = 0, bv = -Infinity; for (let i = 0; i <= 20; i++) { const v = ext.Mg[i] + ext.Mq_max[i]; if (v > bv) { bv = v; ipos = i; } }
+  const x = r.x, ext = r.ext, st = r.st, dd = d.ddCA, ae = d.Es / d.Ecs, fctm = d.fctm, n = d.n;
+  const sup = st.iSup.slice(1, n);   /* apoios internos */
+  let iB = sup.length ? sup[0] : -1, bn = -Infinity;
+  sup.forEach(i => { const v = Math.abs(ext.Mg[i] + ext.Mq_min[i]); if (v > bn) { bn = v; iB = i; } });
+  const hasNeg = iB >= 0;
+  const Md_neg = hasNeg ? 1.4 * Math.abs(ext.Mg[iB] + ext.Mq_min[iB]) : 0;
+  let ipos = 0, bv = -Infinity; for (let i = 0; i < x.length; i++) { const v = ext.Mg[i] + ext.Mq_max[i]; if (v > bv) { bv = v; ipos = i; } }
   const Md_pos = 1.4 * (ext.Mg[ipos] + ext.Mq_max[ipos]);
-  const neg = rcFlexure(d, Md_neg, dd), pos = rcFlexure(d, Md_pos, dd);
+  const neg = hasNeg ? rcFlexure(d, Md_neg, dd) : {Kmd: 0, xd: 0, x: 0, As: 0}, pos = rcFlexure(d, Md_pos, dd);
   const ba = barArea(d.phiCA), As_neg = d.nnegCA * ba, As_pos = d.nposCA * ba;
   const As_min = 0.0015 * d.bw * d.h * 1e4;
   const Mr = 1.5 * fctm * 1e3 * d.Ic / (d.h / 2);
@@ -512,32 +605,32 @@ function rcDesign(d, r) {
   };
   const els = {};
   for (const [tag, As, i] of [['neg', As_neg, iB], ['pos', As_pos, ipos]]) {
+    if (i < 0) { els[tag] = {Mf: 0, x2: 0, I2: 0, sig_s: 0, rho_ri: 0, w1: 0, w2: 0, wk: 0}; continue; }
     const Mf = Math.abs(ext.Mg[i] + d.psi1 * (tag === 'neg' ? ext.Mq_min[i] : ext.Mq_max[i]));
     const {x2, I2} = stage2(As), sig_s = ae * Mf * (dd - x2) / I2 / 1e3, phi_l = d.phiCA, eta1 = 2.25;
     const Acri = d.bw * (d.cgCA + 7.5 * phi_l / 1000), rho_ri = As * 1e-4 / Acri;
     const w1 = phi_l / (12.5 * eta1) * sig_s / d.Es * 3 * sig_s / fctm, w2 = phi_l / (12.5 * eta1) * sig_s / d.Es * (4 / rho_ri + 45);
     els[tag] = {Mf, x2, I2, sig_s, rho_ri, w1, w2, wk: Math.min(w1, w2)};
   }
-  const Ecs = d.Ecs * 1e3, Mqp = x.map((_, j) => twoSpan(d.g, d.g, L, x)[0][j] + twoSpan(d.psi2 * d.q, d.psi2 * d.q, L, x)[0][j]);
+  const Ecs = d.Ecs * 1e3, Mqp = beamField(d, st, d.gv.map((g, k) => g + d.psi2 * d.qv[k]))[0];
   const EIx = Mqp.map(M => {
     const {I2} = stage2(M >= 0 ? As_pos : As_neg), Ma = Math.abs(M);
     const Ie = Ma <= Mr ? d.Ic : Math.min((Mr / Ma) ** 3 * d.Ic + (1 - (Mr / Ma) ** 3) * I2, d.Ic);
     return Ecs * Ie;
   });
-  const yi = integrateDefl(x, Mqp.map((M, j) => -M / EIx[j]), L);
-  const af = (2 - 0.68 * 0.996) / (1 + 0), yi1 = yi.slice(0, 21);
-  const defl_inst = maxA(yi1);
-  const Vsd_B = 1.4 * Math.abs(ext.Vg[iB] + ext.Vq_min[iB]), Vsd_A = 1.4 * (ext.Vg[0] + ext.Vq_max[0]);
+  const yi = integrateDefl(x, Mqp.map((M, j) => -M / EIx[j]), st.iSup);
+  const af = (2 - 0.68 * 0.996) / (1 + 0);
+  const defl_inst = maxA(yi);
+  const Vsd_B = hasNeg ? 1.4 * Math.abs(ext.Vg[iB] + ext.Vq_min[iB]) : 0, Vsd_A = 1.4 * (ext.Vg[0] + ext.Vq_max[0]);
   const fywd = d.fyk / d.gs, Vc = 0.6 * d.fctd * 1e3 * d.bw * dd;
   const asw = V => Math.max(V - Vc, 0) / (0.9 * dd * fywd * 1e3) * 1e4;
-  return {dd, Md_neg, Md_pos, x_pos: x[ipos], neg, pos, As_neg, As_pos, As_min, Mr, els, defl_inst, alpha_f: af, defl_tot: defl_inst * (1 + af),
-    Vsd_B, Vsd_A, Vc, asw_B: asw(Vsd_B), asw_A: asw(Vsd_A), asw_min: 0.2 * d.fctm / d.fyk * d.bw * 1e4, yi, ipos};
+  return {dd, Md_neg, Md_pos, x_pos: x[ipos], x_neg: hasNeg ? x[iB] : null, hasNeg, neg, pos, As_neg, As_pos, As_min, Mr, els, defl_inst, alpha_f: af, defl_tot: defl_inst * (1 + af),
+    Vsd_B, Vsd_A, Vc, asw_B: asw(Vsd_B), asw_A: asw(Vsd_A), asw_min: 0.2 * d.fctm / d.fyk * d.bw * 1e4, yi, ipos, iNeg: iB};
 }
 
 /* ---------- níveis de protensão ---------- */
 function lvlChecks(d, r) {
   const rf = r.res.inf, W = d.W, ext = r.ext, Mg = ext.Mg, ft = d.ft_els;
-  const mk = (a, b) => ext.Mq_max.map((_, i) => Mg[i] + a * ext.Mq_max[i]);
   const comb = ps => ({pos: Mg.map((v, i) => v + ps * ext.Mq_max[i]), neg: Mg.map((v, i) => v + ps * ext.Mq_min[i])});
   const cqp = comb(d.psi2), cf = comb(d.psi1), cr = comb(1);
   const s1 = (M) => M.map((m, i) => rf.s1p[i] + m / W / 1e3), s2 = (M) => M.map((m, i) => rf.s2p[i] - m / W / 1e3);
@@ -592,10 +685,15 @@ function n1Section(d, r, i, hog, nbar, phi) {
 /* ---------- análise completa ---------- */
 function analyse(D) {
   const d = derive(D), r = evaluate(d), fu = fuso(d, r);
-  const aato = asAto(d, r), iB = Math.round(d.L / r.Ls.dx), isp = spanStation(d, r);
-  const eluB = eluSimple(d, r, iB, true, d.AscB, d.AstB), eluV = eluSimple(d, r, isp, false, d.AscV, d.AstV);
+  const aato = asAto(d, r), st = r.st, n = d.n;
+  const supIdx = st.iSup.slice(1, n), iB = supIdx.length ? supIdx[0] : -1;
+  const spIdx = Array.from({length: n}, (_, k) => spanStation(d, r, k)), isp = spIdx[0];
+  const eluSup = supIdx.map(i => eluSimple(d, r, i, true, d.AscB, d.AstB)), eluSpan = spIdx.map(i => eluSimple(d, r, i, false, d.AscV, d.AstV));
+  const worst = a => a.length ? a.reduce((b, v, k) => v.ratio < a[b].ratio - 1e-9 ? k : b, 0) : -1;
+  const kSup = worst(eluSup), kSpan = worst(eluSpan);
+  const eluB = kSup >= 0 ? eluSup[kSup] : null, eluV = eluSpan[kSpan];
   const sh = shear(d, r), df = deflectionPC(d, r), rc = rcDesign(d, r), lv = lvlChecks(d, r);
-  return {d, r, fu, aato, iB, isp, eluB, eluV, sh, df, rc, lv};
+  return {d, r, fu, aato, st, iB, isp, supIdx, spIdx, eluSup, eluSpan, kSup, kSpan, eluB, eluV, sh, df, rc, lv};
 }
 function minStrands(D) {
   const out = [];
@@ -605,7 +703,7 @@ function minStrands(D) {
   }
   return out;
 }
-if (typeof module !== 'undefined') module.exports = {DEF, derive, analyse, minStrands, cable, profileParams, evaluate, fuso, losses, eluNeed, mrdSection, n1Section, barArea, BAR_AREA};
+if (typeof module !== 'undefined') module.exports = {DEF, derive, analyse, minStrands, cable, profileParams, spanProfile, spanData, stations, evaluate, fuso, losses, eluNeed, mrdSection, n1Section, eluSimple, spanStation, barArea, BAR_AREA};
 
 </script>
 <script>
@@ -775,81 +873,126 @@ const PRESETS = [
   {id: 'n2', n: 'Nível 2', s: '4 cord./cabo', ov: {n_cord: 4, nivel: 2, AscB: 0, AscV: 0, AstB: 4.02}},
   {id: 'n1', n: 'Nível 1', s: '2 cord./cabo', ov: {n_cord: 2, nivel: 1, AscB: 0, AscV: 0, AstB: 12.57, AstV: 6.28}}
 ];
-const GROUPS = [
-  {t: 'Nível de protensão alvo', o: true, f: [['nivel', 'Nível exigido no projeto', 'nível', '', 1]]},
-  {t: 'Geometria e materiais', o: true, f: [
-    ['L', 'Vão de cada tramo', 'L', 'm', .5], ['bw', 'Largura da seção', 'bw', 'm', .01], ['h', 'Altura da seção', 'h', 'm', .01],
-    ['fck', 'Resistência do concreto', 'fck', 'MPa', 1], ['gc', 'Coeficiente do concreto', 'γc', '', .05], ['t0', 'Idade na protensão', 't0', 'dias', 1]]},
-  {t: 'Ações', o: true, f: [
-    ['g_add', 'Permanente adicional (adotada)', 'g adic.', 'kN/m', .25], ['q', 'Sobrecarga (adotada)', 'q', 'kN/m', 1],
-    ['psi1', 'Fator ψ1', 'ψ1', '', .05], ['psi2', 'Fator ψ2', 'ψ2', '', .05]]},
-  {t: 'Cobrimento e traçado do cabo', o: true, f: [
-    ['cnom', 'Cobrimento nominal', 'cnom', 'm', .005], ['phi_t', 'Estribo Ø', 'Øt', 'm', .0025], ['d_bain', 'Bainha, diâmetro externo', 'Øbainha', 'm', .001],
-    ['e_end', 'Excentricidade na ancoragem', 'e_end', 'm', .01], ['e_span', 'Excentricidade máx. no vão', 'e_vão', 'm', .01],
-    ['e_sup', 'Excentricidade sobre o apoio B (acima)', 'e_sup', 'm', .01], ['lam', 'Parábola reversa junto ao apoio', 'λ', 'm', .1]]},
-  {t: 'Armadura ativa', o: true, f: [
-    ['n_cab', 'Número de cabos', 'ncab', '', 1], ['n_cord', 'Cordoalhas por cabo', 'ncord', '', 1], ['Ap1', 'Área de uma cordoalha Ø12,7', 'Ap1', 'cm²', .001],
-    ['fptk', 'Resistência do aço', 'fptk', 'MPa', 10], ['Ep', 'Módulo do aço de protensão', 'Ep', 'MPa', 1000], ['rj', 'Tensão no macaco / fptk', 'σpj/fptk', '', .01], ['gs', 'Coeficiente do aço', 'γs', '', .05]]},
-  {t: 'Perdas de protensão', o: false, f: [
-    ['mu', 'Atrito cordoalha-bainha', 'μ', '1/rad', .01], ['kk', 'Perda parasita', 'k', '1/m', .0005], ['slip', 'Cravação das cunhas', 'Δcrav', 'm', .001],
-    ['phi_cr', 'Coeficiente de fluência', 'φ', '', .1], ['eps_cs', 'Retração', 'εcs', '‰', .01, 1000]]},
-  {t: 'Armaduras passivas', o: false, f: [
-    ['fyk', 'Aço CA-50', 'fyk', 'MPa', 10], ['Es', 'Módulo do aço passivo', 'Es', 'MPa', 1000],
-    ['AstB', 'As tracionada no apoio B', 'AsB', 'cm²', .01], ['AstV', 'As tracionada no vão', 'Asvão', 'cm²', .01],
-    ['AscB', "A' comprimida no apoio B", "A'B", 'cm²', .01], ['AscV', "A' comprimida no vão", "A'vão", 'cm²', .01], ['dsc', "d' de A' à face comprimida", "d'", 'm', .005]]},
-  {t: 'Concreto armado (comparação)', o: false, f: [
-    ['nnegCA', 'Barras no apoio B', 'nB', '', 1], ['nposCA', 'Barras no vão', 'nvão', '', 1], ['phiCA', 'Diâmetro das barras', 'Ø', 'mm', 2.5],
-    ['ddCA', 'Altura útil', 'd', 'm', .01], ['cgCA', 'Centro das barras à face', 'c+Øt+Ø/2', 'm', .005]]},
-  {t: 'Nível 1: armadura passiva', o: false, f: [
-    ['nB1', 'Barras tracionadas no apoio B', 'nB', '', 1], ['nV1', 'Barras tracionadas no vão', 'nvão', '', 1], ['phiN1', 'Diâmetro das barras', 'Ø', 'mm', 2.5]]}
+/* tipos de viga: só mudam a estrutura (nº e comprimento dos vãos); os demais dados ficam como estão */
+const TIPOS = [
+  {id: '1', n: '1 vão', s: 'isostática, 10 m', ov: {nsp: 1, L: 10}},
+  {id: '2e', n: '2 vãos iguais', s: 'projeto atual', ov: {nsp: 2, eqL: 1, L: 10}},
+  {id: '2d', n: '2 vãos diferentes', s: '8 m + 12 m', ov: {nsp: 2, eqL: 0, L: 8, L2: 12}},
+  {id: '3e', n: '3 vãos iguais', s: 'contínua, 10 m', ov: {nsp: 3, eqL: 1, L: 10}}
 ];
+const STRUCT = ['nsp', 'eqL', 'eqLoad', 'eqTr'];
+const OPTS = {
+  nivel: [[3, '3 · completa'], [2, '2 · limitada'], [1, '1 · parcial']],
+  nsp: [[1, '1 vão'], [2, '2 vãos'], [3, '3 vãos'], [4, '4 vãos'], [5, '5 vãos'], [6, '6 vãos']],
+  eqL: [[1, 'iguais'], [0, 'diferentes']], eqLoad: [[1, 'iguais nos vãos'], [0, 'por vão']], eqTr: [[1, 'o mesmo em todos'], [0, 'por vão e por apoio']]
+};
+const nsOf = v => Math.max(1, Math.min(MAXSP, Math.round(v.nsp || 2)));
+const supName = j => String.fromCharCode(66 + j);               /* apoio interno j (0 = B, 1 = C, ...) */
+const spanName = k => A && A.d.n === 1 ? 'vão' : 'vão ' + (k + 1);
+function groupsFor(v){
+  const n = nsOf(v), multi = n > 1, dL = multi && v.eqL === 0, dLoad = multi && v.eqLoad === 0, dTr = multi && v.eqTr === 0, G = [];
+  G.push({t: 'Nível de protensão alvo', o: true, f: [['nivel', 'Nível exigido no projeto', 'nível', '', 1, 1, 'nivel']]});
+  const vf = [['nsp', 'Número de vãos', 'n', '', 1, 1, 'nsp']];
+  if (multi) vf.push(['eqL', 'Comprimentos dos vãos', '', '', 1, 1, 'eqL']);
+  vf.push(['L', dL ? 'Vão 1' : (multi ? 'Vão de cada tramo' : 'Vão'), dL ? 'L1' : 'L', 'm', .5]);
+  if (dL) for (let i = 2; i <= n; i++) vf.push(['L' + i, 'Vão ' + i, 'L' + i, 'm', .5]);
+  G.push({t: 'Tipo de viga e vãos', o: true, f: vf});
+  G.push({t: 'Seção e materiais', o: true, f: [
+    ['bw', 'Largura da seção', 'bw', 'm', .01], ['h', 'Altura da seção', 'h', 'm', .01],
+    ['fck', 'Resistência do concreto', 'fck', 'MPa', 1], ['gc', 'Coeficiente do concreto', 'γc', '', .05], ['t0', 'Idade na protensão', 't0', 'dias', 1]]});
+  const af = []; if (multi) af.push(['eqLoad', 'Cargas g e q', '', '', 1, 1, 'eqLoad']);
+  af.push(['g_add', dLoad ? 'Permanente adicional, vão 1' : 'Permanente adicional (adotada)', dLoad ? 'g1' : 'g adic.', 'kN/m', .25], ['q', dLoad ? 'Sobrecarga, vão 1' : 'Sobrecarga (adotada)', dLoad ? 'q1' : 'q', 'kN/m', 1]);
+  if (dLoad) for (let i = 2; i <= n; i++) af.push(['g' + i, 'Permanente adicional, vão ' + i, 'g' + i, 'kN/m', .25], ['q' + i, 'Sobrecarga, vão ' + i, 'q' + i, 'kN/m', 1]);
+  af.push(['psi1', 'Fator ψ1', 'ψ1', '', .05], ['psi2', 'Fator ψ2', 'ψ2', '', .05]);
+  G.push({t: 'Ações', o: true, f: af});
+  const tf = [['cnom', 'Cobrimento nominal', 'cnom', 'm', .005], ['phi_t', 'Estribo Ø', 'Øt', 'm', .0025], ['d_bain', 'Bainha, diâmetro externo', 'Øbainha', 'm', .001], ['e_end', 'Excentricidade na ancoragem', 'e_end', 'm', .01]];
+  if (multi) tf.push(['eqTr', 'Traçado do cabo (e e λ)', '', '', 1, 1, 'eqTr']);
+  tf.push(['e_span', dTr ? 'Excentricidade máx. no vão 1' : 'Excentricidade máx. no vão', dTr ? 'e1' : 'e_vão', 'm', .01]);
+  if (dTr) for (let i = 2; i <= n; i++) tf.push(['ev' + i, 'Excentricidade máx. no vão ' + i, 'e' + i, 'm', .01]);
+  if (multi) {
+    tf.push(['e_sup', dTr ? 'Excentricidade sobre o apoio B (acima)' : 'Excentricidade sobre os apoios internos (acima)', dTr ? 'eB' : 'e_sup', 'm', .01]);
+    if (dTr) for (let j = 1; j < n - 1; j++) tf.push(['es' + (j + 1), 'Excentricidade sobre o apoio ' + supName(j) + ' (acima)', 'e' + supName(j), 'm', .01]);
+    tf.push(['lam', dTr ? 'Parábola reversa junto ao apoio B' : 'Parábola reversa junto aos apoios', dTr ? 'λB' : 'λ', 'm', .1]);
+    if (dTr) for (let j = 1; j < n - 1; j++) tf.push(['lam' + (j + 1), 'Parábola reversa junto ao apoio ' + supName(j), 'λ' + supName(j), 'm', .1]);
+  }
+  G.push({t: 'Cobrimento e traçado do cabo', o: true, f: tf});
+  G.push({t: 'Armadura ativa', o: true, f: [
+    ['n_cab', 'Número de cabos', 'ncab', '', 1], ['n_cord', 'Cordoalhas por cabo', 'ncord', '', 1], ['Ap1', 'Área de uma cordoalha Ø12,7', 'Ap1', 'cm²', .001],
+    ['fptk', 'Resistência do aço', 'fptk', 'MPa', 10], ['Ep', 'Módulo do aço de protensão', 'Ep', 'MPa', 1000], ['rj', 'Tensão no macaco / fptk', 'σpj/fptk', '', .01], ['gs', 'Coeficiente do aço', 'γs', '', .05]]});
+  G.push({t: 'Perdas de protensão', o: false, f: [
+    ['mu', 'Atrito cordoalha-bainha', 'μ', '1/rad', .01], ['kk', 'Perda parasita', 'k', '1/m', .0005], ['slip', 'Cravação das cunhas', 'Δcrav', 'm', .001],
+    ['phi_cr', 'Coeficiente de fluência', 'φ', '', .1], ['eps_cs', 'Retração', 'εcs', '‰', .01, 1000]]});
+  const pf = [['fyk', 'Aço CA-50', 'fyk', 'MPa', 10], ['Es', 'Módulo do aço passivo', 'Es', 'MPa', 1000]];
+  if (multi) pf.push(['AstB', 'As tracionada nos apoios internos', 'Asap', 'cm²', .01]);
+  pf.push(['AstV', multi ? 'As tracionada nos vãos' : 'As tracionada no vão', 'Asvão', 'cm²', .01]);
+  if (multi) pf.push(['AscB', "A' comprimida nos apoios internos", "A'ap", 'cm²', .01]);
+  pf.push(['AscV', multi ? "A' comprimida nos vãos" : "A' comprimida no vão", "A'vão", 'cm²', .01], ['dsc', "d' de A' à face comprimida", "d'", 'm', .005]);
+  G.push({t: 'Armaduras passivas', o: false, f: pf});
+  const cf = []; if (multi) cf.push(['nnegCA', 'Barras nos apoios internos', 'nap', '', 1]);
+  cf.push(['nposCA', multi ? 'Barras nos vãos' : 'Barras no vão', 'nvão', '', 1], ['phiCA', 'Diâmetro das barras', 'Ø', 'mm', 2.5], ['ddCA', 'Altura útil', 'd', 'm', .01], ['cgCA', 'Centro das barras à face', 'c+Øt+Ø/2', 'm', .005]);
+  G.push({t: 'Concreto armado (comparação)', o: false, f: cf});
+  const nf = []; if (multi) nf.push(['nB1', 'Barras tracionadas nos apoios internos', 'nap', '', 1]);
+  nf.push(['nV1', multi ? 'Barras tracionadas nos vãos' : 'Barras tracionadas no vão', 'nvão', '', 1], ['phiN1', 'Diâmetro das barras', 'Ø', 'mm', 2.5]);
+  G.push({t: 'Nível 1: armadura passiva', o: false, f: nf});
+  return G;
+}
 const STORE = 'viga-cp-dados-v1';
 let inp = Object.assign({}, DEF), preset = 'n3';
 try { const sv = JSON.parse(localStorage.getItem(STORE) || 'null'); if (sv && sv.inp) { inp = Object.assign({}, DEF, sv.inp); preset = sv.preset || 'n3'; } } catch (e) {}
 function save(){ try { localStorage.setItem(STORE, JSON.stringify({inp, preset})); } catch (e) {} }
 
 let A = null, lastErr = null, tab = 'resumo';
-/* Vãos exibidos nas tabelas e nos gráficos de flecha: 1 = só o 1º vão (x de 0 a L); 2 = os dois vãos (0 a 2L). */
+/* Vãos exibidos nas tabelas e nos gráficos de flecha: 1 = só o 1º vão; 2 = todos os vãos. */
 let spans = 1; try { spans = localStorage.getItem('viga-cp-vaos') === '2' ? 2 : 1; } catch (e) {}
-const NR = () => spans === 2 ? 41 : 21, secT = () => spans === 2 ? 'Seções dos dois vãos' : 'Seções do 1º vão';
+const NR = () => !A || A.d.n === 1 || spans === 2 ? A.r.x.length : A.st.iSup[1] + 1;
+const secT = () => A && A.d.n === 1 ? 'Seções do vão' : (spans === 2 ? 'Seções de todos os vãos' : 'Seções do 1º vão');
 function compute(){
   try {
     const a = analyse(inp);
-    const bad = [a.d.e_max, a.r.Ls.Pj, a.r.Ls.elong, a.eluB.MRd, a.fu.lo[10]].some(v => !isFinite(v));
-    if (bad) throw new Error('Os dados informados não geram um traçado válido (confira λ, excentricidades e vão).');
+    const bad = [a.d.e_max, a.r.Ls.Pj, a.r.Ls.elong, a.eluV.MRd, a.fu.lo[10]].some(v => !isFinite(v));
+    if (bad) throw new Error('Os dados informados não geram um traçado válido (confira λ, excentricidades e vãos).');
     A = a; lastErr = null;
   } catch (e) { lastErr = e.message || String(e); }
   const bn = $('#banner'); if (lastErr) { bn.textContent = lastErr + ' Os resultados abaixo são do último cálculo válido.'; bn.hidden = false; } else bn.hidden = true;
 }
 
 /* ---------- barra lateral ---------- */
+function tipoOf(){ const n = nsOf(inp); return n === 1 ? '1' : n === 2 ? (inp.eqL === 0 ? '2d' : '2e') : (n === 3 && inp.eqL !== 0 ? '3e' : ''); }
 function buildSide(){
   const pr = $('#presets'); pr.innerHTML = '';
   PRESETS.forEach(p => { const b = h('button', {class: 'btn', type: 'button', 'aria-pressed': String(preset === p.id), 'data-p': p.id}, p.n + '<small>' + p.s + '</small>'); pr.appendChild(b); });
+  const tp = $('#tipos'); tp.innerHTML = '';
+  TIPOS.forEach(p => { const b = h('button', {class: 'btn', type: 'button', 'aria-pressed': String(tipoOf() === p.id), 'data-tp': p.id}, p.n + '<small>' + p.s + '</small>'); tp.appendChild(b); });
   const fl = $('#fields'); fl.innerHTML = '';
-  GROUPS.forEach(g => {
+  groupsFor(inp).forEach(g => {
     const d = h('details', {class: 'grp'}); if (g.o) d.setAttribute('open', ''); d.appendChild(h('summary', null, g.t));
-    g.f.forEach(r => { const [k, lab, sym, u, st, sc] = r, scale = sc || 1, id = 'in_' + k;
+    g.f.forEach(r => { const [k, lab, sym, u, st, sc, ok] = r, scale = sc || 1, id = 'in_' + k;
       const row = h('div', {class: 'fld'});
-      row.appendChild(h('label', {for: id}, lab + ' <b>' + sym + '</b>'));
+      row.appendChild(h('label', {for: id}, lab + (sym ? ' <b>' + sym + '</b>' : '')));
       const w = h('div', {class: 'in'}); let i;
-        if (k === 'nivel'){ i = h('select', {id}, '<option value="3">3 · completa</option><option value="2">2 · limitada</option><option value="1">1 · parcial</option>'); i.value = String(inp[k]); i.addEventListener('change', () => { inp[k] = parseInt(i.value, 10); preset = ''; sched(); }); }
-        else { i = h('input', {id, type: 'number', step: st, inputmode: 'decimal'}); i.value = +(inp[k] * scale).toPrecision(8);
-      i.addEventListener('input', () => { const v = parseFloat(i.value); if (!isFinite(v)) return; inp[k] = v / scale; preset = ''; sched(); }); }
+      if (ok){ i = h('select', {id}, OPTS[ok].map(o => '<option value="' + o[0] + '">' + o[1] + '</option>').join('')); i.value = String(inp[k]);
+        i.addEventListener('change', () => { inp[k] = parseInt(i.value, 10); preset = ''; if (STRUCT.indexOf(k) >= 0) buildSide(); sched(); }); }
+      else { i = h('input', {id, type: 'number', step: st, inputmode: 'decimal'}); i.value = +(inp[k] * scale).toPrecision(8);
+        i.addEventListener('input', () => { const v = parseFloat(i.value); if (!isFinite(v)) return; inp[k] = v / scale; preset = ''; sched(); }); }
       w.appendChild(i); w.appendChild(h('span', {class: 'u'}, u)); row.appendChild(w); d.appendChild(row); });
     fl.appendChild(d);
   });
 }
 $('#presets').addEventListener('click', e => { const b = e.target.closest('button[data-p]'); if (!b) return; const p = PRESETS.find(x => x.id === b.dataset.p);
   inp = Object.assign({}, DEF, p.ov); preset = p.id; buildSide(); sched(); });
+$('#tipos').addEventListener('click', e => { const b = e.target.closest('button[data-tp]'); if (!b) return; const p = TIPOS.find(x => x.id === b.dataset.tp);
+  inp = Object.assign({}, inp, p.ov); preset = ''; buildSide(); sched(); });
 $('#reset').addEventListener('click', () => { inp = Object.assign({}, DEF); preset = 'n3'; buildSide(); sched(); });
 
 let pend = false;
-function sched(){ if (pend) return; pend = true; requestAnimationFrame(() => { pend = false; compute(); save(); renderStatus(); renderPanel(); syncPresetButtons(); }); }
-function syncPresetButtons(){ document.querySelectorAll('#presets button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.p === preset))); }
+function sched(){ if (pend) return; pend = true; requestAnimationFrame(() => { pend = false; compute(); save(); renderStatus(); buildTabs(); renderPanel(); syncPresetButtons(); }); }
+function syncPresetButtons(){ document.querySelectorAll('#presets button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.p === preset))); document.querySelectorAll('#tipos button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.tp === tipoOf()))); }
 
 /* ---------- cabeçalho de situação ---------- */
 function levelOf(){ return A.lv.N3 ? 3 : A.lv.N2 ? 2 : 1; }
+function spanDefl(a){   /* flecha quase permanente ×(1+φ) de cada vão, em mm, e o limite L/250 */
+  return a.d.Ls.map((L, k) => ({k, L, dl: Math.max.apply(null, a.df.qp_inf.slice(a.st.iSup[k], a.st.iSup[k + 1] + 1).map(Math.abs)) * 1000, lim: L * 1000 / 250}));
+}
 function checks(){
   const a = A, m = a.r.margins, d = a.d, aatoMax = Math.max.apply(null, a.aato), out = [];
   const tr = Math.min(m['Ato: tração (fibra inf.)'], m['Ato: tração (fibra sup.)']);
@@ -857,9 +1000,10 @@ function checks(){
   out.push({k: 'ato_c', t: 'Ato · compressão ≤ 0,7·fcj', v: 'σ = ' + f(m['Ato: compressão'] + a.r.lim.ato_c, 2) + ' MPa (limite ' + f(a.r.lim.ato_c, 2) + ')', s: m['Ato: compressão'] >= 0 ? 'ok' : 'bad', c: m['Ato: compressão'] >= 0 ? 'Atende' : 'Não atende'});
   const nv = d.nivel || 3, lvc = a.lv;
   if (nv === 1){
-    const b1 = n1Section(d, a.r, a.iB, true, d.nB1, d.phiN1), v1 = n1Section(d, a.r, a.isp, false, d.nV1, d.phiN1);
-    const w = Math.max(b1.cracked && b1.wk ? b1.wk : 0, v1.cracked && v1.wk ? v1.wk : 0);
-    out.push({k: 'w', t: 'ELS-W · abertura de fissuras wk ≤ 0,2 mm (nível 1)', v: (b1.cracked || v1.cracked ? 'wk = ' + f(w, 3) + ' mm (limite 0,2)' : 'seção não fissurada (limite wk 0,2 mm)'), s: w <= 0.2 ? 'ok' : 'bad', c: w <= 0.2 ? 'Atende' : 'Não atende'});
+    let w = 0, cr = false;
+    a.supIdx.forEach(i => { const b1 = n1Section(d, a.r, i, true, d.nB1, d.phiN1); if (b1.cracked) cr = true; w = Math.max(w, b1.cracked && b1.wk ? b1.wk : 0); });
+    a.spIdx.forEach(i => { const v1 = n1Section(d, a.r, i, false, d.nV1, d.phiN1); if (v1.cracked) cr = true; w = Math.max(w, v1.cracked && v1.wk ? v1.wk : 0); });
+    out.push({k: 'w', t: 'ELS-W · abertura de fissuras wk ≤ 0,2 mm (nível 1)', v: (cr ? 'wk = ' + f(w, 3) + ' mm (limite 0,2)' : 'seção não fissurada (limite wk 0,2 mm)'), s: w <= 0.2 ? 'ok' : 'bad', c: w <= 0.2 ? 'Atende' : 'Não atende'});
   } else {
     const dv = nv === 3 ? lvc.N3d : lvc.N2d, fv = nv === 3 ? lvc.N3f : lvc.N2f;
     out.push({k: 'd', t: 'ELS-D · descompressão, comb. ' + (nv === 3 ? 'frequente' : 'quase permanente'), v: 'σ máx = ' + f(-dv, 2) + ' MPa (limite 0)', s: dv >= 0 ? 'ok' : 'bad', c: dv >= 0 ? 'Atende' : 'Não atende'});
@@ -867,17 +1011,21 @@ function checks(){
   }
   const ce = m['ELS-CE compressão (CR)'];
   out.push({k: 'ce', t: 'ELS-CE · compressão excessiva', v: 'σ mín = ' + f(ce + a.r.lim.ce, 2) + ' MPa (limite ' + f(a.r.lim.ce, 2) + ')', s: ce >= 0 ? 'ok' : 'bad', c: ce >= 0 ? 'Atende' : 'Não atende'});
-  [['B', a.eluB], ['vão', a.eluV]].forEach(([n, e]) => out.push({k: 'elu' + n, t: 'ELU flexão · ' + (n === 'B' ? 'apoio B' : 'vão'), v: 'MRd/|Msd| = ' + f(e.ratio, 2) + ' (limite 1,00)' + (e.ductile ? '' : ' · x/d ' + f(e.xd, 2) + ' (limite 0,45)'), s: e.ok && e.yieldP ? (e.ductile ? 'ok' : 'warn') : 'bad', c: !e.ok ? 'Não atende' : !e.yieldP ? 'Aço não escoa' : e.ductile ? 'Atende' : 'Aumentar A′ (x/d > 0,45)'}));
+  const eluRow = (nm, e) => ({k: 'elu' + nm, t: 'ELU flexão · ' + nm, v: 'MRd/|Msd| = ' + f(e.ratio, 2) + ' (limite 1,00)' + (e.ductile ? '' : ' · x/d ' + f(e.xd, 2) + ' (limite 0,45)'), s: e.ok && e.yieldP ? (e.ductile ? 'ok' : 'warn') : 'bad', c: !e.ok ? 'Não atende' : !e.yieldP ? 'Aço não escoa' : e.ductile ? 'Atende' : 'Aumentar A′ (x/d > 0,45)'});
+  a.eluSup.forEach((e, j) => out.push(eluRow('apoio ' + supName(j), e)));
+  a.eluSpan.forEach((e, k) => out.push(eluRow(spanName(k), e)));
   const vmax = Math.max.apply(null, a.sh.Vsd);
   out.push({k: 'v', t: 'Cortante · Vsd ≤ VRd2', v: 'Vsd = ' + f(vmax, 0) + ' kN (limite ' + f(a.sh.Vu, 0) + ')', s: vmax <= a.sh.Vu ? 'ok' : 'bad', c: vmax <= a.sh.Vu ? 'Atende' : 'Não atende'});
-  const dl = Math.max.apply(null, a.df.qp_inf.slice(0, 21).map(Math.abs)) * 1000, lim = d.L * 1000 / 250;
-  out.push({k: 'fl', t: 'Flecha quase permanente ×(1+φ) ≤ L/250', v: 'δ = ' + f(dl, 1) + ' mm (limite ' + f(lim, 0) + ')', s: dl <= lim ? 'ok' : 'bad', c: dl <= lim ? 'Atende' : 'Não atende'});
+  const sd = spanDefl(a), w = sd.reduce((b, x) => x.dl / x.lim > b.dl / b.lim ? x : b);
+  out.push({k: 'fl', t: 'Flecha quase permanente ×(1+φ) ≤ L/250', v: 'δ = ' + f(w.dl, 1) + ' mm' + (d.n > 1 ? ' no ' + spanName(w.k) : '') + ' (limite ' + f(w.lim, 0) + ')', s: w.dl <= w.lim ? 'ok' : 'bad', c: w.dl <= w.lim ? 'Atende' : 'Não atende'});
   return out;
 }
 function renderStatus(){
   const a = A, c = checks(), nBad = c.filter(x => x.s === 'bad').length, nWarn = c.filter(x => x.s === 'warn').length;
-  const lv = levelOf(), names = {3: 'completa', 2: 'limitada', 1: 'parcial'};
-  $('#status').innerHTML = chip('info', 'Nível de protensão ' + lv + ' (' + names[lv] + ')') +
+  const lv = levelOf(), names = {3: 'completa', 2: 'limitada', 1: 'parcial'}, d = a.d;
+  $('#ttl').textContent = d.n === 1 ? 'Viga protendida, 1 vão' : 'Viga contínua protendida, ' + d.n + ' vãos';
+  const tipo = d.n === 1 ? 'Viga de 1 vão' : d.n + ' vãos ' + (d.Ls.every(l => Math.abs(l - d.Ls[0]) < 1e-9) ? 'iguais' : 'diferentes') + ' (' + d.Ls.map(l => f(l, l % 1 ? 1 : 0)).join(' + ') + ' m)';
+  $('#status').innerHTML = chip('info', tipo) + chip('info', 'Nível de protensão ' + lv + ' (' + names[lv] + ')') +
     (nBad ? chip('bad', nBad + (nBad > 1 ? ' verificações não atendem' : ' verificação não atende')) : chip('ok', 'Verificações atendem')) +
     (nWarn ? chip('warn', nWarn + (nWarn > 1 ? ' pontos pedem passiva' : ' ponto pede passiva')) : '') +
     chip('info', 'Pj ' + f(a.r.Ls.Pj, 0) + ' kN · P∞ ' + f(Math.min.apply(null, a.r.Ls.Pinf), 0) + ' kN');
@@ -889,7 +1037,7 @@ const TABS = [['resumo', 'Resumo'], ['tracado', 'Traçado e fuso'], ['perdas', '
 function buildTabs(){
   const t = $('#tabs'); t.innerHTML = '';
   TABS.forEach(([id, n]) => { const b = h('button', {class: 'tab', role: 'tab', id: 'tab_' + id, 'aria-selected': String(id === tab), 'data-t': id}, n); t.appendChild(b); });
-  const sw = h('div', {class: 'spansw', role: 'group', 'aria-label': 'Vãos exibidos'}, '<span>Vãos:</span><button type="button" data-v="1">1º vão</button><button type="button" data-v="2">Os dois vãos</button>'); t.appendChild(sw); syncSpans();
+  if (A && A.d.n > 1) { const sw = h('div', {class: 'spansw', role: 'group', 'aria-label': 'Vãos exibidos'}, '<span>Tabelas e flecha:</span><button type="button" data-v="1">1º vão</button><button type="button" data-v="2">Todos os vãos</button>'); t.appendChild(sw); syncSpans(); }
 }
 function syncSpans(){ document.querySelectorAll('.spansw button').forEach(b => b.setAttribute('aria-pressed', String(+b.dataset.v === spans))); }
 $('#tabs').addEventListener('click', e => { const b = e.target.closest('.spansw button'); if (!b) return; spans = +b.dataset.v; try { localStorage.setItem('viga-cp-vaos', String(spans)); } catch (x) {} syncSpans(); renderPanel(); });
@@ -907,7 +1055,7 @@ function table(head, rows){
 }
 function kv(items){ return '<dl class="kv">' + items.map(([k, v]) => '<div><dt>' + k + '</dt><dd>' + v + '</dd></div>').join('') + '</dl>'; }
 const xsOf = () => A.r.x;
-const xfine = () => { const n = 400, L2 = 2 * A.d.L; return Array.from({length: n + 1}, (_, i) => L2 * i / n); };
+const xfine = () => { const n = 200 * A.d.n, L2 = A.d.Ltot; return Array.from({length: n + 1}, (_, i) => L2 * i / n); };
 
 function traceSeries(opts){
   const d = A.d, xf = xfine(), ef = cable(d, xf).e;
@@ -924,7 +1072,7 @@ function traceSeries(opts){
 }
 
 
-/* ---------- armadura passiva por zona (apoio B: |x−L| ≤ 1 m; vão: demais seções; ancoragem sem passiva) ---------- */
+/* ---------- armadura passiva por zona (apoios internos: a ≤ 1 m do apoio; vãos: demais seções; ancoragem sem passiva) ---------- */
 function pickBars(Acm2){
   if (!(Acm2 > 0.01)) return null;
   let best = null;
@@ -933,10 +1081,11 @@ function pickBars(Acm2){
   return best;
 }
 function passiveAt(x){
-  const d = A.d, L = d.L, zB = Math.abs(x - L) <= 1 + 1e-9, nearEnd = x < 1 - 1e-9 || x > 2 * L - 1 + 1e-9;
+  const d = A.d, Lt = d.Ltot, sups = d.xSup.slice(1, d.n), nearEnd = x < 1 - 1e-9 || x > Lt - 1 + 1e-9;
   if (nearEnd) return {top: null, bot: null};
-  if (zB) {
-    let ato = 0; for (let i = 0; i < A.aato.length; i++) if (Math.abs(A.r.x[i] - L) <= 1 + 1e-9) ato = Math.max(ato, A.aato[i]);
+  const xs = sups.find(s => Math.abs(x - s) <= 1 + 1e-9);
+  if (xs !== undefined) {
+    let ato = 0; for (let i = 0; i < A.aato.length; i++) if (Math.abs(A.r.x[i] - xs) <= 1 + 1e-9) ato = Math.max(ato, A.aato[i]);
     return {top: pickBars(d.AstB), bot: pickBars(Math.max(d.AscB, ato))};
   }
   return {top: pickBars(d.AscV), bot: pickBars(d.AstV)};
@@ -968,11 +1117,12 @@ function cutBox(x, title, sel){
     '<div class="m">x = ' + f(x, 2) + ' m · e = ' + (e >= 0 ? '+' : '−') + f(Math.abs(e), 3) + ' m<br>cabos a ' + f(fb, 1) + ' cm da base<br>passiva sup.: ' + barTxt(ps.top) + '<br>passiva inf.: ' + barTxt(ps.bot) + '</div></div>';
 }
 function cutsCard(){
-  const d = A.d, pp = profileParams(d), L = d.L;
-  const st = [[0, 'Ancoragem'], [L / 5, 'Vão'], [pp.x0, 'Vão (vértice)'], [0.7 * L, 'Vão'], [L - 0.5, 'Junto ao apoio'], [L, 'Apoio B']];
-  return '<div class="card" id="cutsCard"><h2>Cortes na seção · cablagem e armadura passiva</h2><p class="lead">' + d.n_cab + ' cabos de ' + d.n_cord + ' cordoalhas Ø12,7 em bainhas de Ø' + f(d.d_bain * 1000, 0) + ' mm, vistos nas seções ao longo da viga. O cabo sai do CG na ancoragem, desce no vão e sobe para a parte superior sobre o apoio B (e negativo). Em roxo, a armadura passiva (A′ comprimida, As,ato e armadura tracionada no ELU, conforme o nível; barras ampliadas para leitura). Cotas em cm; a linha tracejada verde é o estribo. Na região da ancoragem (menos de 1 m das extremidades) não se desenha passiva.</p>' +
+  const d = A.d, pp = profileParams(d), L = d.L, Lt = d.Ltot, multi = d.n > 1;
+  const st = multi ? [[0, 'Ancoragem'], [L / 5, 'Vão 1'], [pp.x0, 'Vão 1 (vértice)'], [0.7 * L, 'Vão 1'], [L - 0.5, 'Junto ao apoio B'], [L, 'Apoio B']]
+    : [[0, 'Ancoragem'], [L / 5, 'Vão'], [pp.x0, 'Vão (vértice)'], [0.7 * L, 'Vão'], [L, 'Ancoragem']];
+  return '<div class="card" id="cutsCard"><h2>Cortes na seção · cablagem e armadura passiva</h2><p class="lead">' + d.n_cab + ' cabos de ' + d.n_cord + ' cordoalhas Ø12,7 em bainhas de Ø' + f(d.d_bain * 1000, 0) + ' mm, vistos nas seções ao longo da viga. O cabo sai do CG na ancoragem, desce no vão' + (multi ? ' e sobe para a parte superior sobre os apoios internos (e negativo)' : '') + '. Em roxo, a armadura passiva (A′ comprimida, As,ato e armadura tracionada no ELU, conforme o nível; barras ampliadas para leitura). Cotas em cm; a linha tracejada verde é o estribo. Na região da ancoragem (menos de 1 m das extremidades) não se desenha passiva.</p>' +
     '<div class="cuts">' + st.map(a => cutBox(a[0], a[1])).join('') + '</div>' +
-    '<div class="cutctl"><label for="cutx"><b>Corte em x =</b> <span id="cutxv">' + f(d.L / 2, 1) + '</span> m</label><input type="range" id="cutx" min="0" max="' + 2 * L + '" step="0.5" value="' + L / 2 + '"><span class="foot" style="margin:0">arraste para percorrer a viga (0 a ' + f(2 * L, 0) + ' m)</span></div>' +
+    '<div class="cutctl"><label for="cutx"><b>Corte em x =</b> <span id="cutxv">' + f(d.L / 2, 1) + '</span> m</label><input type="range" id="cutx" min="0" max="' + Lt + '" step="0.5" value="' + L / 2 + '"><span class="foot" style="margin:0">arraste para percorrer a viga (0 a ' + f(Lt, 0) + ' m)</span></div>' +
     '<div class="cuts" id="cutone" style="grid-template-columns:minmax(150px,220px);margin-top:10px">' + cutBox(L / 2, 'Corte escolhido', true) + '</div></div>';
 }
 function initCuts(){
@@ -988,11 +1138,13 @@ PANELS.resumo = function(){
     html: '<div class="grid2"><div class="card"><h2>Traçado do cabo e fuso limite</h2><p class="lead">Excentricidade positiva abaixo do centro de gravidade. O cabo deve ficar dentro do fuso em cada seção; a linha de pressões inclui o efeito hiperestático.</p><div id="c1"></div></div>' +
       '<div class="card"><h2>Verificações</h2>' + table(['Verificação', 'Valor', 'Situação'], c.map(x => ({c: [x.t, x.v, chip(x.s, x.c)]}))) + '</div></div>' + cutsCard() +
       '<div class="card"><h2>Valores principais</h2>' + kv([
-        ['Carga a equilibrar g + ψ2·q', f(d.pbal, 2) + ' kN/m'], ['Peso próprio g0', f(d.g_pp, 2) + ' kN/m'], ['d′ do cabo', f(d.dpp, 3) + ' m'], ['e_max = h/2 − d′', f(d.e_max, 3) + ' m'],
-        ['Vértice da parábola x0', f(pp.x0, 2) + ' m'], ['Ângulo total Σα', f(Ls.theta_tot, 3) + ' rad'], ['Comprimento do cabo', f(Ls.arc_tot, 2) + ' m'], ['Ap total', f(d.Ap * 1e4, 2) + ' cm²'],
+        ['Carga a equilibrar g + ψ2·q' + (d.n > 1 ? ' (vão 1)' : ''), f(d.pbal, 2) + ' kN/m'], ['Peso próprio g0', f(d.g_pp, 2) + ' kN/m'], ['d′ do cabo', f(d.dpp, 3) + ' m'], ['e_max = h/2 − d′', f(d.e_max, 3) + ' m'],
+        ['Vértice da parábola x0' + (d.n > 1 ? ' (vão 1)' : ''), f(pp.x0, 2) + ' m'], ['Ângulo total Σα', f(Ls.theta_tot, 3) + ' rad'], ['Comprimento do cabo', f(Ls.arc_tot, 2) + ' m'], ['Ap total', f(d.Ap * 1e4, 2) + ' cm²'],
         ['Força no macaco Pj', f(Ls.Pj, 0) + ' kN'], ['Pi no ato (mín.)', f(Math.min.apply(null, Ls.Pi), 0) + ' kN'], ['P∞ (mín. a máx.)', f(Math.min.apply(null, Ls.Pinf), 0) + ' a ' + f(Math.max.apply(null, Ls.Pinf), 0) + ' kN'],
-        ['Alcance da cravação xa', f(Ls.xa, 2) + ' m'], ['Alongamento por extremidade', f(Ls.elong, 1) + ' mm'], ['Reação hiperestática R_B(∞)', f(a.r.res.inf.RB, 1) + ' kN'],
-        ['M_hip no apoio B (∞)', f(a.r.res.inf.Mhip[a.iB], 1) + ' kN·m'], ['Passiva no ato As,ato', f(Math.max.apply(null, a.aato), 1) + ' cm²'], ['Flecha máx. quase perm. ×(1+φ)', f(Math.min.apply(null, a.df.qp_inf.slice(0, 21)) * 1000, 1) + ' mm']]) + '</div>',
+        ['Alcance da cravação xa', f(Ls.xa, 2) + (d.n > 1 && Math.abs(Ls.xa - Ls.xaR) > 0.005 ? ' m / ' + f(Ls.xaR, 2) : '') + ' m'], ['Alongamento por extremidade', f(Ls.elong, 1) + (d.n > 1 && Math.abs(Ls.elong - Ls.elongR) > 0.05 ? ' / ' + f(Ls.elongR, 1) : '') + ' mm']]
+        .concat(a.supIdx.map((i, j) => ['Reação hiperestática R_' + supName(j) + '(∞)', f(a.r.res.inf.R[j], 1) + ' kN']))
+        .concat(a.supIdx.map((i, j) => ['M_hip no apoio ' + supName(j) + ' (∞)', f(a.r.res.inf.Mhip[i], 1) + ' kN·m']))
+        .concat([['Passiva no ato As,ato', f(Math.max.apply(null, a.aato), 1) + ' cm²'], ['Flecha máx. quase perm. ×(1+φ)', f(Math.min.apply(null, a.df.qp_inf) * 1000, 1) + ' mm']])) + '</div>',
     after(){ initCuts(); const t = traceSeries(); chart($('#c1'), {series: t.series, bands: t.bands, refs: t.refs, groups: t.groups, invertY: true, height: 300, xlab: 'x (m)', ylab: 'e (m)  + abaixo do CG', yd: 2, vd: 3, title: 'Traçado e fuso', tx: xsOf()}); }
   };
 };
@@ -1001,13 +1153,13 @@ PANELS.tracado = function(){
   const d = A.d, pp = profileParams(d), rows = [];
   for (let i = 0; i < NR(); i++) { const x = A.r.x[i], inside = A.fu.elp[i] >= A.fu.lo[i] - 1e-6 && A.fu.elp[i] <= A.fu.up[i] + 1e-6;
     rows.push({c: [f(x, 2), f(A.r.e[i], 3), f(A.fu.elp[i], 3), f(A.fu.lo[i], 3), f(A.fu.up[i], 3), inside ? 'dentro' : 'fora'], hl: !inside}); }
-  const over = Math.abs(d.e_span) > d.e_max + 1e-9 || Math.abs(d.e_sup) > d.e_max + 1e-9;
+  const over = d.ev.concat(d.es, [d.e_end]).some(v => Math.abs(v) > d.e_max + 1e-9);
   return {
     html: '<div class="card"><h2>Traçado do cabo e fuso limite</h2><div class="src">Planilha: Dados (seção 3), Tracado_Perdas e Fuso</div>' +
       '<p class="lead">Cada limite do fuso vem de uma condição de tensão: tração e compressão no ato, descompressão, formação de fissuras e compressão excessiva em serviço. O fuso é o maior dos cinco limites inferiores de e e o menor dos cinco superiores.</p>' +
       (over ? '<p>' + chip('warn', 'Excentricidade acima de e_max = ' + f(d.e_max, 3) + ' m') + '</p>' : '') +
       '<div class="ctl"><label><input type="checkbox" id="lim"> Mostrar os 10 limites</label></div><div id="c1"></div></div>' + cutsCard() +
-      '<div class="grid2"><div class="card"><h2>Parábolas</h2>' + kv([['Parábola A, de 0 a x_i', 'e = e_vão − aA·(x − x0)²'], ['aA', f(pp.aA, 5) + ' 1/m'], ['x0', f(pp.x0, 3) + ' m'], ['Parábola reversa, de x_i a L', 'e = −e_sup + aB·(L − x)²'], ['aB', f(pp.aB, 5) + ' 1/m'], ['x_i = L − λ', f(pp.xi, 2) + ' m']]) + '</div>' +
+      '<div class="grid2"><div class="card"><h2>Parábolas de cada vão</h2><p class="lead">Em cada vão: parábola principal e = e_vão − a·(s − x0)², com s medido a partir do apoio esquerdo; junto a cada apoio interno, parábola reversa e = e_apoio + a′·(distância ao apoio)² num trecho λ, com inclinação contínua.</p>' + table(['Vão', 'L (m)', 'e_vão (m)', 'x0 (m)', 'a (1/m)', 'λ esq. (m)', 'λ dir. (m)'], d.Ls.map((L, k) => { const q = spanProfile(d, k); return {c: [spanName(k), f(L, 2), f(q.em, 3), f(q.x0, 3), f(q.a, 5), f(q.lL, 2), f(q.lR, 2)]}; })) + '</div>' +
       '<div class="card"><h2>' + secT() + '</h2>' + table(['x (m)', 'e cabo (m)', 'e_lp (m)', 'e mín. (m)', 'e máx. (m)', 'e_lp no fuso?'], rows) + '</div></div>',
     after(){ initCuts(); const draw = () => { const t = traceSeries({lim: $('#lim').checked}); chart($('#c1'), {series: t.series, bands: t.bands, refs: t.refs, groups: t.groups, invertY: true, height: 380, ylim: [-0.5, 0.5], xlab: 'x (m)', ylab: 'e (m)  + abaixo do CG', yd: 2, vd: 3, tx: xsOf(), title: 'Traçado e fuso'}); };
       $('#lim').addEventListener('change', draw); draw(); }
@@ -1017,22 +1169,23 @@ PANELS.tracado = function(){
 PANELS.perdas = function(){
   const Ls = A.r.Ls, d = A.d, rows = [];
   for (let i = 0; i < NR(); i++) rows.push({c: [f(Ls.x[i], 2), f(Ls.theta[i], 4), f(Ls.sL[i], 1), f(Ls.sig_slip[i], 1), f(Ls.des[i], 1), f(Ls.sig_i[i], 1), f(Ls.dsig[i], 1), f(Ls.sig_inf[i], 1), f(Ls.Pinf[i], 0)]});
-  const iB = A.iB, pmin = Math.min.apply(null, Ls.Pinf);
+  const iB = A.iB >= 0 ? A.iB : Ls.x.length - 1, pmin = Math.min.apply(null, Ls.Pinf), dd2 = d.n > 1 && Math.abs(Ls.elong - Ls.elongR) > 0.05;
   return {
     html: '<div class="card"><h2>Tensão no aço ao longo do cabo</h2><div class="src">Planilha: Tracado_Perdas e Alongamento</div>' +
       '<p class="lead">Protensão simultânea pelas duas extremidades. A tensão cai pelo atrito, a cravação das cunhas devolve tensão perto das ancoragens, o encurtamento elástico e as perdas progressivas (fluência, retração e relaxação) completam o quadro.</p><div id="c1"></div></div>' +
       '<div class="grid2"><div class="card"><h2>Forças e perdas</h2>' + kv([
         ['σp,j no macaco', f(d.sig_j, 0) + ' MPa'], ['Pj', f(Ls.Pj, 0) + ' kN'], ['Pi no ato (mín.)', f(Math.min.apply(null, Ls.Pi), 0) + ' kN'], ['P∞ (mín.)', f(pmin, 0) + ' kN'],
-        ['Perda total até o fim (mín. P∞/Pj)', f((1 - pmin / Ls.Pj) * 100, 1) + ' %'], ['Perda por atrito até o apoio B', f((1 - Ls.sL[iB] / d.sig_j) * 100, 1) + ' %'], ['Alcance da cravação xa', f(Ls.xa, 2) + ' m'],
+        ['Perda total até o fim (mín. P∞/Pj)', f((1 - pmin / Ls.Pj) * 100, 1) + ' %'], ['Perda por atrito até ' + (A.iB >= 0 ? 'o apoio B' : 'a outra extremidade'), f((1 - Ls.sL[iB] / d.sig_j) * 100, 1) + ' %'], ['Alcance da cravação, extremidade esquerda', f(Ls.xa, 2) + ' m'], ['Alcance da cravação, extremidade direita', f(Ls.xaR, 2) + ' m'],
         ['αp no ato = Ep/Eci,j', f(Ls.ap, 2)], ['αp = Ep/Ecs', f(Ls.ap28, 2)]]) + '</div>' +
       '<div class="card"><h2>Alongamento dos cabos</h2>' + kv([
-        ['Δl por extremidade (pré-cravação)', f(Ls.elong, 1) + ' mm'], ['Δl total do cabo (2 extremidades)', f(2 * Ls.elong, 1) + ' mm'], ['Tolerância −5 %', f(0.95 * Ls.elong, 1) + ' mm'], ['Tolerância +5 %', f(1.05 * Ls.elong, 1) + ' mm'],
-        ['Cravação das cunhas', f(d.slip * 1000, 1) + ' mm'], ['Líquido por extremidade após cravação', f(Ls.elong - d.slip * 1000, 1) + ' mm'], ['Comprimento do cabo', f(Ls.arc_tot, 2) + ' m'], ['Ângulo total desviado Σα', f(Ls.theta_tot, 3) + ' rad']]) + '</div></div>' +
+        ['Δl da extremidade esquerda (pré-cravação)', f(Ls.elong, 1) + ' mm'], ['Δl da extremidade direita (pré-cravação)', f(Ls.elongR, 1) + ' mm'], ['Δl total do cabo (2 extremidades)', f(Ls.elong + Ls.elongR, 1) + ' mm'],
+        ['Tolerância −5 % (esq. / dir.)', f(0.95 * Ls.elong, 1) + ' / ' + f(0.95 * Ls.elongR, 1) + ' mm'], ['Tolerância +5 % (esq. / dir.)', f(1.05 * Ls.elong, 1) + ' / ' + f(1.05 * Ls.elongR, 1) + ' mm'],
+        ['Cravação das cunhas', f(d.slip * 1000, 1) + ' mm'], ['Líquido após cravação (esq. / dir.)', f(Ls.elong - d.slip * 1000, 1) + ' / ' + f(Ls.elongR - d.slip * 1000, 1) + ' mm'], ['Comprimento do cabo', f(Ls.arc_tot, 2) + ' m'], ['Ângulo total desviado Σα', f(Ls.theta_tot, 3) + ' rad']]) + '</div></div>' +
       '<div class="card"><h2>' + secT() + '</h2>' + table(['x (m)', 'Σα (rad)', 'σ atrito (MPa)', 'após cravação', 'Δσ enc. elást.', 'σp,i (ato)', 'Δσ progress.', 'σp,∞', 'P∞ (kN)'], rows) + '</div>',
     after(){ const x = Ls.x; chart($('#c1'), {series: [
-      {name: 'Atrito (da extremidade esquerda)', x, y: Ls.sL, color: C.s1, d: 1}, {name: 'Após a cravação', x, y: Ls.sig_slip, color: C.s2, d: 1},
+      {name: 'Atrito (da extremidade esquerda)', x, y: Ls.sL, color: C.s1, d: 1}, {name: 'Atrito (da extremidade direita)', x, y: Ls.sR, color: C.s1, dash: 1, d: 1}, {name: 'Após a cravação', x, y: Ls.sig_slip, color: C.s2, d: 1},
       {name: 'No ato σp,i', x, y: Ls.sig_i, color: C.s3, d: 1}, {name: 'Em t∞ σp,∞', x, y: Ls.sig_inf, color: C.s4, d: 1}],
-      refs: [{y: d.sig_j, label: 'σp,j'}], groups: [{n: 'Perdas imediatas', s: ['Atrito (da extremidade esquerda)', 'Após a cravação', 'No ato σp,i']}, {n: 'Do ato ao longo prazo', s: ['No ato σp,i', 'Em t∞ σp,∞']}], height: 340, xlab: 'x (m)', ylab: 'σp (MPa)', yd: 0, vd: 1, unit: 'MPa', tx: x, title: 'Tensão no aço'}); }
+      refs: [{y: d.sig_j, label: 'σp,j'}], groups: [{n: 'Perdas imediatas', s: ['Atrito (da extremidade esquerda)', 'Atrito (da extremidade direita)', 'Após a cravação', 'No ato σp,i']}, {n: 'Só o atrito', s: ['Atrito (da extremidade esquerda)', 'Atrito (da extremidade direita)']}, {n: 'Do ato ao longo prazo', s: ['No ato σp,i', 'Em t∞ σp,∞']}], height: 340, xlab: 'x (m)', ylab: 'σp (MPa)', yd: 0, vd: 1, unit: 'MPa', tx: x, title: 'Tensão no aço'}); }
   };
 };
 
@@ -1040,8 +1193,8 @@ PANELS.esforcos = function(){
   const x = xsOf(), e = A.r.ext, rf = A.r.res.inf, ri = A.r.res.i, d = A.d, rows = [];
   for (let i = 0; i < NR(); i++) rows.push({c: [f(x[i], 2), f(e.Mg[i], 1), f(e.Mq_max[i], 1), f(e.Mq_min[i], 1), f(rf.Miso[i], 1), f(rf.Mhip[i], 1), f(rf.MP[i], 1), f(e.Vg[i], 1)]});
   return {
-    html: '<div class="card"><h2>Momentos externos</h2><div class="src">Planilha: Esforcos</div><p class="lead">Momento positivo traciona a fibra inferior (eixo invertido: positivo para baixo). A sobrecarga q é posicionada nos dois vãos, só no vão do ponto ou só no outro.</p><div id="c1"></div></div>' +
-      '<div class="card"><h2>Momentos da protensão em t∞</h2><div class="src">Planilha: Hiperestatico</div><p class="lead">M_iso = −P∞·cosα·e. O apoio central impede a deformação da protensão e gera a reação hiperestática R_B, que dá M_hip = −R_B·m. R_B(∞) = ' + f(rf.RB, 1) + ' kN; M_hip no apoio B = ' + f(rf.Mhip[A.iB], 1) + ' kN·m.</p><div id="c2"></div></div>' +
+    html: '<div class="card"><h2>Momentos externos</h2><div class="src">Planilha: Esforcos</div><p class="lead">Momento positivo traciona a fibra inferior (eixo invertido: positivo para baixo). A sobrecarga q é posicionada vão a vão (alternada): o máximo e o mínimo de cada seção somam as parcelas positivas e as negativas de cada arranjo.</p><div id="c1"></div></div>' +
+      '<div class="card"><h2>Momentos da protensão em t∞</h2><div class="src">Planilha: Hiperestatico</div><p class="lead">M_iso = −P∞·cosα·e. ' + (d.n === 1 ? 'Viga isostática: não há apoio interno, então M_hip = 0 e M_P = M_iso.' : 'Os apoios internos impedem a deformação da protensão e geram as reações hiperestáticas R (método das forças), que dão M_hip = −Σ R·m. ' + A.supIdx.map((i, j) => 'R_' + supName(j) + '(∞) = ' + f(rf.R[j], 1) + ' kN, M_hip no apoio ' + supName(j) + ' = ' + f(rf.Mhip[i], 1) + ' kN·m').join('; ') + '.') + '</p><div id="c2"></div></div>' +
       '<div class="card"><h2>' + secT() + '</h2>' + table(['x (m)', 'Mg', 'Mq,máx', 'Mq,mín', 'M_iso,∞', 'M_hip,∞', 'M_P,∞', 'Vg'], rows) + '<p class="foot">Momentos em kN·m, cortante em kN.</p></div>',
     after(){ chart($('#c1'), {series: [{name: 'Mg', x, y: e.Mg, color: C.s1, d: 1}, {name: 'Mg + Mq,máx', x, y: x.map((_, i) => e.Mg[i] + e.Mq_max[i]), color: C.s2, d: 1}, {name: 'Mg + Mq,mín', x, y: x.map((_, i) => e.Mg[i] + e.Mq_min[i]), color: C.s3, d: 1}],
         groups: [{n: 'Permanente', s: ['Mg']}, {n: 'Com sobrecarga', s: ['Mg + Mq,máx', 'Mg + Mq,mín']}, {n: 'Envoltória positiva', s: ['Mg', 'Mg + Mq,máx']}], invertY: true, height: 300, xlab: 'x (m)', ylab: 'M (kN·m)', yd: 0, vd: 1, unit: 'kN·m', tx: x, title: 'Momentos externos'});
@@ -1077,21 +1230,22 @@ PANELS.tensoes = function(){
 };
 
 PANELS.elu = function(){
-  const B = A.eluB, V = A.eluV, d = A.d, sh = A.sh, x = xsOf();
-  const R = (lab, fb, fv, hl) => ({c: [lab, fb, fv], hl});
+  const d = A.d, sh = A.sh, x = xsOf();
+  const cols = A.eluSup.map((e, j) => ({e, nm: 'Apoio ' + supName(j)})).concat(A.eluSpan.map((e, k) => ({e, nm: spanName(k).charAt(0).toUpperCase() + spanName(k).slice(1)})));
+  const R = (lab, fn, hl) => ({c: [lab].concat(cols.map(c => fn(c.e))), hl});
   const rows = [
-    R('Face comprimida', 'inferior', 'superior'), R('Seção x (m)', f(B.x, 2), f(V.x, 2)), R('e do cabo (m)', f(B.e, 3), f(V.e, 3)), R('dp, cabo à face comprimida (m)', f(B.dp, 3), f(V.dp, 3)),
-    R('P∞ no cabo (kN)', f(B.P, 0), f(V.P, 0)), R('σp,∞ (MPa)', f(B.sinf, 0), f(V.sinf, 0)), R('εp0 de pré-alongamento (‰)', f(B.eps0 * 1000, 3), f(V.eps0 * 1000, 3)),
-    R('As tracionada, passiva (cm²)', f(d.AstB, 2), f(d.AstV, 2)), R("A′ comprimida (cm²)", f(d.AscB, 2), f(d.AscV, 2)), R('Tp = Ap·fpyd (kN)', f(B.Tp, 0), f(V.Tp, 0)), R('Ts = As·fyd (kN)', f(B.Ts, 0), f(V.Ts, 0)), R("Cs = A′·fyd (kN)", f(B.Cs, 0), f(V.Cs, 0)),
-    R('x = (Tp + Ts − Cs)/(0,85·fcd·0,8·bw) (m)', f(B.xs, 3), f(V.xs, 3)), R('x/dp', f(B.xd, 3), f(V.xd, 3)), R('εp = εp0 + 3,5‰·(dp−x)/x (‰)', f(B.epsp * 1000, 2), f(V.epsp * 1000, 2)),
-    R('Aço de protensão escoa?', B.yieldP ? 'sim' : 'não', V.yieldP ? 'sim' : 'não'), R("A′ escoa?", B.yieldAsc ? 'sim' : 'não', V.yieldAsc ? 'sim' : 'não'), R('MRd (kN·m)', f(B.MRd, 0), f(V.MRd, 0), 1),
-    R('M_hip,∞ (kN·m)', f(B.Mh, 1), f(V.Mh, 1)), R('Msd externo = 1,4(Mg+Mq) (kN·m)', f(B.Mext, 0), f(V.Mext, 0)), R('γp do hiperestático', f(B.gp, 1), f(V.gp, 1)), R('Msd (kN·m)', f(B.Msd, 0), f(V.Msd, 0), 1),
-    R('|Msd| ≤ MRd?', ok(B.ok), ok(V.ok)), R('MRd/|Msd|', f(B.ratio, 2), f(V.ratio, 2), 1), R('Ductilidade x/dp ≤ 0,45?', ok(B.ductile, 'Atende', 'Aumentar A′'), ok(V.ductile, 'Atende', 'Aumentar A′')),
-    R("A′ mínimo p/ x/dp ≤ 0,45 (cm²)", f(B.Ascmin, 2), f(V.Ascmin, 2)), R('Md,mín = 0,8·W·fctk,sup (kN·m)', f(B.Mdmin, 0), f(V.Mdmin, 0))];
+    R('Face comprimida', e => e.hog ? 'inferior' : 'superior'), R('Seção x (m)', e => f(e.x, 2)), R('e do cabo (m)', e => f(e.e, 3)), R('dp, cabo à face comprimida (m)', e => f(e.dp, 3)),
+    R('P∞ no cabo (kN)', e => f(e.P, 0)), R('σp,∞ (MPa)', e => f(e.sinf, 0)), R('εp0 de pré-alongamento (‰)', e => f(e.eps0 * 1000, 3)),
+    R('As tracionada, passiva (cm²)', e => f(e.hog ? d.AstB : d.AstV, 2)), R("A′ comprimida (cm²)", e => f(e.hog ? d.AscB : d.AscV, 2)), R('Tp = Ap·fpyd (kN)', e => f(e.Tp, 0)), R('Ts = As·fyd (kN)', e => f(e.Ts, 0)), R("Cs = A′·fyd (kN)", e => f(e.Cs, 0)),
+    R('x = (Tp + Ts − Cs)/(0,85·fcd·0,8·bw) (m)', e => f(e.xs, 3)), R('x/dp', e => f(e.xd, 3)), R('εp = εp0 + 3,5‰·(dp−x)/x (‰)', e => f(e.epsp * 1000, 2)),
+    R('Aço de protensão escoa?', e => e.yieldP ? 'sim' : 'não'), R("A′ escoa?", e => e.yieldAsc ? 'sim' : 'não'), R('MRd (kN·m)', e => f(e.MRd, 0), 1),
+    R('M_hip,∞ (kN·m)', e => f(e.Mh, 1)), R('Msd externo = 1,4(Mg+Mq) (kN·m)', e => f(e.Mext, 0)), R('γp do hiperestático', e => f(e.gp, 1)), R('Msd (kN·m)', e => f(e.Msd, 0), 1),
+    R('|Msd| ≤ MRd?', e => ok(e.ok)), R('MRd/|Msd|', e => f(e.ratio, 2), 1), R('Ductilidade x/dp ≤ 0,45?', e => ok(e.ductile, 'Atende', 'Aumentar A′')),
+    R("A′ mínimo p/ x/dp ≤ 0,45 (cm²)", e => f(e.Ascmin, 2)), R('Md,mín = 0,8·W·fctk,sup (kN·m)', e => f(e.Mdmin, 0))];
   const srows = []; for (let i = 0; i < NR(); i++) srows.push({c: [f(x[i], 2), f(sh.Vp[i], 1), f(sh.Vsd[i], 0), f(sh.beta[i], 2), f(sh.tau_cor[i], 2), f(sh.twd[i], 2), f(sh.asw_n[i], 2), f(sh.asw_calc[i], 2)]});
   return {
     html: '<div class="card"><h2>Flexão no estado limite último</h2><div class="src">Planilha: ELU</div><p class="lead">Aço de protensão com pré-alongamento (neutralização) e patamar em fpyd; retângulo de tensões 0,8x·0,85·fcd. A′ é a armadura passiva comprimida e As a passiva tracionada (necessária nos níveis 1 e 2), ambas informadas nos dados.</p>' +
-      table(['Grandeza', 'Apoio B (x = ' + f(B.x, 1) + ' m)', 'Vão (x = ' + f(V.x, 1) + ' m)'], rows) + '</div>' +
+      table(['Grandeza'].concat(cols.map(c => c.nm)), rows) + '<p class="foot">Seções críticas: cada apoio interno (momento negativo) e, em cada vão, a seção de maior momento positivo. As armaduras passivas informadas nos dados valem para todos os apoios internos e para todos os vãos.</p></div>' +
       '<div class="grid2"><div class="card"><h2>Força cortante Vsd e VRd2</h2><div class="src">Planilha: Cortante</div><p class="lead">Vp = −P∞·senα mais a parcela hiperestática; Vsd é o maior valor entre as combinações com γp = 0,9 e 1,2. VRd2 = ' + f(sh.Vu, 0) + ' kN, com bw reduzido = ' + f(sh.bwred, 3) + ' m.</p><div id="c1"></div></div>' +
       '<div class="card"><h2>Estribos por ramo</h2><p class="lead">asw/s por ramo, 2 ramos. Mínimo = ' + f(sh.asw_min_n, 2) + ' cm²/m (ρsw,mín = ' + f(sh.rho_min * 100, 3) + ' %).</p><div id="c2"></div></div></div>' +
       '<div class="card"><h2>' + secT() + '</h2>' + table(['x (m)', 'Vp (kN)', 'Vsd (kN)', 'β', 'τc,cor (MPa)', 'τwd (MPa)', 'asw/n calc.', 'asw/n adotado'], srows) + '</div>',
@@ -1101,25 +1255,26 @@ PANELS.elu = function(){
 };
 
 PANELS.flecha = function(){
-  const df = A.df, d = A.d, x = xsOf().slice(0, NR()), mm = a => a.slice(0, NR()).map(v => v * 1000), lim = d.L * 1000 / 250;
+  const df = A.df, d = A.d, x = xsOf().slice(0, NR()), mm = a => a.slice(0, NR()).map(v => v * 1000), sd = spanDefl(A), lim = d.Lmax * 1000 / 250;
   const qp = mm(df.qp_net), inf = mm(df.qp_inf), cf = mm(df.cfq_net), P = mm(df.P), g = mm(df.g);
   const mx = a => a.reduce((m, v) => Math.abs(v) > Math.abs(m) ? v : m, 0);
-  const dinf = Math.max.apply(null, inf.map(Math.abs));
+  const dok = sd.every(s => s.dl <= s.lim);
   return {
-    html: '<div class="card"><h2>Deslocamentos verticais ' + (spans === 2 ? 'dos dois vãos' : 'do 1º vão') + '</h2><div class="src">Planilha: Flecha_PC</div><p class="lead">Seção não fissurada, rigidez Ecs·Ic, y″ = −M/EI integrado duas vezes. Positivo para baixo. Combinação quase permanente: Mg + ψ2·Mq + efeito da protensão P∞.</p><div id="c1"></div></div>' +
-      '<div class="card"><h2>Resultados</h2>' + kv([['Máx. |δ| do peso g', f(Math.abs(mx(g)), 1) + ' mm'], ['Máx. |δ| da protensão P∞', f(Math.abs(mx(P)), 1) + ' mm'], ['δ quase permanente (líquida)', f(mx(qp), 1) + ' mm'], ['δ quase permanente ×(1+φ)', f(mx(inf), 1) + ' mm'], ['Combinação frequente', f(mx(cf), 1) + ' mm'], ['Limite L/250', f(lim, 1) + ' mm'], ['Frequência f1 (modo antissimétrico)', f(df.f1, 1) + ' Hz']]) +
-      '<p style="margin-top:10px">' + ok(dinf <= lim, 'Dentro de L/250', 'Acima de L/250') + (mx(inf) < 0 ? ' ' + chip('info', 'Contraflecha: a protensão levanta a viga') : '') + '</p></div>',
+    html: '<div class="card"><h2>Deslocamentos verticais ' + (d.n === 1 ? 'do vão' : spans === 2 ? 'de todos os vãos' : 'do 1º vão') + '</h2><div class="src">Planilha: Flecha_PC</div><p class="lead">Seção não fissurada, rigidez Ecs·Ic, y″ = −M/EI integrado duas vezes. Positivo para baixo. Combinação quase permanente: Mg + ψ2·Mq + efeito da protensão P∞.</p><div id="c1"></div></div>' +
+      '<div class="card"><h2>Resultados</h2>' + kv([['Máx. |δ| do peso g', f(Math.abs(mx(g)), 1) + ' mm'], ['Máx. |δ| da protensão P∞', f(Math.abs(mx(P)), 1) + ' mm'], ['δ quase permanente (líquida)', f(mx(qp), 1) + ' mm'], ['δ quase permanente ×(1+φ)', f(mx(inf), 1) + ' mm'], ['Combinação frequente', f(mx(cf), 1) + ' mm']].concat(sd.map(s => [(d.n === 1 ? 'Vão' : 'Vão ' + (s.k + 1)) + ' · δ×(1+φ) / limite L/250', f(s.dl, 1) + ' / ' + f(s.lim, 1) + ' mm']), [['Frequência f1 (estimativa: maior vão biapoiado)', f(df.f1, 1) + ' Hz']])) +
+      '<p style="margin-top:10px">' + ok(dok, 'Dentro de L/250 em todos os vãos', 'Acima de L/250 em algum vão') + (mx(inf) < 0 ? ' ' + chip('info', 'Contraflecha: a protensão levanta a viga') : '') + '</p></div>',
     after(){ chart($('#c1'), {series: [{name: 'Quase permanente líquida', x, y: qp, color: C.s1, d: 2}, {name: 'Quase permanente ×(1+φ)', x, y: inf, color: C.s2, d: 2}, {name: 'Frequente', x, y: cf, color: C.s3, d: 2}],
-      refs: [{y: lim, label: 'L/250'}, {y: -lim, label: '−L/250'}], groups: [{n: 'Quase permanente', s: ['Quase permanente líquida', 'Quase permanente ×(1+φ)']}, {n: 'Frequente', s: ['Frequente']}, {n: 'Longo prazo', s: ['Quase permanente ×(1+φ)']}], invertY: true, height: 300, xlab: 'x (m)', ylab: 'δ (mm), + para baixo', yd: 0, vd: 2, unit: 'mm', tx: x, title: 'Flecha'}); }
+      refs: [{y: lim, label: d.n > 1 ? 'L/250 (maior vão)' : 'L/250'}, {y: -lim, label: '−L/250'}], groups: [{n: 'Quase permanente', s: ['Quase permanente líquida', 'Quase permanente ×(1+φ)']}, {n: 'Frequente', s: ['Frequente']}, {n: 'Longo prazo', s: ['Quase permanente ×(1+φ)']}], invertY: true, height: 300, xlab: 'x (m)', ylab: 'δ (mm), + para baixo', yd: 0, vd: 2, unit: 'mm', tx: x, title: 'Flecha'}); }
   };
 };
 
 PANELS.niveis = function(){
   const lv = A.lv, d = A.d, x = xsOf(), ms = minStrands(inp);
-  const n1B = n1Section(d, A.r, A.iB, true, d.nB1, d.phiN1), n1V = n1Section(d, A.r, A.isp, false, d.nV1, d.phiN1);
-  const wlim = 0.2, wB = n1B.cracked ? n1B.wk : 0, wV = n1V.cracked ? n1V.wk : 0;
-  const nb = barArea(16);
-  const needB = eluNeed(d, A.r, A.iB, true, 16), needV = eluNeed(d, A.r, A.isp, false, 16);
+  const wlim = 0.2, secs = [];   /* seções críticas: o apoio interno e o vão mais exigidos no ELU */
+  if (A.kSup >= 0) secs.push({nm: 'Apoio ' + supName(A.kSup), i: A.supIdx[A.kSup], hog: true, nbar: d.nB1});
+  secs.push({nm: d.n === 1 ? 'Vão' : 'Vão ' + (A.kSpan + 1), i: A.spIdx[A.kSpan], hog: false, nbar: d.nV1});
+  secs.forEach(s => { s.n1 = n1Section(d, A.r, s.i, s.hog, s.nbar, d.phiN1); s.need = eluNeed(d, A.r, s.i, s.hog, 16); s.w = s.n1.cracked ? (s.n1.wk || 0) : 0; });
+  const wmax = Math.max.apply(null, secs.map(s => s.w)), anyCr = secs.some(s => s.n1.cracked);
   const rows = ms.map(r => ({c: [r.n, f(r.Ap, 2), f(r.Pj, 0), r.N3 ? chip('ok', 'N3') : '<span class="tag">—</span>', r.N2 ? chip('ok', 'N2') : '<span class="tag">—</span>', f(r.N3d, 2) + ' / ' + f(r.N3f, 2), f(r.N2d, 2) + ' / ' + f(r.N2f, 2)], hl: r.n === inp.n_cord}));
   const minN3 = ms.find(r => r.N3), minN2 = ms.find(r => r.N2);
   const nc = d.n_cab;
@@ -1129,20 +1284,20 @@ PANELS.niveis = function(){
       table(['Nível', 'Critério', 'Margem (MPa)', 'Situação'], [
         {c: ['3 · completa', 'ELS-D: tração ≤ 0 na comb. frequente', f(lv.N3d, 2), ok(lv.N3d >= 0)]}, {c: ['', 'ELS-F: tração ≤ 1,2·fctk,inf na comb. rara', f(lv.N3f, 2), ok(lv.N3f >= 0)]},
         {c: ['2 · limitada', 'ELS-D: tração ≤ 0 na comb. quase permanente', f(lv.N2d, 2), ok(lv.N2d >= 0)]}, {c: ['', 'ELS-F: tração ≤ 1,2·fctk,inf na comb. frequente', f(lv.N2f, 2), ok(lv.N2f >= 0)]},
-        {c: ['1 · parcial', 'ELS-W: wk ≤ 0,2 mm (seção fissurada, abaixo)', (n1B.cracked || n1V.cracked ? f(Math.max(wB, wV), 3) + ' mm' : 'não fissurada'), ok(Math.max(wB, wV) <= wlim, 'Atende', 'Não atende')]}]) +
+        {c: ['1 · parcial', 'ELS-W: wk ≤ 0,2 mm (seção fissurada, abaixo)', (anyCr ? f(wmax, 3) + ' mm' : 'não fissurada'), ok(wmax <= wlim, 'Atende', 'Não atende')]}]) +
       '<p style="margin-top:10px">' + chip('info', 'Este projeto atinge o nível ' + levelOf()) + ' ' + chip('info', 'Cordoalhas mínimas: N3 = ' + (minN3 ? minN3.n * nc : '> ' + 12 * nc) + ', N2 = ' + (minN2 ? minN2.n * nc : '> ' + 12 * nc) + ' (' + nc + ' cabos)') + '</p></div>' +
       '<div class="card"><h2>Tração máxima por combinação</h2><p class="lead">Maior tração entre as fibras inferior e superior em cada seção. A linha tracejada de 0 é o limite de descompressão e a de 1,2·fctk,inf é o limite de fissuração.</p><div id="c1"></div></div>' +
       '<div class="card"><h2>Número de cordoalhas necessário</h2><p class="lead">Varredura com os demais dados fixos. Cada linha mostra a margem de ELS-D / ELS-F em MPa para o nível 3 e para o nível 2. A linha em destaque é o projeto atual.</p>' +
       table(['Cordoalhas por cabo', 'Ap (cm²)', 'Pj (kN)', 'Nível 3', 'Nível 2', 'Margens N3 (D / F)', 'Margens N2 (D / F)'], rows) + '</div>' +
       '<div class="grid2"><div class="card"><h2>Nível 1: seção fissurada</h2><p class="lead">Flexo-compressão com N∞ como força externa e M = Mext(comb. frequente) + M_P. Abertura de fissuras pelo menor dos dois valores do item 17.3.3.2. Informe as barras tracionadas nos dados (Nível 1).</p>' +
-      table(['Grandeza', 'Apoio B', 'Vão'], [
-        {c: ['Barras tracionadas', d.nB1 + ' Ø' + d.phiN1, d.nV1 + ' Ø' + d.phiN1]}, {c: ['As (cm²)', f(n1B.As, 2), f(n1V.As, 2)]}, {c: ['M = Mext + M_P (kN·m)', f(n1B.M, 1), f(n1V.M, 1)]}, {c: ['N∞ (kN)', f(n1B.N, 0), f(n1V.N, 0)]},
-        {c: ['Tração máx. na comb. frequente (MPa)', f(n1B.sTen, 2), f(n1V.sTen, 2)]}, {c: ['Seção fissurada?', n1B.cracked ? 'sim' : 'não', n1V.cracked ? 'sim' : 'não']},
-        {c: ['σs na armadura (MPa)', n1B.sig === null || n1B.sig === undefined ? '—' : f(n1B.sig, 1), n1V.sig === null || n1V.sig === undefined ? '—' : f(n1V.sig, 1)]},
-        {c: ['wk (mm)', n1B.cracked && n1B.wk !== undefined ? f(n1B.wk, 3) : '—', n1V.cracked && n1V.wk !== undefined ? f(n1V.wk, 3) : '—'], hl: 1}, {c: ['wk ≤ 0,2 mm?', n1B.cracked ? ok(wB <= wlim) : chip('ok', 'não fissurada'), n1V.cracked ? ok(wV <= wlim) : chip('ok', 'não fissurada')]}]) + '</div>' +
+      table(['Grandeza'].concat(secs.map(s => s.nm)), [
+        {c: ['Barras tracionadas'].concat(secs.map(s => s.nbar + ' Ø' + d.phiN1))}, {c: ['As (cm²)'].concat(secs.map(s => f(s.n1.As, 2)))}, {c: ['M = Mext + M_P (kN·m)'].concat(secs.map(s => f(s.n1.M, 1)))}, {c: ['N∞ (kN)'].concat(secs.map(s => f(s.n1.N, 0)))},
+        {c: ['Tração máx. na comb. frequente (MPa)'].concat(secs.map(s => f(s.n1.sTen, 2)))}, {c: ['Seção fissurada?'].concat(secs.map(s => s.n1.cracked ? 'sim' : 'não'))},
+        {c: ['σs na armadura (MPa)'].concat(secs.map(s => s.n1.sig === null || s.n1.sig === undefined ? '—' : f(s.n1.sig, 1)))},
+        {c: ['wk (mm)'].concat(secs.map(s => s.n1.cracked && s.n1.wk !== undefined ? f(s.n1.wk, 3) : '—')), hl: 1}, {c: ['wk ≤ 0,2 mm?'].concat(secs.map(s => s.n1.cracked ? ok(s.w <= wlim) : chip('ok', 'não fissurada')))}]) + '</div>' +
       '<div class="card"><h2>Passiva exigida no ELU</h2><p class="lead">Armadura passiva tracionada em barras Ø16 para MRd ≥ Msd com x/d ≤ 0,45, por compatibilidade de deformações com a protensão atual.</p>' +
-      table(['Grandeza', 'Apoio B', 'Vão'], [{c: ['Barras Ø16 necessárias', needB.ok ? needB.n : '> 14', needV.ok ? needV.n : '> 14']}, {c: ['As (cm²)', needB.ok ? f(needB.As, 2) : '—', needV.ok ? f(needV.As, 2) : '—']},
-        {c: ['MRd (kN·m)', f(needB.Mrd, 0), f(needV.Mrd, 0)]}, {c: ['Msd (kN·m)', f(needB.Msd, 0), f(needV.Msd, 0)]}, {c: ['x/d', f(needB.xd, 2), f(needV.xd, 2)]}]) +
+      table(['Grandeza'].concat(secs.map(s => s.nm)), [{c: ['Barras Ø16 necessárias'].concat(secs.map(s => s.need.ok ? s.need.n : '> 14'))}, {c: ['As (cm²)'].concat(secs.map(s => s.need.ok ? f(s.need.As, 2) : '—'))},
+        {c: ['MRd (kN·m)'].concat(secs.map(s => f(s.need.Mrd, 0)))}, {c: ['Msd (kN·m)'].concat(secs.map(s => f(s.need.Msd, 0)))}, {c: ['x/d'].concat(secs.map(s => f(s.need.xd, 2)))}]) +
       '<p class="foot">Com protensão forte (nível 3) a passiva tracionada costuma ser zero, e o ELU é controlado pela passiva comprimida A′ da aba Ruptura.</p></div></div>',
     after(){ const t = lv.t; const mxS = a => x.map((_, i) => Math.max(a[0][i], a[1][i]));
       chart($('#c1'), {series: [{name: 'Quase permanente (ψ2)', x, y: mxS(t.cqp), color: C.s1, d: 2}, {name: 'Frequente (ψ1)', x, y: mxS(t.cf), color: C.s2, d: 2}, {name: 'Rara', x, y: mxS(t.cr), color: C.s3, d: 2}],
@@ -1151,17 +1306,21 @@ PANELS.niveis = function(){
 };
 
 PANELS.ca = function(){
-  const rc = A.rc, d = A.d, ap = d.Ap * 1e4, aato = Math.max.apply(null, A.aato);
-  const pcMax = Math.min.apply(null, A.df.qp_inf.slice(0, 21)) * 1000;
-  const rows = [
-    {c: ['Md no apoio B (kN·m)', f(rc.Md_neg, 0), f(Math.abs(A.eluB.Msd), 0)]}, {c: ['Md no vão, x = ' + f(rc.x_pos, 1) + ' m (kN·m)', f(rc.Md_pos, 0), f(A.eluV.Msd, 0)]},
-    {c: ['Armadura de flexão no apoio B (cm²)', f(rc.neg.As, 1), "A′ = " + f(d.AscB, 2)]}, {c: ['Armadura de flexão no vão (cm²)', f(rc.pos.As, 1), "A′ = " + f(d.AscV, 2)]},
-    {c: ['Armadura ativa Ap (cm²)', '—', f(ap, 2)]}, {c: ['Passiva no ato As,ato (cm²)', '—', f(aato, 1)]},
-    {c: ['Barras adotadas (B / vão)', d.nnegCA + ' Ø' + d.phiCA + ' = ' + f(rc.As_neg, 1) + ' cm²', '—'], hl: 0}, {c: ['', d.nposCA + ' Ø' + d.phiCA + ' = ' + f(rc.As_pos, 1) + ' cm²', '—']},
-    {c: ['wk no apoio B, comb. frequente (mm)', f(rc.els.neg.wk, 2), 'fuso e tensões (aba Tensões)']}, {c: ['Flecha imediata (mm)', f(rc.defl_inst * 1000, 1), f(mm1(A.df.qp_net), 1) + ' (líquida)']},
-    {c: ['Flecha total (mm)', f(rc.defl_tot * 1000, 1), f(pcMax, 1) + ' (×(1+φ))']}, {c: ['Vsd no apoio B (kN)', f(rc.Vsd_B, 0), f(Math.max.apply(null, A.sh.Vsd), 0)]},
-    {c: ['asw total no apoio B (cm²/m)', f(rc.asw_B, 1), f(2 * Math.max.apply(null, A.sh.asw_calc), 1)]}];
-  function mm1(a){ return a.slice(0, 21).reduce((m, v) => Math.abs(v) > Math.abs(m) ? v : m, 0) * 1000; }
+  const rc = A.rc, d = A.d, ap = d.Ap * 1e4, aato = Math.max.apply(null, A.aato), neg = rc.hasNeg, nmN = neg ? 'apoio ' + supName(A.supIdx.indexOf(rc.iNeg)) : '';
+  const pcMax = Math.min.apply(null, A.df.qp_inf) * 1000;
+  const eN = neg ? A.eluSup[A.supIdx.indexOf(rc.iNeg)] : null, eP = A.eluSpan.reduce((b, e) => Math.abs(e.Msd) > Math.abs(b.Msd) ? e : b);
+  const rows = [].concat(
+    neg ? [{c: ['Md no ' + nmN + ' (kN·m)', f(rc.Md_neg, 0), f(Math.abs(eN.Msd), 0)]}] : [],
+    [{c: ['Md no vão, x = ' + f(rc.x_pos, 1) + ' m (kN·m)', f(rc.Md_pos, 0), f(eP.Msd, 0)]}],
+    neg ? [{c: ['Armadura de flexão no ' + nmN + ' (cm²)', f(rc.neg.As, 1), "A′ = " + f(d.AscB, 2)]}] : [],
+    [{c: ['Armadura de flexão no vão (cm²)', f(rc.pos.As, 1), "A′ = " + f(d.AscV, 2)]}, {c: ['Armadura ativa Ap (cm²)', '—', f(ap, 2)]}, {c: ['Passiva no ato As,ato (cm²)', '—', f(aato, 1)]}],
+    neg ? [{c: ['Barras adotadas (apoios internos / vãos)', d.nnegCA + ' Ø' + d.phiCA + ' = ' + f(rc.As_neg, 1) + ' cm²', '—'], hl: 0}, {c: ['', d.nposCA + ' Ø' + d.phiCA + ' = ' + f(rc.As_pos, 1) + ' cm²', '—']}]
+        : [{c: ['Barras adotadas (vão)', d.nposCA + ' Ø' + d.phiCA + ' = ' + f(rc.As_pos, 1) + ' cm²', '—'], hl: 0}],
+    neg ? [{c: ['wk no ' + nmN + ', comb. frequente (mm)', f(rc.els.neg.wk, 2), 'fuso e tensões (aba Tensões)']}] : [{c: ['wk no vão, comb. frequente (mm)', f(rc.els.pos.wk, 2), 'fuso e tensões (aba Tensões)']}],
+    [{c: ['Flecha imediata (mm)', f(rc.defl_inst * 1000, 1), f(mm1(A.df.qp_net), 1) + ' (líquida)']}, {c: ['Flecha total (mm)', f(rc.defl_tot * 1000, 1), f(pcMax, 1) + ' (×(1+φ))']}],
+    neg ? [{c: ['Vsd no ' + nmN + ' (kN)', f(rc.Vsd_B, 0), f(Math.max.apply(null, A.sh.Vsd), 0)]}, {c: ['asw total no ' + nmN + ' (cm²/m)', f(rc.asw_B, 1), f(2 * Math.max.apply(null, A.sh.asw_calc), 1)]}]
+        : [{c: ['Vsd na ancoragem (kN)', f(rc.Vsd_A, 0), f(Math.max.apply(null, A.sh.Vsd), 0)]}, {c: ['asw total na ancoragem (cm²/m)', f(rc.asw_A, 1), f(2 * Math.max.apply(null, A.sh.asw_calc), 1)]}]);
+  function mm1(a){ return a.reduce((m, v) => Math.abs(v) > Math.abs(m) ? v : m, 0) * 1000; }
   const x = xsOf().slice(0, NR());
   return {
     html: '<div class="card"><h2>Concreto protendido × concreto armado</h2><div class="src">Planilha: CA e CA_Flecha · mesma seção e mesmas cargas</div><p class="lead">ELU pelo bloco retangular 0,8x·0,85·fcd, sem redistribuição. Abertura de fissuras pelo item 17.3.3.2 na comb. frequente. Flecha por Branson com integração ao longo do vão. Barras e altura útil vêm dos dados (Concreto armado).</p>' +
@@ -1204,7 +1363,7 @@ const Tb = rows => '<div class="tw"><table class="fmt"><thead><tr><th>Item</th><
 const em = (s, t) => '<i>' + s + '</i>' + (t ? '<sub>' + t + '</sub>' : '');
 
 function memorialBody(){
-  const a = A, d = a.d, r = a.r, Ls = r.Ls, ext = r.ext, rf = r.res.inf, ri = r.res.i, L = d.L, iB = a.iB, iV = 8, xv = Ls.x[iV], pp = profileParams(d), W = d.W, Ac = d.Ac;
+  const a = A, d = a.d, r = a.r, Ls = r.Ls, ext = r.ext, rf = r.res.inf, ri = r.res.i, L = d.L, nsp = d.n, hasB = a.iB >= 0, iB = hasB ? a.iB : r.x.length - 1, iV = 8, xv = Ls.x[iV], pp = profileParams(d), W = d.W, Ac = d.Ac;
   const sec = [], num = (v, k) => f(v, k === undefined ? 2 : k);
   let n = 0;
   const S = (titulo, lead, html) => { n++; sec.push({n, titulo, html: '<section class="ms" id="ms' + n + '"><h2>' + n + '. ' + titulo + '</h2>' + (lead ? '<p class="lead">' + lead + '</p>' : '') + html + '</section>'}); };
@@ -1219,7 +1378,9 @@ function memorialBody(){
     Rw('Módulo resistente', em('W') + ' = ' + em('I', 'c') + ' / (' + em('h') + '/2)', num(d.Ic, 5) + ' / ' + num(d.h / 2, 2), num(W, 5) + ' m³'),
     Rw('Núcleo central', em('k') + ' = ' + em('W') + ' / ' + em('A', 'c'), num(W, 5) + ' / ' + num(Ac, 3), num(d.k, 3) + ' m'),
     Rw('Peso próprio', em('g', '0') + ' = 25·' + em('A', 'c'), '25 × ' + num(Ac, 3), num(d.g_pp, 2) + ' kN/m'),
-    Rw('Permanente total', em('g') + ' = ' + em('g', '0') + ' + ' + em('g', 'adic'), num(d.g_pp, 2) + ' + ' + num(d.g_add, 2), num(d.g, 2) + ' kN/m'),
+    Rw('Vãos', em('L', 'i'), d.n + (d.n === 1 ? ' vão' : ' vãos'), d.Ls.map(l => num(l, 2)).join(' + ') + ' = ' + num(d.Ltot, 2) + ' m'),
+    Rw('Permanente total' + (d.n > 1 ? ' (por vão)' : ''), em('g') + ' = ' + em('g', '0') + ' + ' + em('g', 'adic'), d.gadd.map(g => num(d.g_pp, 2) + ' + ' + num(g, 2)).join(' ; '), d.gv.map(g => num(g, 2)).join(' ; ') + ' kN/m'),
+    Rw('Sobrecarga' + (d.n > 1 ? ' (por vão)' : ''), em('q'), '', d.qv.map(q => num(q, 2)).join(' ; ') + ' kN/m'),
     Rw('Resistência de cálculo', em('f', 'cd') + ' = ' + em('f', 'ck') + ' / γ<sub>c</sub>', num(d.fck, 0) + ' / ' + num(d.gc, 2), num(d.fcd, 2) + ' MPa'),
     Rw('Resistência à tração média', em('f', 'ct,m') + ' = 0,3·' + em('f', 'ck') + '<sup>2/3</sup>', '0,3 × ' + num(d.fck, 0) + '^(2/3)', num(d.fctm, 2) + ' MPa'),
     Rw('Tração característica inf. / sup.', em('f', 'ctk,inf') + ' = 0,7·' + em('f', 'ct,m') + ' ;  ' + em('f', 'ctk,sup') + ' = 1,3·' + em('f', 'ct,m'), '0,7 × ' + num(d.fctm, 2) + ' ; 1,3 × ' + num(d.fctm, 2), num(d.fctkinf, 2) + ' / ' + num(d.fctksup, 2) + ' MPa'),
@@ -1234,83 +1395,104 @@ function memorialBody(){
     Rw('Força no macaco', em('P', 'j') + ' = ' + em('A', 'p') + '·σ<sub>pj</sub>', num(d.Ap * 1e4, 2) + ' cm² × ' + num(d.sig_j, 0) + ' MPa', num(Ls.Pj, 0) + ' kN'),
     Rw('Posição do cabo', 'd′ = ' + em('c', 'nom') + ' + Ø<sub>t</sub> + Ø<sub>bainha</sub>/2', num(d.cnom, 3) + ' + ' + num(d.phi_t, 3) + ' + ' + num(d.d_bain, 3) + '/2', num(d.dpp, 3) + ' m'),
     Rw('Excentricidade máxima', em('e', 'max') + ' = ' + em('h') + '/2 − d′', num(d.h / 2, 3) + ' − ' + num(d.dpp, 3), num(d.e_max, 3) + ' m'),
-    Rw('Carga a equilibrar', em('p', 'bal') + ' = ' + em('g') + ' + ψ<sub>2</sub>·' + em('q'), num(d.g, 2) + ' + ' + num(d.psi2, 2) + ' × ' + num(d.q, 2), num(d.pbal, 2) + ' kN/m')]));
+    Rw('Carga a equilibrar' + (d.n > 1 ? ' (por vão)' : ''), em('p', 'bal') + ' = ' + em('g') + ' + ψ<sub>2</sub>·' + em('q'), d.gv.map((g, k) => num(g, 2) + ' + ' + num(d.psi2, 2) + ' × ' + num(d.qv[k], 2)).join(' ; '), d.pbalv.map(v => num(v, 2)).join(' ; ') + ' kN/m')]));
 
   /* 2. Traçado */
-  S('Traçado do cabo', 'Duas parábolas por vão: a principal, de 0 a x<sub>i</sub> = L − λ, com vértice em x<sub>0</sub>; e a reversa, de x<sub>i</sub> até o apoio B, com concavidade para baixo. A inclinação é contínua em x<sub>i</sub>.', Tb([
-    Rw('Início da parábola reversa', em('x', 'i') + ' = ' + em('L') + ' − λ', num(L, 2) + ' − ' + num(d.lam, 2), num(pp.xi, 2) + ' m'),
-    Rw('Vértice da parábola principal', em('x', '0') + ': raiz de A·x² + B·x + C = 0, imposta a continuidade da inclinação em ' + em('x', 'i'), em('e', 'vão') + ' = ' + num(d.e_span, 3) + ' ; ' + em('e', 'sup') + ' = ' + num(d.e_sup, 3) + ' ; ' + em('e', 'ext') + ' = ' + num(d.e_end, 3), num(pp.x0, 3) + ' m'),
-    Rw('Curvatura A', em('a', 'A') + ' = (' + em('e', 'vão') + ' − ' + em('e', 'ext') + ') / ' + em('x', '0') + '²', '(' + num(d.e_span, 3) + ' − ' + num(d.e_end, 3) + ') / ' + num(pp.x0, 3) + '²', num(pp.aA, 5) + ' 1/m'),
-    Rw('Curvatura B', em('a', 'B') + ' = ' + em('a', 'A') + '·(' + em('x', 'i') + ' − ' + em('x', '0') + ') / λ', num(pp.aA, 5) + ' × (' + num(pp.xi, 2) + ' − ' + num(pp.x0, 3) + ') / ' + num(d.lam, 2), num(pp.aB, 5) + ' 1/m'),
-    Rw('Parábola A (0 ≤ x ≤ ' + em('x', 'i') + ')', em('e') + '(x) = ' + em('e', 'vão') + ' − ' + em('a', 'A') + '·(x − ' + em('x', '0') + ')²', 'em x = ' + num(xv, 1) + ' m', num(r.e[iV], 3) + ' m'),
-    Rw('Parábola reversa (' + em('x', 'i') + ' ≤ x ≤ L)', em('e') + '(x) = −' + em('e', 'sup') + ' + ' + em('a', 'B') + '·(L − x)²', 'em x = ' + num(L, 1) + ' m (apoio B)', num(r.e[iB], 3) + ' m'),
-    Rw('Ângulo do cabo', 'α(x) = arctg(de/dx) ;  Σα = soma das variações |Δα| ao longo do cabo', 'de 0 a ' + num(2 * L, 0) + ' m', num(Ls.theta_tot, 3) + ' rad')]) +
-    tela('Aba Traçado e fuso', cap.tracado[0]));
+  const trRows = [
+    Rw('Parábola principal de cada vão', em('e') + '(s) = ' + em('e', 'vão') + ' − a·(s − ' + em('x', '0') + ')²', 's = distância ao apoio esquerdo do vão', 'ver quadro abaixo'),
+    Rw('Parábola reversa junto a cada apoio interno', em('e') + '(s) = ' + em('e', 'apoio') + ' + a′·(distância ao apoio)²,  trecho λ', 'inclinação nula sobre o apoio', 'e<sub>apoio</sub> = −e<sub>sup</sub> (acima do CG)'),
+    Rw('Continuidade em cada vão', 'a·(x<sub>0</sub> − λ<sub>e</sub>)·x<sub>0</sub> = e<sub>vão</sub> − e<sub>apoio esq.</sub> ;  a·(L − λ<sub>d</sub> − x<sub>0</sub>)·(L − x<sub>0</sub>) = e<sub>vão</sub> − e<sub>apoio dir.</sub>', 'duas equações em a e x<sub>0</sub>', 'x<sub>0</sub> por equação do 2º grau'),
+    Rw('Curvatura da reversa', 'a′<sub>e</sub> = a·(x<sub>0</sub> − λ<sub>e</sub>)/λ<sub>e</sub> ;  a′<sub>d</sub> = a·(L − λ<sub>d</sub> − x<sub>0</sub>)/λ<sub>d</sub>', 'continuidade da inclinação', 'ver quadro abaixo'),
+    Rw('Ângulo do cabo', 'α(x) = arctg(de/dx) ;  Σα = soma das variações |Δα| ao longo do cabo', 'de 0 a ' + num(d.Ltot, 0) + ' m', num(Ls.theta_tot, 3) + ' rad')];
+  const trTab = '<div class="tw"><table class="fmt"><thead><tr><th>Vão</th><th>L (m)</th><th>e<sub>vão</sub> (m)</th><th>e<sub>apoio esq.</sub> (m)</th><th>e<sub>apoio dir.</sub> (m)</th><th>λ esq. (m)</th><th>λ dir. (m)</th><th>x<sub>0</sub> (m)</th><th>a (1/m)</th></tr></thead><tbody>' +
+    d.Ls.map((Lk, k) => { const q = spanProfile(d, k); return '<tr><td>' + (nsp === 1 ? 'único' : k + 1) + '</td><td class="n">' + num(Lk, 2) + '</td><td class="n">' + num(q.em, 3) + '</td><td class="n">' + num(q.eL, 3) + '</td><td class="n">' + num(q.eR, 3) + '</td><td class="n">' + num(q.lL, 2) + '</td><td class="n">' + num(q.lR, 2) + '</td><td class="n">' + num(q.x0, 3) + '</td><td class="n">' + num(q.a, 5) + '</td></tr>'; }).join('') + '</tbody></table></div>';
+  S('Traçado do cabo', 'Um cabo contínuo ao longo de todos os vãos. Em cada vão, uma parábola principal com vértice em x<sub>0</sub> e, junto a cada apoio interno, uma parábola reversa de comprimento λ, com concavidade para baixo e inclinação contínua nas junções. Nas extremidades o cabo ancora com e = e<sub>ext</sub> = ' + num(d.e_end, 3) + ' m.',
+    Tb(trRows) + trTab + tela('Aba Traçado e fuso', cap.tracado[0]));
 
   /* 3. Perdas */
   const cES = d.n_cab > 1 ? Ls.ap * (d.n_cab - 1) / (2 * d.n_cab) : 0, rho_p = d.Ap / Ac;
-  S('Força de protensão e perdas', 'Protensão simultânea pelas duas extremidades. Seções conferidas: x = ' + num(xv, 1) + ' m (vão) e x = ' + num(L, 1) + ' m (apoio B).', Tb([
-    Rw('Atrito no apoio B', 'σ(s) = σ<sub>pj</sub>·e<sup>−(μΣα + k·s)</sup>', num(d.sig_j, 0) + ' · e^−(' + num(d.mu, 2) + ' × ' + num(Ls.theta[iB], 3) + ' + ' + num(d.kk, 4) + ' × ' + num(Ls.arc[iB], 2) + ')', num(Ls.sL[iB], 1) + ' MPa'),
-    Rw('Alcance da cravação', 'Δ(x<sub>a</sub>) = 2·(∫σ dx − σ·x)/' + em('E', 'p') + ' = ' + em('Δ', 'cunha'), em('Δ', 'cunha') + ' = ' + num(d.slip * 1000, 1) + ' mm', em('x', 'a') + ' = ' + num(Ls.xa, 2) + ' m'),
+  S('Força de protensão e perdas', 'Protensão simultânea pelas duas extremidades. Seções conferidas: x = ' + num(xv, 1) + ' m (vão 1)' + (hasB ? ' e x = ' + num(Ls.x[iB], 1) + ' m (apoio B).' : ' e a outra extremidade.'), Tb([
+    Rw('Atrito até ' + (hasB ? 'o apoio B' : 'a outra extremidade') + ', a partir da extremidade esquerda', 'σ(s) = σ<sub>pj</sub>·e<sup>−(μΣα + k·s)</sup>', num(d.sig_j, 0) + ' · e^−(' + num(d.mu, 2) + ' × ' + num(Ls.theta[iB], 3) + ' + ' + num(d.kk, 4) + ' × ' + num(Ls.arc[iB], 2) + ')', num(Ls.sL[iB], 1) + ' MPa'),
+    Rw('Alcance da cravação (esquerda / direita)', 'Δ(x<sub>a</sub>) = 2·(∫σ dx − σ·x)/' + em('E', 'p') + ' = ' + em('Δ', 'cunha'), em('Δ', 'cunha') + ' = ' + num(d.slip * 1000, 1) + ' mm ; limite no cruzamento das curvas, x = ' + num(Ls.xc, 2) + ' m', em('x', 'a') + ' = ' + num(Ls.xa, 2) + ' / ' + num(Ls.xaR, 2) + ' m'),
     Rw('Tensão após a cravação (x = ' + num(xv, 1) + ' m)', 'σ = 2σ(x<sub>a</sub>) − σ(x), se x ≤ x<sub>a</sub>', 'x<sub>a</sub> = ' + num(Ls.xa, 2) + ' m', num(Ls.sig_slip[iV], 1) + ' MPa'),
     Rw('Encurtamento elástico', 'Δσ<sub>ee</sub> = c·[A<sub>p</sub>(1/A<sub>c</sub> + e²/I<sub>c</sub>)·σ − M<sub>g0</sub>·e/I<sub>c</sub>] / (1 + c·A<sub>p</sub>(1/A<sub>c</sub> + e²/I<sub>c</sub>)) ;  c = α<sub>p</sub>(n−1)/(2n)',
       'α<sub>p</sub> = ' + num(Ls.ap, 2) + ' ; c = ' + num(cES, 3) + ' ; e = ' + num(r.e[iV], 3) + ' m ; M<sub>g0</sub> = ' + num(ext.Mg0[iV], 1) + ' kN·m', num(Ls.des[iV], 1) + ' MPa'),
     Rw('Tensão no ato', 'σ<sub>p,i</sub> = σ − Δσ<sub>ee</sub> ;  P<sub>i</sub> = A<sub>p</sub>·σ<sub>p,i</sub>', num(Ls.sig_slip[iV], 1) + ' − ' + num(Ls.des[iV], 1), num(Ls.sig_i[iV], 1) + ' MPa · ' + num(Ls.Pi[iV], 0) + ' kN'),
     Rw('Perdas progressivas', 'Δσ<sub>∞</sub> = [|ε<sub>cs</sub>|E<sub>p</sub> + α<sub>p</sub>|σ<sub>cp0</sub>|φ + σ<sub>p,i</sub>χ] / [(1+χ) + (1+0,5φ)α<sub>p</sub>η·ρ<sub>p</sub>]',
       '[' + num(Math.abs(d.eps_cs) * d.Ep, 1) + ' + ' + num(Ls.ap28 * Math.abs(Ls.scp0[iV]) * d.phi_cr, 1) + ' + ' + num(Ls.sig_i[iV] * Ls.chi[iV], 1) + '] / [' + num(1 + Ls.chi[iV], 3) + ' + ' + num((1 + 0.5 * d.phi_cr) * Ls.ap28 * Ls.eta[iV] * rho_p, 3) + ']', num(Ls.dsig[iV], 1) + ' MPa'),
-    Rw('Força final no vão', 'σ<sub>p,∞</sub> = σ<sub>p,i</sub> − Δσ<sub>∞</sub> ;  P<sub>∞</sub> = A<sub>p</sub>·σ<sub>p,∞</sub>', num(Ls.sig_i[iV], 1) + ' − ' + num(Ls.dsig[iV], 1), num(Ls.sig_inf[iV], 1) + ' MPa · ' + num(Ls.Pinf[iV], 0) + ' kN'),
-    Rw('Força final no apoio B', 'P<sub>∞</sub> = A<sub>p</sub>·σ<sub>p,∞</sub>', num(Ls.sig_inf[iB], 1) + ' MPa × ' + num(d.Ap * 1e4, 2) + ' cm²', num(Ls.Pinf[iB], 0) + ' kN'),
-    Rw('Alongamento por extremidade', 'Δl = ∫ σ/E<sub>p</sub> ds', 'comprimento do cabo ' + num(Ls.arc_tot, 2) + ' m', num(Ls.elong, 1) + ' mm'),
-    Rw('Alongamento líquido', 'Δl − Δ<sub>cunha</sub>', num(Ls.elong, 1) + ' − ' + num(d.slip * 1000, 1), num(Ls.elong - d.slip * 1000, 1) + ' mm')]) +
+    Rw('Força final no vão 1', 'σ<sub>p,∞</sub> = σ<sub>p,i</sub> − Δσ<sub>∞</sub> ;  P<sub>∞</sub> = A<sub>p</sub>·σ<sub>p,∞</sub>', num(Ls.sig_i[iV], 1) + ' − ' + num(Ls.dsig[iV], 1), num(Ls.sig_inf[iV], 1) + ' MPa · ' + num(Ls.Pinf[iV], 0) + ' kN'),
+    Rw('Força final ' + (hasB ? 'no apoio B' : 'na outra extremidade'), 'P<sub>∞</sub> = A<sub>p</sub>·σ<sub>p,∞</sub>', num(Ls.sig_inf[iB], 1) + ' MPa × ' + num(d.Ap * 1e4, 2) + ' cm²', num(Ls.Pinf[iB], 0) + ' kN'),
+    Rw('Alongamento por extremidade (esquerda / direita)', 'Δl = ∫ σ/E<sub>p</sub> ds, cada extremidade até o cruzamento das curvas de atrito', 'comprimento do cabo ' + num(Ls.arc_tot, 2) + ' m', num(Ls.elong, 1) + ' / ' + num(Ls.elongR, 1) + ' mm'),
+    Rw('Alongamento líquido (esquerda / direita)', 'Δl − Δ<sub>cunha</sub>', num(Ls.elong, 1) + ' − ' + num(d.slip * 1000, 1) + ' ; ' + num(Ls.elongR, 1) + ' − ' + num(d.slip * 1000, 1), num(Ls.elong - d.slip * 1000, 1) + ' / ' + num(Ls.elongR - d.slip * 1000, 1) + ' mm')]) +
     tela('Aba Perdas e alongamento', cap.perdas));
 
   /* 4. Esforços externos */
-  const wq = d.q;
-  S('Esforços externos', 'Viga contínua de dois vãos iguais. A sobrecarga q é posicionada nos dois vãos, só no vão 1 ou só no vão 2, e as envoltórias são tomadas por seção.', Tb([
+  const wq = d.q, supRowsM = a.supIdx.map((i, j) => Rw('Momento permanente no apoio ' + supName(j), 'M<sub>j−1</sub>·L<sub>j</sub> + 2M<sub>j</sub>(L<sub>j</sub> + L<sub>j+1</sub>) + M<sub>j+1</sub>·L<sub>j+1</sub> = −(g<sub>j</sub>L<sub>j</sub>³ + g<sub>j+1</sub>L<sub>j+1</sub>³)/4  (equação dos três momentos, sistema para todos os apoios)', 'j = ' + (j + 1) + ' ; L<sub>j</sub> = ' + num(d.Ls[j], 2) + ' ; L<sub>j+1</sub> = ' + num(d.Ls[j + 1], 2) + ' m ; g<sub>j</sub> = ' + num(d.gv[j], 2) + ' ; g<sub>j+1</sub> = ' + num(d.gv[j + 1], 2) + ' kN/m', num(ext.Mg[i], 1) + ' kN·m'));
+  const rowsEsf = d.eq2 ? [
     Rw('Momento no apoio B (carga uniforme w em ambos os vãos)', em('M', 'B') + ' = −(' + em('w', '1') + ' + ' + em('w', '2') + ')·' + em('L') + '² / 16 = −w·L²/8', 'g = ' + num(d.g, 2) + ' kN/m', num(-d.g * L * L / 8, 1) + ' kN·m'),
     Rw('Reação no apoio A', em('R', 'A') + ' = w·L/2 + ' + em('M', 'B') + '/L', num(d.g, 2) + ' × ' + num(L, 0) + '/2 + (' + num(-d.g * L * L / 8, 1) + ')/' + num(L, 0), num(d.g * L / 2 - d.g * L / 8, 1) + ' kN'),
     Rw('Momento permanente no vão (x = ' + num(xv, 1) + ' m)', em('M', 'g') + '(x) = ' + em('R', 'A') + '·x − g·x²/2', num(d.g * L * 3 / 8, 1) + ' × ' + num(xv, 1) + ' − ' + num(d.g, 2) + ' × ' + num(xv, 1) + '²/2', num(ext.Mg[iV], 1) + ' kN·m'),
     Rw('Momento da sobrecarga no vão (máx.)', em('M', 'q,máx') + ' = máx. entre os três arranjos de q', 'q = ' + num(wq, 1) + ' kN/m', num(ext.Mq_max[iV], 1) + ' kN·m'),
     Rw('Momento da sobrecarga em B (mín.)', em('M', 'q,mín') + ' = −q·L²/8', num(wq, 1) + ' × ' + num(L, 0) + '²/8', num(ext.Mq_min[iB], 1) + ' kN·m'),
     Rw('Peso próprio isolado em B', em('M', 'g0') + ' = −g<sub>0</sub>·L²/8', num(d.g_pp, 2) + ' × ' + num(L, 0) + '²/8', num(ext.Mg0[iB], 1) + ' kN·m'),
-    Rw('Cortante permanente à esquerda de B', em('V', 'g') + ' = ' + em('R', 'A') + ' − g·L', num(d.g * L * 3 / 8, 1) + ' − ' + num(d.g, 2) + ' × ' + num(L, 0), num(ext.Vg[iB], 1) + ' kN')]) +
+    Rw('Cortante permanente à esquerda de B', em('V', 'g') + ' = ' + em('R', 'A') + ' − g·L', num(d.g * L * 3 / 8, 1) + ' − ' + num(d.g, 2) + ' × ' + num(L, 0), num(ext.Vg[iB], 1) + ' kN')]
+  : [].concat(
+    nsp === 1 ? [Rw('Momento permanente no meio do vão', em('M', 'g') + ' = g·L²/8', num(d.g, 2) + ' × ' + num(L, 1) + '²/8', num(ext.Mg[10], 1) + ' kN·m'), Rw('Reação nas extremidades', em('R') + ' = g·L/2', num(d.g, 2) + ' × ' + num(L, 1) + '/2', num(ext.Vg[0], 1) + ' kN')] : supRowsM,
+    [Rw('Momento permanente no vão 1 (x = ' + num(xv, 1) + ' m)', em('M', 'g') + '(x) = g·s·(L − s)/2 + M<sub>esq.</sub>·(1 − s/L) + M<sub>dir.</sub>·s/L', 's = ' + num(xv, 1) + ' m ; L = ' + num(L, 2) + ' m', num(ext.Mg[iV], 1) + ' kN·m'),
+     Rw('Momento da sobrecarga no vão 1 (máx.)', em('M', 'q,máx') + ' = soma das parcelas positivas, vão a vão', 'q = ' + d.qv.map(q => num(q, 1)).join(' ; ') + ' kN/m', num(ext.Mq_max[iV], 1) + ' kN·m')],
+    hasB ? [Rw('Momento da sobrecarga no apoio B (mín.)', em('M', 'q,mín') + ' = soma das parcelas negativas, vão a vão', '', num(ext.Mq_min[iB], 1) + ' kN·m'), Rw('Cortante permanente à esquerda de B', em('V', 'g') + '(s) = g·(L/2 − s) + (M<sub>dir.</sub> − M<sub>esq.</sub>)/L', 's = L', num(ext.Vg[iB], 1) + ' kN')] : []);
+  S('Esforços externos', d.n === 1 ? 'Viga isostática de um vão com carga uniformemente distribuída.' : 'Viga contínua de ' + d.n + ' vãos de EI constante' + (d.eq2 ? ', dois vãos iguais' : '') + '. A sobrecarga q é posicionada vão a vão e as envoltórias de cada seção somam as parcelas positivas (máximo) e as negativas (mínimo) de cada arranjo.', Tb(rowsEsf) +
     tela('Aba Esforços e hiperestático · momentos externos', cap.esforcos[0]));
 
   /* 5. Hiperestático */
   const EI = d.Ecs * 1e3 * d.Ic, mB = L / 2, d11 = L * L * L / (6 * EI);
-  S('Hiperestático de protensão (método das forças)', 'Sistema principal: viga com o apoio B liberado. A protensão isostática M<sub>iso</sub> = −P·cosα·e deflete a viga; a reação R<sub>B</sub> que restitui a deslocabilidade nula gera o momento hiperestático. Integral em trapézio, estações a cada 0,5 m.', Tb([
+  let hipTb;
+  if (nsp === 1) hipTb = Tb([Rw('Momento isostático no vão (t∞)', em('M', 'iso') + ' = −P<sub>∞</sub>·cosα·e', '−' + num(Ls.Pinf[iV], 0) + ' × ' + num(r.cosa[iV], 4) + ' × ' + num(r.e[iV], 3), num(rf.Miso[iV], 1) + ' kN·m'), Rw('Hiperestático', 'viga isostática: não há apoio interno', '', 'M<sub>hip</sub> = 0, M<sub>P</sub> = M<sub>iso</sub>')]);
+  else if (d.eq2) hipTb = Tb([
     Rw('Momento isostático em B (t∞)', em('M', 'iso') + ' = −P<sub>∞</sub>·cosα·e', '−' + num(Ls.Pinf[iB], 0) + ' × ' + num(r.cosa[iB], 4) + ' × ' + num(r.e[iB], 3), num(rf.Miso[iB], 1) + ' kN·m'),
     Rw('Momento isostático no vão (t∞)', em('M', 'iso') + ' = −P<sub>∞</sub>·cosα·e', '−' + num(Ls.Pinf[iV], 0) + ' × ' + num(r.cosa[iV], 4) + ' × ' + num(r.e[iV], 3), num(rf.Miso[iV], 1) + ' kN·m'),
     Rw('Diagrama virtual (R<sub>B</sub> = 1)', em('m') + '(x) = x/2 (no vão 1) ;  m(' + num(L, 0) + ') = L/2', 'L/2', num(mB, 2) + ' m'),
     Rw('Flexibilidade', 'δ<sub>11</sub> = ∫ m² dx / EI = L³ / (6·EI)', 'EI = ' + num(EI, 0) + ' kN·m²', num(d11, 6) + ' m/kN'),
-    Rw('Deslocamento da protensão', 'δ<sub>10</sub> = ∫ M<sub>iso</sub>·m dx / EI  (trapézio)', 'resultado numérico das 41 estações', num(rf.RB * d11, 6) + ' m'),
+    Rw('Deslocamento da protensão', 'δ<sub>10</sub> = ∫ M<sub>iso</sub>·m dx / EI  (trapézio)', 'resultado numérico das ' + r.x.length + ' estações', num(rf.RB * d11, 6) + ' m'),
     Rw('Reação hiperestática', em('R', 'B') + ' = δ<sub>10</sub> / δ<sub>11</sub>', num(rf.RB * d11, 6) + ' / ' + num(d11, 6), num(rf.RB, 2) + ' kN'),
     Rw('Momento hiperestático em B', em('M', 'hip') + ' = −R<sub>B</sub>·m', '−(' + num(rf.RB, 2) + ') × ' + num(mB, 2), num(rf.Mhip[iB], 1) + ' kN·m'),
     Rw('Momento hiperestático no vão', em('M', 'hip') + ' = −R<sub>B</sub>·x/2', '−(' + num(rf.RB, 2) + ') × ' + num(xv, 1) + '/2', num(rf.Mhip[iV], 1) + ' kN·m'),
     Rw('Momento total da protensão em B', em('M', 'P') + ' = ' + em('M', 'iso') + ' + ' + em('M', 'hip'), num(rf.Miso[iB], 1) + ' + (' + num(rf.Mhip[iB], 1) + ')', num(rf.MP[iB], 1) + ' kN·m'),
-    Rw('Reação hiperestática no ato', em('R', 'B') + '(P<sub>i</sub>)', 'mesma sequência com P<sub>i</sub>', num(ri.RB, 2) + ' kN')]) +
+    Rw('Reação hiperestática no ato', em('R', 'B') + '(P<sub>i</sub>)', 'mesma sequência com P<sub>i</sub>', num(ri.RB, 2) + ' kN')]);
+  else {
+    const Fm = flexib(d, EI), d0 = Fm.map((row, j) => sum(row.map((v, k) => v * rf.R[k])));
+    hipTb = Tb([].concat(
+      [Rw('Momento isostático no vão 1 (t∞)', em('M', 'iso') + ' = −P<sub>∞</sub>·cosα·e', '−' + num(Ls.Pinf[iV], 0) + ' × ' + num(r.cosa[iV], 4) + ' × ' + num(r.e[iV], 3), num(rf.Miso[iV], 1) + ' kN·m'),
+       Rw('Diagramas virtuais (R<sub>j</sub> = 1)', em('m', 'j') + '(x) = x·(L<sub>tot</sub> − x<sub>j</sub>)/L<sub>tot</sub> (x ≤ x<sub>j</sub>) ;  x<sub>j</sub>·(L<sub>tot</sub> − x)/L<sub>tot</sub> (x ≥ x<sub>j</sub>)', 'L<sub>tot</sub> = ' + num(d.Ltot, 2) + ' m ; x<sub>j</sub> = ' + d.xSup.slice(1, d.n).map(v => num(v, 2)).join(' ; ') + ' m', 'viga simples nos extremos')],
+      Fm.map((row, j) => Rw('Flexibilidades δ<sub>' + (j + 1) + 'k</sub>', 'δ<sub>jk</sub> = a·(L<sub>tot</sub> − b)·(L<sub>tot</sub>² − a² − (L<sub>tot</sub> − b)²) / (6·L<sub>tot</sub>·EI), a = mín(x<sub>j</sub>, x<sub>k</sub>), b = máx', 'EI = ' + num(EI, 0) + ' kN·m²', row.map(v => num(v * 1e6, 3)).join(' ; ') + ' (×10⁻⁶ m/kN)')),
+      [Rw('Deslocamentos da protensão', 'δ<sub>j0</sub> = ∫ M<sub>iso</sub>·m<sub>j</sub> dx / EI  (trapézio)', 'sistema F·R = δ<sub>0</sub>', d0.map(v => num(v * 1e6, 3)).join(' ; ') + ' (×10⁻⁶ m)')],
+      a.supIdx.map((i, j) => Rw('Reação hiperestática R<sub>' + supName(j) + '</sub> (t∞)', 'R = F⁻¹·δ<sub>0</sub>', 'apoio ' + supName(j) + ', x = ' + num(r.x[i], 2) + ' m', num(rf.R[j], 2) + ' kN')),
+      a.supIdx.map((i, j) => Rw('Momento hiperestático e total em ' + supName(j), em('M', 'hip') + ' = −Σ R<sub>k</sub>·m<sub>k</sub> ;  ' + em('M', 'P') + ' = ' + em('M', 'iso') + ' + ' + em('M', 'hip'), 'M<sub>iso</sub> = ' + num(rf.Miso[i], 1) + ' kN·m', 'M<sub>hip</sub> = ' + num(rf.Mhip[i], 1) + ' ; M<sub>P</sub> = ' + num(rf.MP[i], 1) + ' kN·m')),
+      [Rw('Reações hiperestáticas no ato', em('R') + '(P<sub>i</sub>)', 'mesma sequência com P<sub>i</sub>', ri.R.map(v => num(v, 2)).join(' ; ') + ' kN')]));
+  }
+  S('Hiperestático de protensão (método das forças)', nsp === 1 ? 'Viga isostática: a protensão não gera esforços hiperestáticos.' : 'Sistema principal: viga simples entre as extremidades, com os ' + (nsp - 1) + ' apoio(s) interno(s) liberado(s). A protensão isostática M<sub>iso</sub> = −P·cosα·e deflete a viga; as reações R que restituem deslocamento nulo nos apoios geram o momento hiperestático. Integral em trapézio nas ' + r.x.length + ' estações.', hipTb +
     tela('Aba Esforços e hiperestático · momentos da protensão', [cap.esforcos[1], cap.esforcos[2]]));
 
   /* 6. Tensões */
-  const st = (i) => ({N: rf.N[i], MP: rf.MP[i]});
-  const sRow = (lab, i, e1, e2, M1, M2, k1, k2) => Rw(lab, 'σ<sub>1</sub> = −N/A<sub>c</sub> + (M<sub>P</sub> + M)/W ;  σ<sub>2</sub> = −N/A<sub>c</sub> − (M<sub>P</sub> + M)/W',
+  const iF = hasB ? iB : iV, nF = hasB ? 'em B' : 'em x = ' + num(xv, 1) + ' m';
+  const sRow = (lab, i, M1, M2, k1, k2) => Rw(lab, 'σ<sub>1</sub> = −N/A<sub>c</sub> + (M<sub>P</sub> + M)/W ;  σ<sub>2</sub> = −N/A<sub>c</sub> − (M<sub>P</sub> + M)/W',
     'N = ' + num(rf.N[i], 0) + ' kN ; M<sub>P</sub> = ' + num(rf.MP[i], 1) + ' ; M<sub>1</sub> = ' + num(M1, 1) + ' ; M<sub>2</sub> = ' + num(M2, 1) + ' kN·m', 'σ₁ = ' + num(k1, 2) + ' ; σ₂ = ' + num(k2, 2) + ' MPa');
-  S('Tensões nas fibras', 'Em cada estado a tensão é a soma da parcela normal, do momento da protensão (isostático + hiperestático) e do momento externo. Combinações: ato (P<sub>i</sub> + peso próprio g<sub>0</sub>), quase permanente (ψ<sub>2</sub>), frequente (ψ<sub>1</sub>) e rara (ψ = 1).', Tb([
-    Rw('Parcela normal em B', '−N/A<sub>c</sub>', '−' + num(rf.N[iB], 0) + ' / ' + num(Ac, 3) + ' / 10³', num(-rf.N[iB] / Ac / 1e3, 2) + ' MPa'),
-    Rw('Parcela do momento da protensão em B', '±M<sub>P</sub>/W', num(rf.MP[iB], 1) + ' / ' + num(W, 5) + ' / 10³', num(rf.MP[iB] / W / 1e3, 2) + ' MPa'),
-    sRow('Combinação rara em B (σ₁ com M<sub>q,máx</sub>, σ₂ com M<sub>q,mín</sub>)', iB, 0, 0, r.Mcr_max[iB], r.Mcr_min[iB], r.ck.cr_s1[iB], r.ck.cr_s2[iB]),
-    sRow('Combinação rara no vão, x = ' + num(xv, 1) + ' m', iV, 0, 0, r.Mcr_max[iV], r.Mcr_min[iV], r.ck.cr_s1[iV], r.ck.cr_s2[iV]),
-    Rw('Ato em B (P<sub>i</sub> + g<sub>0</sub>)', 'σ = −N<sub>i</sub>/A<sub>c</sub> ± (M<sub>P,i</sub> ± M<sub>g0</sub>)/W', 'M<sub>g0</sub> = ' + num(ext.Mg0[iB], 1) + ' kN·m', 'σ₁ = ' + num(r.ck.ato_s1[iB], 2) + ' ; σ₂ = ' + num(r.ck.ato_s2[iB], 2) + ' MPa')]) +
+  S('Tensões nas fibras', 'Em cada estado a tensão é a soma da parcela normal, do momento da protensão (isostático + hiperestático) e do momento externo. Combinações: ato (P<sub>i</sub> + peso próprio g<sub>0</sub>), quase permanente (ψ<sub>2</sub>), frequente (ψ<sub>1</sub>) e rara (ψ = 1).', Tb([].concat(
+    [Rw('Parcela normal ' + nF, '−N/A<sub>c</sub>', '−' + num(rf.N[iF], 0) + ' / ' + num(Ac, 3) + ' / 10³', num(-rf.N[iF] / Ac / 1e3, 2) + ' MPa'),
+     Rw('Parcela do momento da protensão ' + nF, '±M<sub>P</sub>/W', num(rf.MP[iF], 1) + ' / ' + num(W, 5) + ' / 10³', num(rf.MP[iF] / W / 1e3, 2) + ' MPa'),
+     sRow('Combinação rara ' + nF + ' (σ₁ com M<sub>q,máx</sub>, σ₂ com M<sub>q,mín</sub>)', iF, r.Mcr_max[iF], r.Mcr_min[iF], r.ck.cr_s1[iF], r.ck.cr_s2[iF])],
+    hasB ? [sRow('Combinação rara no vão 1, x = ' + num(xv, 1) + ' m', iV, r.Mcr_max[iV], r.Mcr_min[iV], r.ck.cr_s1[iV], r.ck.cr_s2[iV])] : [],
+    [Rw('Ato ' + nF + ' (P<sub>i</sub> + g<sub>0</sub>)', 'σ = −N<sub>i</sub>/A<sub>c</sub> ± (M<sub>P,i</sub> ± M<sub>g0</sub>)/W', 'M<sub>g0</sub> = ' + num(ext.Mg0[iF], 1) + ' kN·m', 'σ₁ = ' + num(r.ck.ato_s1[iF], 2) + ' ; σ₂ = ' + num(r.ck.ato_s2[iF], 2) + ' MPa')])) +
     tela('Aba Tensões · no ato', tens.ato[0]) + tela('Aba Tensões · quase permanente', tens.cqp[0]) + tela('Aba Tensões · frequente (ELS-D)', tens.cf[0]) + tela('Aba Tensões · rara (ELS-F e ELS-CE)', tens.cr[0]) + tela('Aba Tensões · margens e limites', tens.cr[1]));
 
   /* 7. Fuso */
   const LK = Object.keys(a.fu.lows), UK = Object.keys(a.fu.ups);
   const lowF = ['(M<sub>g0</sub> − f<sub>t,ato</sub>·W)/N<sub>i</sub> − k', '(M<sub>g0</sub> − 0,7f<sub>cj</sub>·W)/N<sub>i</sub> + k', 'M<sub>freq,máx</sub>/N<sub>∞</sub> − k', '(M<sub>rara,máx</sub> − f<sub>t,els</sub>·W)/N<sub>∞</sub> − k', '(M<sub>rara,máx</sub> − 0,7f<sub>ck</sub>·W)/N<sub>∞</sub> + k'];
   const upF = ['(M<sub>g0</sub> + 0,7f<sub>cj</sub>·W)/N<sub>i</sub> − k', '(M<sub>g0</sub> + f<sub>t,ato</sub>·W)/N<sub>i</sub> + k', 'M<sub>freq,mín</sub>/N<sub>∞</sub> + k', '(f<sub>t,els</sub>·W + M<sub>rara,mín</sub>)/N<sub>∞</sub> + k', '(M<sub>rara,mín</sub> + 0,7f<sub>ck</sub>·W)/N<sub>∞</sub> − k'];
-  S('Fuso limite do cabo', 'Cada condição de tensão fornece um limite para a excentricidade e. O fuso é o maior dos cinco limites inferiores e o menor dos cinco superiores. Valores no apoio B (x = ' + num(L, 1) + ' m).',
-    Tb(LK.map((k, j) => Rw('e ≥ — ' + k, 'e ≥ ' + lowF[j], 'k = ' + num(d.k, 3) + ' m', num(a.fu.lows[k][iB], 3) + ' m')).concat(UK.map((k, j) => Rw('e ≤ — ' + k, 'e ≤ ' + upF[j], 'k = ' + num(d.k, 3) + ' m', num(a.fu.ups[k][iB], 3) + ' m'))).concat([
-      Rw('Fuso em B', em('e', 'mín') + ' = máx(limites inferiores) ;  ' + em('e', 'máx') + ' = mín(limites superiores)', '', num(a.fu.lo[iB], 3) + ' a ' + num(a.fu.up[iB], 3) + ' m'),
-      Rw('Linha de pressões em B', em('e', 'lp') + ' = e − M<sub>hip</sub>/N', num(r.e[iB], 3) + ' − (' + num(rf.Mhip[iB], 1) + ')/' + num(rf.N[iB], 0), num(a.fu.elp[iB], 3) + ' m')])) +
+  S('Fuso limite do cabo', 'Cada condição de tensão fornece um limite para a excentricidade e. O fuso é o maior dos cinco limites inferiores e o menor dos cinco superiores. Valores ' + nF + ' (x = ' + num(Ls.x[iF], 1) + ' m).',
+    Tb(LK.map((k, j) => Rw('e ≥ — ' + k, 'e ≥ ' + lowF[j], 'k = ' + num(d.k, 3) + ' m', num(a.fu.lows[k][iF], 3) + ' m')).concat(UK.map((k, j) => Rw('e ≤ — ' + k, 'e ≤ ' + upF[j], 'k = ' + num(d.k, 3) + ' m', num(a.fu.ups[k][iF], 3) + ' m'))).concat([
+      Rw('Fuso ' + nF, em('e', 'mín') + ' = máx(limites inferiores) ;  ' + em('e', 'máx') + ' = mín(limites superiores)', '', num(a.fu.lo[iF], 3) + ' a ' + num(a.fu.up[iF], 3) + ' m'),
+      Rw('Linha de pressões ' + nF, em('e', 'lp') + ' = e − M<sub>hip</sub>/N', num(r.e[iF], 3) + ' − (' + num(rf.Mhip[iF], 1) + ')/' + num(rf.N[iF], 0), num(a.fu.elp[iF], 3) + ' m')])) +
     tela('Aba Traçado e fuso · com os 10 limites', fusoCap[0]));
 
   /* 8. Passiva no ato */
@@ -1334,14 +1516,16 @@ function memorialBody(){
     Rw('Momento resistente', 'M<sub>Rd</sub> = T<sub>p</sub>(d<sub>p</sub> − 0,4x) + T<sub>s</sub>(d<sub>s</sub> − 0,4x) + C<sub>s</sub>(0,4x − d′)', num(E.Tp, 0) + ' × (' + num(E.dp, 3) + ' − 0,4 × ' + num(E.xs, 3) + ') + …', num(E.MRd, 0) + ' kN·m'),
     Rw('Momento solicitante', 'M<sub>sd</sub> = 1,4(M<sub>g</sub> + M<sub>q</sub>) + γ<sub>p</sub>·M<sub>hip</sub>', num(E.Mext, 0) + ' + ' + num(E.gp, 1) + ' × (' + num(E.Mh, 1) + ')', num(E.Msd, 0) + ' kN·m'),
     Rw('Verificação', 'M<sub>Rd</sub> ≥ |M<sub>sd</sub>| ;  x/d<sub>p</sub> ≤ 0,45', num(E.MRd, 0) + ' / ' + num(Math.abs(E.Msd), 0), 'MRd/Msd = ' + num(E.ratio, 2) + (E.ok ? ' · atende' : ' · não atende') + (E.ductile ? '' : ' · x/d &gt; 0,45'))];
-  S('Ruptura à flexão (ELU)', 'Aço de protensão com pré-alongamento e patamar em f<sub>pyd</sub>; bloco retangular de tensões 0,8x·0,85f<sub>cd</sub>; armaduras passivas A′ (comprimida) e A<sub>s</sub> (tracionada) informadas nos dados.',
-    '<h3>Apoio B (x = ' + num(a.eluB.x, 1) + ' m, face comprimida inferior)</h3>' + Tb(eluRows(a.eluB)) + '<h3>Vão (x = ' + num(a.eluV.x, 1) + ' m, face comprimida superior)</h3>' + Tb(eluRows(a.eluV)) +
+  const eluAll = '<h3>Resumo de todas as seções críticas</h3>' + Tb([].concat(a.eluSup.map((e, j) => Rw('Apoio ' + supName(j) + ' (x = ' + num(e.x, 1) + ' m)', 'MRd / |Msd|', num(e.MRd, 0) + ' / ' + num(Math.abs(e.Msd), 0), num(e.ratio, 2) + (e.ok && e.ductile ? '' : ' · atenção'))),
+    a.eluSpan.map((e, k) => Rw((nsp === 1 ? 'Vão' : 'Vão ' + (k + 1)) + ' (x = ' + num(e.x, 1) + ' m)', 'MRd / |Msd|', num(e.MRd, 0) + ' / ' + num(Math.abs(e.Msd), 0), num(e.ratio, 2) + (e.ok && e.ductile ? '' : ' · atenção')))));
+  S('Ruptura à flexão (ELU)', 'Aço de protensão com pré-alongamento e patamar em f<sub>pyd</sub>; bloco retangular de tensões 0,8x·0,85f<sub>cd</sub>; armaduras passivas A′ (comprimida) e A<sub>s</sub> (tracionada) informadas nos dados. Detalhe das seções mais exigidas.',
+    (a.eluB ? '<h3>Apoio ' + supName(a.kSup) + ' (x = ' + num(a.eluB.x, 1) + ' m, face comprimida inferior)</h3>' + Tb(eluRows(a.eluB)) : '') + '<h3>' + (nsp === 1 ? 'Vão' : 'Vão ' + (a.kSpan + 1)) + ' (x = ' + num(a.eluV.x, 1) + ' m, face comprimida superior)</h3>' + Tb(eluRows(a.eluV)) + eluAll +
     tela('Aba Ruptura e cortante · flexão', cap.elu[0]));
 
   /* 10. Cortante */
   const sh = a.sh, iS = sh.Vsd.indexOf(Math.max.apply(null, sh.Vsd));
   S('Força cortante', 'Verificação da biela comprimida (VRd2) e dimensionamento dos estribos pelo modelo I, com a parcela da protensão (V<sub>p</sub>) e do hiperestático. Seção mais solicitada: x = ' + num(Ls.x[iS], 1) + ' m.', Tb([
-    Rw('Cortante da protensão', 'V<sub>p</sub> = −P<sub>∞</sub>·senα + V<sub>hip</sub> ;  V<sub>hip</sub> = ∓R<sub>B</sub>/2', '−' + num(Ls.Pinf[iS], 0) + ' × sen(' + num(Ls.alpha[iS], 4) + ') + (' + num(sh.Vhip[iS], 2) + ')', num(sh.Vp[iS], 1) + ' kN'),
+    Rw('Cortante da protensão', 'V<sub>p</sub> = −P<sub>∞</sub>·senα + V<sub>hip</sub> ;  V<sub>hip</sub> = dM<sub>hip</sub>/dx' + (d.eq2 ? ' = ∓R<sub>B</sub>/2' : ''), '−' + num(Ls.Pinf[iS], 0) + ' × sen(' + num(Ls.alpha[iS], 4) + ') + (' + num(sh.Vhip[iS], 2) + ')', num(sh.Vp[iS], 1) + ' kN'),
     Rw('Cortante solicitante', 'V<sub>sd</sub> = máx |γ<sub>p</sub>V<sub>p</sub> + γ<sub>g</sub>V<sub>g</sub> + 1,4V<sub>q</sub>|, com γ<sub>p</sub> = 0,9 e 1,2', 'V<sub>g</sub> = ' + num(ext.Vg[iS], 1) + ' ; V<sub>q</sub> = ' + num(ext.Vq_max[iS], 1) + ' / ' + num(ext.Vq_min[iS], 1) + ' kN', num(sh.Vsd[iS], 0) + ' kN'),
     Rw('Largura efetiva', 'b<sub>w,red</sub> = b<sub>w</sub> − 0,5·n<sub>cab</sub>·Ø<sub>bainha</sub>  (se Ø<sub>bainha</sub> &gt; b<sub>w</sub>/8)', num(d.bw, 2) + ' − 0,5 × ' + num(d.n_cab, 0) + ' × ' + num(d.d_bain, 3), num(sh.bwred, 3) + ' m'),
     Rw('Biela comprimida', 'V<sub>Rd2</sub> = 0,27(1 − f<sub>ck</sub>/250)·f<sub>cd</sub>·b<sub>w,red</sub>·0,9h', '0,27 × (1 − ' + num(d.fck, 0) + '/250) × ' + num(d.fcd * 1e3, 0) + ' × ' + num(sh.bwred, 3) + ' × ' + num(sh.dd, 3), num(sh.Vu, 0) + ' kN (' + (Math.max.apply(null, sh.Vsd) <= sh.Vu ? 'atende' : 'não atende') + ')'),
@@ -1350,20 +1534,20 @@ function memorialBody(){
     Rw('Tensão de cálculo', 'τ<sub>wd</sub> = V<sub>sd</sub> / (b<sub>w,red</sub>·0,9h)', num(sh.Vsd[iS], 0) + ' / (' + num(sh.bwred, 3) + ' × ' + num(sh.dd, 3) + ') / 10³', num(sh.twd[iS], 2) + ' MPa'),
     Rw('Estribos por ramo', 'a<sub>sw</sub>/n = [(τ<sub>wd</sub> − τ<sub>c,cor</sub>)/0,9] / f<sub>ywd</sub> · b<sub>w,red</sub>/2', '(' + num(sh.twd[iS], 2) + ' − ' + num(sh.tau_cor[iS], 2) + ')/0,9 / ' + num(d.fyk / d.gs, 0), num(sh.asw_n[iS], 2) + ' cm²/m'),
     Rw('Mínimo', 'ρ<sub>sw,mín</sub> = 0,2·f<sub>ctm</sub>/f<sub>yk</sub> ;  a<sub>sw,mín</sub>/n = ρ·b<sub>w</sub>/2', '0,2 × ' + num(d.fctm, 2) + ' / ' + num(d.fyk, 0), num(sh.asw_min_n, 2) + ' cm²/m · adotado ' + num(sh.asw_calc[iS], 2)) ]) +
-    tela('Aba Ruptura e cortante · cortante e estribos', cap.elu[1]) + tela('Aba Ruptura e cortante · seções do 1º vão', cap.elu[2]));
+    tela('Aba Ruptura e cortante · cortante e estribos', cap.elu[1]) + tela('Aba Ruptura e cortante · seções', cap.elu[2]));
 
   /* 11. Flecha */
-  const df = a.df, mxS = v => v.slice(0, 21).reduce((m, x) => Math.abs(x) > Math.abs(m) ? x : m, 0) * 1000;
-  S('Flecha', 'Seção não fissurada, rigidez E<sub>cs</sub>·I<sub>c</sub>. Curvatura κ = −M/EI, integrada duas vezes por trapézios com δ = 0 nos apoios. Positivo para baixo.', Tb([
+  const df = a.df, mxS = v => v.reduce((m, x) => Math.abs(x) > Math.abs(m) ? x : m, 0) * 1000, sdf = spanDefl(a);
+  S('Flecha', 'Seção não fissurada, rigidez E<sub>cs</sub>·I<sub>c</sub>. Curvatura κ = −M/EI, integrada duas vezes por trapézios com δ = 0 em todos os apoios. Positivo para baixo.', Tb([].concat([
     Rw('Rigidez', 'EI = E<sub>cs</sub>·I<sub>c</sub>', num(d.Ecs * 1e3, 0) + ' kPa × ' + num(d.Ic, 5) + ' m⁴', num(EI, 0) + ' kN·m²'),
-    Rw('Momento quase permanente', 'M = M<sub>g</sub> + ψ<sub>2</sub>·M<sub>q</sub> + M<sub>P,∞</sub>', 'carga uniforme g + ψ<sub>2</sub>q = ' + num(d.pbal, 2) + ' kN/m', 'M<sub>P,∞</sub> em B = ' + num(rf.MP[iB], 1) + ' kN·m'),
-    Rw('Integração', 'θ = ∫κ dx ;  δ = ∫θ dx − correção linear', '41 estações, Δx = ' + num(Ls.dx, 2) + ' m', ''),
+    Rw('Momento quase permanente', 'M = M<sub>g</sub> + ψ<sub>2</sub>·M<sub>q</sub> + M<sub>P,∞</sub>', 'carga uniforme g + ψ<sub>2</sub>q = ' + d.pbalv.map(v => num(v, 2)).join(' ; ') + ' kN/m', 'M<sub>P,∞</sub> ' + nF + ' = ' + num(rf.MP[iF], 1) + ' kN·m'),
+    Rw('Integração', 'θ = ∫κ dx ;  δ = ∫θ dx − correção linear por trecho', r.x.length + ' estações', ''),
     Rw('Flecha do peso g', 'δ<sub>g</sub>', '', num(mxS(df.g), 1) + ' mm'),
     Rw('Flecha da protensão P<sub>∞</sub>', 'δ<sub>P</sub>', '', num(mxS(df.P), 1) + ' mm'),
     Rw('Quase permanente líquida', 'δ<sub>qp</sub> = δ(g + ψ<sub>2</sub>q + P)', '', num(mxS(df.qp_net), 1) + ' mm'),
-    Rw('Quase permanente a t∞', 'δ<sub>∞</sub> = δ<sub>qp</sub>·(1 + φ)', num(mxS(df.qp_net), 1) + ' × (1 + ' + num(d.phi_cr, 1) + ')', num(mxS(df.qp_inf), 1) + ' mm'),
-    Rw('Limite', 'L/250', num(L * 1000, 0) + ' / 250', num(L * 1000 / 250, 1) + ' mm'),
-    Rw('Frequência fundamental', 'f<sub>1</sub> = π/(2L²)·√(EI/m)', 'm = g/9,81 = ' + num(d.g / 9.81 * 1000, 0) + ' kg/m', num(df.f1, 1) + ' Hz')]) +
+    Rw('Quase permanente a t∞', 'δ<sub>∞</sub> = δ<sub>qp</sub>·(1 + φ)', num(mxS(df.qp_net), 1) + ' × (1 + ' + num(d.phi_cr, 1) + ')', num(mxS(df.qp_inf), 1) + ' mm')],
+    sdf.map(s => Rw((nsp === 1 ? 'Vão' : 'Vão ' + (s.k + 1)) + ' · limite', 'δ<sub>∞</sub> ≤ L/250', 'L = ' + num(s.L, 2) + ' m ; δ<sub>∞</sub> = ' + num(s.dl, 1) + ' mm', num(s.lim, 1) + ' mm')),
+    [Rw('Frequência fundamental', 'f<sub>1</sub> = π/(2L²)·√(EI/m)' + (nsp > 1 ? ' (estimativa com o maior vão biapoiado)' : ''), 'L = ' + num(d.Lmax, 2) + ' m ; m = g/9,81 = ' + num(d.g / 9.81 * 1000, 0) + ' kg/m', num(df.f1, 1) + ' Hz')])) +
     tela('Aba Flecha', cap.flecha));
 
   /* 12. Níveis */
@@ -1377,18 +1561,20 @@ function memorialBody(){
     tela('Aba Níveis de protensão', cap.niveis));
 
   /* 13. Comparação com CA */
-  const rc = a.rc;
-  S('Comparação com concreto armado', 'Mesma seção e mesmas cargas. ELU pelo bloco retangular, sem redistribuição; abertura de fissuras pelo item 17.3.3.2; flecha por Branson.', Tb([
-    Rw('Momento de cálculo em B', 'M<sub>d</sub> = 1,4|M<sub>g</sub> + M<sub>q,mín</sub>|', '1,4 × |' + num(ext.Mg[iB], 1) + ' + (' + num(ext.Mq_min[iB], 1) + ')|', num(rc.Md_neg, 0) + ' kN·m'),
-    Rw('Coeficiente', 'K<sub>md</sub> = M<sub>d</sub>/(b<sub>w</sub>·d²·f<sub>cd</sub>)', num(rc.Md_neg, 0) + ' / (' + num(d.bw, 2) + ' × ' + num(rc.dd, 2) + '² × ' + num(d.fcd * 1e3, 0) + ')', num(rc.neg.Kmd, 3)),
-    Rw('Linha neutra', 'x/d = 1,25·[1 − √(1 − 2K<sub>md</sub>/0,85)]', '', num(rc.neg.xd, 3)),
-    Rw('Armadura em B', 'A<sub>s</sub> = M<sub>d</sub> / [f<sub>yd</sub>(d − 0,4x)]', num(rc.Md_neg, 0) + ' / [' + num(d.fyk / d.gs * 1e3, 0) + ' × (' + num(rc.dd, 2) + ' − 0,4 × ' + num(rc.neg.x, 3) + ')]', num(rc.neg.As, 1) + ' cm² (adotado ' + num(rc.As_neg, 1) + ')'),
-    Rw('Armadura no vão (x = ' + num(rc.x_pos, 1) + ' m)', 'idem, com M<sub>d</sub> = ' + num(rc.Md_pos, 0) + ' kN·m', 'K<sub>md</sub> = ' + num(rc.pos.Kmd, 3), num(rc.pos.As, 1) + ' cm² (adotado ' + num(rc.As_pos, 1) + ')'),
-    Rw('Tensão na armadura (B, frequente)', 'σ<sub>s</sub> = α<sub>e</sub>·M·(d − x<sub>II</sub>)/I<sub>II</sub>', 'M = ' + num(rc.els.neg.Mf, 1) + ' kN·m ; x<sub>II</sub> = ' + num(rc.els.neg.x2, 3) + ' m', num(rc.els.neg.sig_s, 1) + ' MPa'),
-    Rw('Abertura de fissuras', 'w<sub>k</sub> = mín{ Ø/(12,5η₁)·σ<sub>s</sub>/E<sub>s</sub>·3σ<sub>s</sub>/f<sub>ctm</sub> ; Ø/(12,5η₁)·σ<sub>s</sub>/E<sub>s</sub>·(4/ρ<sub>ri</sub> + 45) }', 'w₁ = ' + num(rc.els.neg.w1, 3) + ' ; w₂ = ' + num(rc.els.neg.w2, 3) + ' mm', num(rc.els.neg.wk, 3) + ' mm'),
-    Rw('Momento de fissuração', 'M<sub>r</sub> = 1,5·f<sub>ctm</sub>·I<sub>c</sub>/(h/2)', '1,5 × ' + num(d.fctm * 1e3, 0) + ' × ' + num(d.Ic, 5) + ' / ' + num(d.h / 2, 2), num(rc.Mr, 0) + ' kN·m'),
-    Rw('Rigidez equivalente', 'I<sub>e</sub> = (M<sub>r</sub>/M<sub>a</sub>)³I<sub>c</sub> + [1 − (M<sub>r</sub>/M<sub>a</sub>)³]I<sub>II</sub> ≤ I<sub>c</sub>', 'por estação, com M<sub>a</sub> quase permanente', ''),
-    Rw('Flecha imediata e total', 'δ<sub>t</sub> = δ<sub>i</sub>·(1 + α<sub>f</sub>)', num(rc.defl_inst * 1000, 1) + ' × (1 + ' + num(rc.alpha_f, 2) + ')', num(rc.defl_tot * 1000, 1) + ' mm')]) +
+  const rc = a.rc, nmN = rc.hasNeg ? 'apoio ' + supName(a.supIdx.indexOf(rc.iNeg)) : '';
+  S('Comparação com concreto armado', 'Mesma seção e mesmas cargas. ELU pelo bloco retangular, sem redistribuição; abertura de fissuras pelo item 17.3.3.2; flecha por Branson.', Tb([].concat(
+    rc.hasNeg ? [
+      Rw('Momento de cálculo no ' + nmN, 'M<sub>d</sub> = 1,4|M<sub>g</sub> + M<sub>q,mín</sub>|', '1,4 × |' + num(ext.Mg[rc.iNeg], 1) + ' + (' + num(ext.Mq_min[rc.iNeg], 1) + ')|', num(rc.Md_neg, 0) + ' kN·m'),
+      Rw('Coeficiente', 'K<sub>md</sub> = M<sub>d</sub>/(b<sub>w</sub>·d²·f<sub>cd</sub>)', num(rc.Md_neg, 0) + ' / (' + num(d.bw, 2) + ' × ' + num(rc.dd, 2) + '² × ' + num(d.fcd * 1e3, 0) + ')', num(rc.neg.Kmd, 3)),
+      Rw('Linha neutra', 'x/d = 1,25·[1 − √(1 − 2K<sub>md</sub>/0,85)]', '', num(rc.neg.xd, 3)),
+      Rw('Armadura no ' + nmN, 'A<sub>s</sub> = M<sub>d</sub> / [f<sub>yd</sub>(d − 0,4x)]', num(rc.Md_neg, 0) + ' / [' + num(d.fyk / d.gs * 1e3, 0) + ' × (' + num(rc.dd, 2) + ' − 0,4 × ' + num(rc.neg.x, 3) + ')]', num(rc.neg.As, 1) + ' cm² (adotado ' + num(rc.As_neg, 1) + ')')] : [],
+    [Rw('Armadura no vão (x = ' + num(rc.x_pos, 1) + ' m)', 'idem, com M<sub>d</sub> = ' + num(rc.Md_pos, 0) + ' kN·m', 'K<sub>md</sub> = ' + num(rc.pos.Kmd, 3), num(rc.pos.As, 1) + ' cm² (adotado ' + num(rc.As_pos, 1) + ')')],
+    (rc.hasNeg ? [['neg', 'no ' + nmN]] : []).concat([['pos', 'no vão']]).reduce((acc, [k, nm]) => acc.concat([
+      Rw('Tensão na armadura (' + nm.replace('no ', '') + ', frequente)', 'σ<sub>s</sub> = α<sub>e</sub>·M·(d − x<sub>II</sub>)/I<sub>II</sub>', 'M = ' + num(rc.els[k].Mf, 1) + ' kN·m ; x<sub>II</sub> = ' + num(rc.els[k].x2, 3) + ' m', num(rc.els[k].sig_s, 1) + ' MPa'),
+      Rw('Abertura de fissuras ' + nm, 'w<sub>k</sub> = mín{ Ø/(12,5η₁)·σ<sub>s</sub>/E<sub>s</sub>·3σ<sub>s</sub>/f<sub>ctm</sub> ; Ø/(12,5η₁)·σ<sub>s</sub>/E<sub>s</sub>·(4/ρ<sub>ri</sub> + 45) }', 'w₁ = ' + num(rc.els[k].w1, 3) + ' ; w₂ = ' + num(rc.els[k].w2, 3) + ' mm', num(rc.els[k].wk, 3) + ' mm')]), []),
+    [Rw('Momento de fissuração', 'M<sub>r</sub> = 1,5·f<sub>ctm</sub>·I<sub>c</sub>/(h/2)', '1,5 × ' + num(d.fctm * 1e3, 0) + ' × ' + num(d.Ic, 5) + ' / ' + num(d.h / 2, 2), num(rc.Mr, 0) + ' kN·m'),
+     Rw('Rigidez equivalente', 'I<sub>e</sub> = (M<sub>r</sub>/M<sub>a</sub>)³I<sub>c</sub> + [1 − (M<sub>r</sub>/M<sub>a</sub>)³]I<sub>II</sub> ≤ I<sub>c</sub>', 'por estação, com M<sub>a</sub> quase permanente', ''),
+     Rw('Flecha imediata e total', 'δ<sub>t</sub> = δ<sub>i</sub>·(1 + α<sub>f</sub>)', num(rc.defl_inst * 1000, 1) + ' × (1 + ' + num(rc.alpha_f, 2) + ')', num(rc.defl_tot * 1000, 1) + ' mm')])) +
     tela('Aba Comparação com CA', cap.ca));
 
   /* 14. Conclusão */
@@ -1411,14 +1597,14 @@ const DOC_CSS = 'body{font-family:"Segoe UI",Calibri,Arial,sans-serif;font-size:
   '@media print{body{max-width:none;padding:0}.ms{page-break-inside:auto}h2{page-break-after:avoid}.tela{page-break-inside:avoid}tr{page-break-inside:avoid}}@page{size:A4;margin:16mm 14mm}';
 
 const LOGO_UNB = document.getElementById('logoUnb') ? document.getElementById('logoUnb').src : '';
-const VERSION = '1.4.0'; { const v = document.getElementById('ver'); if (v) v.textContent = 'v' + VERSION; }
+const VERSION = '2.0.0'; { const v = document.getElementById('ver'); if (v) v.textContent = 'v' + VERSION; }
 let MEM = null;
 function memorialDoc(){
-  const sec = memorialBody(), d = A.d, pn = (PRESETS.find(p => p.id === preset) || {n: 'dados personalizados'}).n, dt = new Date().toLocaleDateString('pt-BR');
-  const rows = []; GROUPS.forEach(g => g.f.forEach(fl => { const [k, lab, sym, u, , sc] = fl; if (k === 'nivel') { rows.push('<tr><td>' + g.t + '</td><td>' + lab + '</td><td>' + sym + '</td><td class="n">' + inp[k] + '</td><td></td></tr>'); return; }
+  const sec = memorialBody(), d = A.d, tipoTxt = d.n === 1 ? 'viga protendida de 1 vão' : 'viga contínua protendida de ' + d.n + ' vãos', pn = (PRESETS.find(p => p.id === preset) || {n: 'dados personalizados'}).n, dt = new Date().toLocaleDateString('pt-BR');
+  const rows = []; groupsFor(inp).forEach(g => g.f.forEach(fl => { const [k, lab, sym, u, , sc, ok2] = fl; if (ok2) { rows.push('<tr><td>' + g.t + '</td><td>' + lab + '</td><td>' + sym + '</td><td class="n">' + (OPTS[ok2].find(o => o[0] === inp[k]) || [0, inp[k]])[1] + '</td><td></td></tr>'); return; }
     rows.push('<tr><td>' + g.t + '</td><td>' + lab + '</td><td>' + sym + '</td><td class="n">' + String(+(inp[k] * (sc || 1)).toPrecision(6)).replace('.', ',') + '</td><td>' + u + '</td></tr>'); }));
-  const capa = '<div class="capa"><div class="unbl"><img alt="UnB" src="' + LOGO_UNB + '" height="32"> Universidade de Brasília</div><h1>Memorial de cálculo · viga contínua protendida de 2 vãos</h1><div class="sub">Concreto protendido · pós-tração aderente · NBR 6118 · UnB · Prof. Li Chong Lee Bacelar de Castro</div>' +
-    '<div class="sub">Seção ' + f(d.bw * 100, 0) + ' × ' + f(d.h * 100, 0) + ' cm · C' + f(d.fck, 0) + ' · ' + d.n_cab + ' cabos × ' + d.n_cord + ' cordoalhas Ø12,7 · vão ' + f(d.L, 0) + ' m · ' + pn + ' · emitido em ' + dt + '</div><div class="sub">Produzido pelo Professor DSc. Li Chong Lee (Todos os direitos reservados) · painel v' + VERSION + '</div></div>';
+  const capa = '<div class="capa"><div class="unbl"><img alt="UnB" src="' + LOGO_UNB + '" height="32"> Universidade de Brasília</div><h1>Memorial de cálculo · ' + tipoTxt + '</h1><div class="sub">Concreto protendido · pós-tração aderente · NBR 6118 · UnB · Prof. Li Chong Lee Bacelar de Castro</div>' +
+    '<div class="sub">Seção ' + f(d.bw * 100, 0) + ' × ' + f(d.h * 100, 0) + ' cm · C' + f(d.fck, 0) + ' · ' + d.n_cab + ' cabos × ' + d.n_cord + ' cordoalhas Ø12,7 · ' + (d.n === 1 ? 'vão ' : 'vãos ') + d.Ls.map(l => f(l, l % 1 ? 1 : 0)).join(' + ') + ' m · ' + pn + ' · emitido em ' + dt + '</div><div class="sub">Produzido pelo Professor DSc. Li Chong Lee (Todos os direitos reservados) · painel v' + VERSION + '</div></div>';
   const toc = '<h2>Sumário</h2><ol class="toc">' + sec.map(s => '<li><a href="#ms' + s.n + '">' + s.titulo + '</a></li>').join('') + '</ol>';
   const dados = '<h2>Dados de entrada</h2><div class="tw"><table><thead><tr><th>Grupo</th><th>Dado</th><th>Símbolo</th><th class="n">Valor</th><th>Unid.</th></tr></thead><tbody>' + rows.join('') + '</tbody></table></div>';
   return capa + toc + dados + sec.map(s => s.html).join('') + '<p class="rodape">Produzido pelo Professor DSc. Li Chong Lee (Todos os direitos reservados) · Universidade de Brasília · painel de viga contínua protendida v' + VERSION + '</p>';
@@ -1470,7 +1656,7 @@ function renderPanel(){
 let rt = null; window.addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(renderPanel, 150); });
 
 /* ---------- inicialização ---------- */
-buildTabs(); buildSide(); compute(); if (A) { renderStatus(); renderPanel(); }
+buildSide(); compute(); if (A) renderStatus(); buildTabs(); if (A) renderPanel();
 })();
 </script>
 
