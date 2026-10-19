@@ -42,6 +42,18 @@ p{margin:0 0 8px}
 @media (max-width:980px){.side{position:static;max-height:none;order:2}.jump{display:inline-flex!important}}
 .jump{display:none;text-decoration:none;color:var(--accent);font-size:13px}
 .side h2{display:flex;justify-content:space-between;align-items:center}
+.recbar{display:flex;gap:6px 8px;flex-wrap:wrap;align-items:center;margin:-4px 0 10px;font-size:12px;color:var(--muted)}
+.recbar[hidden]{display:none}
+.recbar button{font:inherit;font-size:12px;padding:2px 10px;border:1px solid var(--axis);border-radius:999px;background:var(--surface);color:var(--ink)}
+.recbar button:hover{background:var(--accent-soft)}
+.recbar .chipc{border-style:dashed;color:var(--accent)}
+.recbar .sp{margin-left:auto;display:flex;gap:6px}
+#panel.gridp{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,520px),1fr));gap:14px;align-items:start}
+#panel.gridp>.card{margin-bottom:0;min-width:0}
+.chd{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.cbtn{flex:none;width:24px;height:24px;padding:0;border:1px solid var(--axis);border-radius:6px;background:var(--surface);color:var(--ink2);font-size:15px;line-height:1}
+.cbtn:hover{background:var(--accent-soft);color:var(--accent)}
+.btn:disabled{opacity:.5;cursor:not-allowed}
 .tiposl{font-size:11.5px;color:var(--muted);margin:2px 0 4px}
 .presets{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:10px}
 button{font:inherit;cursor:pointer}
@@ -147,7 +159,7 @@ h1{color:var(--accent)}
   <header class="top">
     <div>
       <h1 id="ttl">Viga contínua protendida, 2 vãos</h1>
-      <div class="credit">Produzido pelo Professor DSc. Li Chong Lee (Todos os direitos reservados) <span class="ver" id="ver" title="Versão do painel">v2.0.0</span></div>
+      <div class="credit">Produzido pelo Professor DSc. Li Chong Lee (Todos os direitos reservados) <span class="ver" id="ver" title="Versão do painel">v2.4.0</span></div>
       <div class="sub">Pós-tração aderente · 1 a 6 vãos, iguais ou diferentes · NBR 6118 · mesma lógica da planilha de apoio, recalculada a cada alteração</div>
     </div>
     <div class="status" id="status"></div>
@@ -157,13 +169,14 @@ h1{color:var(--accent)}
   <div class="shell">
     <aside class="side" id="dados" aria-label="Dados de entrada">
       <h2>Dados <button class="btn" id="reset" type="button" style="padding:3px 8px">Restaurar</button></h2>
-      <div class="presets" id="presets"></div>
+      <div class="tiposl">Dados carregados e níveis de protensão (da viga atual)</div><div class="presets" id="presets" style="grid-template-columns:repeat(2,1fr)"></div>
       <div class="tiposl">Tipo de viga</div><div class="presets" id="tipos" style="grid-template-columns:repeat(2,1fr)"></div>
       <div id="fields"></div>
       <p class="foot">Valores em kN, m e MPa, como na planilha. Cargas g adicional e q são adotadas e provisórias.</p>
     </aside>
     <main>
       <div class="tabs" role="tablist" id="tabs"></div>
+      <div class="recbar" id="recbar"></div>
       <div id="panel"></div>
     </main>
   </div>
@@ -185,7 +198,7 @@ const DEF = {
   e_sup: 0.28, es2: 0.28, es3: 0.28, es4: 0.28, es5: 0.28,
   lam: 1.0, lam2: 1.0, lam3: 1.0, lam4: 1.0, lam5: 1.0,
   n_cab: 2, n_cord: 5, Ap1: 0.987, fptk: 1900, Ep: 200000, rj: 0.74,
-  mu: 0.20, kk: 0.002, slip: 0.006, t0: 7, phi_cr: 2.9, eps_cs: -0.00023,
+  mu: 0.20, kk: 0.002, slip: 0.006, t0: 7, phi_cr: 2.9, eps_cs: -0.00023, perdaMode: 0, perdaTot: 20,
   fyk: 500, Es: 210000,
   AscB: 4.91, AscV: 2.45, dsc: 0.05,
   nnegCA: 8, nposCA: 6, phiCA: 20, ddCA: 0.82, cgCA: 0.0755,
@@ -370,18 +383,20 @@ function losses(d) {
     scp0.push(-Pi[i] / Ac / 1e3 - Pi[i] * e[i] * e[i] / Ic / 1e3 + Mg0[i] * e[i] / Ic / 1e3);
   }
   const phi = d.phi_cr, ecs = d.eps_cs, ap28 = Ep / d.Ecs, rho_p = Ap / Ac;
-  const psi1000 = [], chi = [], eta = [], dsig = [], sig_inf = [];
+  const psi1000 = [], chi = [], eta = [], dsig = [], sig_inf = []; let stipClamp = 0;
   for (let i = 0; i < n; i++) {
     const rr = sig_i[i] / d.fptk, p1000 = relaxPsi1000(rr), psit = 2.5 * p1000, ch = -Math.log(1 - psit);
     const et = 1 + e[i] * e[i] * Ac / Ic;
     const ds = (Math.abs(ecs) * Ep + ap28 * Math.abs(scp0[i]) * phi + sig_i[i] * ch) / ((1 + ch) + (1 + 0.5 * phi) * ap28 * et * rho_p);
-    psi1000.push(p1000); chi.push(ch); eta.push(et); dsig.push(ds); sig_inf.push(sig_i[i] - ds);
+    psi1000.push(p1000); chi.push(ch); eta.push(et); let dse = ds;   /* perda total estipulada (%): σp,∞ = σp,j·(1 − p), sem passar do que sobra após as perdas imediatas */
+    if (d.perdaMode === 1) { const sEst = d.sig_j * (1 - d.perdaTot / 100); if (sig_i[i] < sEst) stipClamp++; dse = sig_i[i] - Math.min(sig_i[i], sEst); }
+    dsig.push(dse); sig_inf.push(sig_i[i] - dse);
   }
   const Pinf = sig_inf.map(s => Ap * s * 1e3);
   let elong = 0, elongR = 0;
   for (let i = 1; i < n; i++) { const v = (sL[i] + sL[i - 1]) / 2 * darc[i] / Ep * 1000, w = (sR[i] + sR[i - 1]) / 2 * darc[i] / Ep * 1000; if (x[i] <= xc + 1e-9) elong += v; else elongR += w; }
   return {x, st, dx: d.Ls[0] / 20, e, de, alpha, theta, arc, darc, dtheta, sL, sR, sig_fric: sf, delta_k: zl.dk, sig_slip: sas, xa: zl.xa, sfa: zl.sfa, xaR: zr.xa, xc, sig_i, sig_inf, des, dsig,
-    Pj: Ap * sj * 1e3, Pi, Pinf, scp0, psi1000, chi, eta, theta_tot: Th, arc_tot: S, ap, ap28, elong, elongR, Mg0};
+    stip: d.perdaMode === 1, stipClamp, Pj: Ap * sj * 1e3, Pi, Pinf, scp0, psi1000, chi, eta, theta_tot: Th, arc_tot: S, ap, ap28, elong, elongR, Mg0};
 }
 
 /* ---------- hiperestático (método das forças: apoios internos liberados) e avaliação ---------- */
@@ -868,11 +883,9 @@ function chartDraw(host, cfg, all, hidden, setHidden, groups, ov, setScale){
 }
 
 /* ---------- estado e campos ---------- */
-const PRESETS = [
-  {id: 'n3', n: 'Projeto atual', s: 'nível 3 · 5 cord./cabo', ov: {}},
-  {id: 'n2', n: 'Nível 2', s: '4 cord./cabo', ov: {n_cord: 4, nivel: 2, AscB: 0, AscV: 0, AstB: 4.02}},
-  {id: 'n1', n: 'Nível 1', s: '2 cord./cabo', ov: {n_cord: 2, nivel: 1, AscB: 0, AscV: 0, AstB: 12.57, AstV: 6.28}}
-];
+/* Os três botões de cima referem-se à viga que está carregada (não a uma viga fixa): "dados carregados" restaura o que foi carregado e os níveis
+   3, 2 e 1 recalculam o nº de cordoalhas (e a passiva) para esta viga. Ficam em branco até o primeiro cálculo. */
+const PRESET_NAMES = {base: 'dados carregados', n3: 'nível 3', n2: 'nível 2', n1: 'nível 1'};
 /* tipos de viga: só mudam a estrutura (nº e comprimento dos vãos); os demais dados ficam como estão */
 const TIPOS = [
   {id: '1', n: '1 vão', s: 'isostática, 10 m', ov: {nsp: 1, L: 10}},
@@ -880,10 +893,11 @@ const TIPOS = [
   {id: '2d', n: '2 vãos diferentes', s: '8 m + 12 m', ov: {nsp: 2, eqL: 0, L: 8, L2: 12}},
   {id: '3e', n: '3 vãos iguais', s: 'contínua, 10 m', ov: {nsp: 3, eqL: 1, L: 10}}
 ];
-const STRUCT = ['nsp', 'eqL', 'eqLoad', 'eqTr'];
+const STRUCT = ['nsp', 'eqL', 'eqLoad', 'eqTr', 'perdaMode'];
 const OPTS = {
   nivel: [[3, '3 · completa'], [2, '2 · limitada'], [1, '1 · parcial']],
   nsp: [[1, '1 vão'], [2, '2 vãos'], [3, '3 vãos'], [4, '4 vãos'], [5, '5 vãos'], [6, '6 vãos']],
+  perdaMode: [[0, 'calculada pelo modelo'], [1, 'estipulada (%)']],
   eqL: [[1, 'iguais'], [0, 'diferentes']], eqLoad: [[1, 'iguais nos vãos'], [0, 'por vão']], eqTr: [[1, 'o mesmo em todos'], [0, 'por vão e por apoio']]
 };
 const nsOf = v => Math.max(1, Math.min(MAXSP, Math.round(v.nsp || 2)));
@@ -920,8 +934,9 @@ function groupsFor(v){
     ['n_cab', 'Número de cabos', 'ncab', '', 1], ['n_cord', 'Cordoalhas por cabo', 'ncord', '', 1], ['Ap1', 'Área de uma cordoalha Ø12,7', 'Ap1', 'cm²', .001],
     ['fptk', 'Resistência do aço', 'fptk', 'MPa', 10], ['Ep', 'Módulo do aço de protensão', 'Ep', 'MPa', 1000], ['rj', 'Tensão no macaco / fptk', 'σpj/fptk', '', .01], ['gs', 'Coeficiente do aço', 'γs', '', .05]]});
   G.push({t: 'Perdas de protensão', o: false, f: [
+    ['perdaMode', 'Perda total de protensão', '', '', 1, 1, 'perdaMode']].concat(v.perdaMode === 1 ? [['perdaTot', 'Perda total estipulada (de σp,j)', 'Δ', '%', 1]] : [], [
     ['mu', 'Atrito cordoalha-bainha', 'μ', '1/rad', .01], ['kk', 'Perda parasita', 'k', '1/m', .0005], ['slip', 'Cravação das cunhas', 'Δcrav', 'm', .001],
-    ['phi_cr', 'Coeficiente de fluência', 'φ', '', .1], ['eps_cs', 'Retração', 'εcs', '‰', .01, 1000]]});
+    ['phi_cr', 'Coeficiente de fluência', 'φ', '', .1], ['eps_cs', 'Retração', 'εcs', '‰', .01, 1000]])});
   const pf = [['fyk', 'Aço CA-50', 'fyk', 'MPa', 10], ['Es', 'Módulo do aço passivo', 'Es', 'MPa', 1000]];
   if (multi) pf.push(['AstB', 'As tracionada nos apoios internos', 'Asap', 'cm²', .01]);
   pf.push(['AstV', multi ? 'As tracionada nos vãos' : 'As tracionada no vão', 'Asvão', 'cm²', .01]);
@@ -937,8 +952,9 @@ function groupsFor(v){
   return G;
 }
 const STORE = 'viga-cp-dados-v1';
-let inp = Object.assign({}, DEF), preset = 'n3';
-try { const sv = JSON.parse(localStorage.getItem(STORE) || 'null'); if (sv && sv.inp) { inp = Object.assign({}, DEF, sv.inp); preset = sv.preset || 'n3'; } } catch (e) {}
+let inp = Object.assign({}, DEF), preset = 'base';
+try { const sv = JSON.parse(localStorage.getItem(STORE) || 'null'); if (sv && sv.inp) { inp = Object.assign({}, DEF, sv.inp); preset = (sv.preset === 'n3' || !sv.preset) ? 'base' : sv.preset; } } catch (e) {}
+let base = Object.assign({}, inp), LV = null;   /* base = dados carregados; LV = cordoalhas por nível, da viga atual */
 function save(){ try { localStorage.setItem(STORE, JSON.stringify({inp, preset})); } catch (e) {} }
 
 let A = null, lastErr = null, tab = 'resumo';
@@ -958,9 +974,30 @@ function compute(){
 
 /* ---------- barra lateral ---------- */
 function tipoOf(){ const n = nsOf(inp); return n === 1 ? '1' : n === 2 ? (inp.eqL === 0 ? '2d' : '2e') : (n === 3 && inp.eqL !== 0 ? '3e' : ''); }
+function buildPresets(){
+  const pr = $('#presets'); pr.innerHTML = '';
+  const cd = LV ? [['base', 'Dados carregados', 'nível ' + base.nivel + ' · ' + base.n_cord + ' cord./cabo'], ['n3', 'Nível 3', LV.n3 ? LV.n3 + ' cord./cabo' : 'não atinge'], ['n2', 'Nível 2', LV.n2 ? LV.n2 + ' cord./cabo' : 'não atinge'], ['n1', 'Nível 1', LV.n1 ? LV.n1 + ' cord./cabo' : 'não atinge']]
+    : [['base', 'Dados carregados', '—'], ['n3', 'Nível 3', '—'], ['n2', 'Nível 2', '—'], ['n1', 'Nível 1', '—']];
+  cd.forEach(([id, n, s]) => { const off = id !== 'base' && (!LV || !LV[id]); const b = h('button', {class: 'btn', type: 'button', 'aria-pressed': String(preset === id), 'data-p': id, title: id === 'base' ? 'Volta aos dados que foram carregados' : 'Menor nº de cordoalhas por cabo que atinge o nível, para a viga atual'}, n + '<small>' + s + '</small>'); if (off) b.disabled = true; pr.appendChild(b); });
+}
+function refreshLevels(){
+  const ms = minStrands(inp), n3 = ms.find(r => r.N3), n2 = ms.find(r => r.N2);
+  LV = {n3: n3 ? n3.n : null, n2: n2 ? n2.n : null, n1: n2 ? Math.max(1, Math.ceil(n2.n / 2)) : 2};   /* nível 1: metade das cordoalhas do nível 2 (2 se o nível 2 não for atingido) */
+  buildPresets();
+}
+function applyLevel(lv){
+  const n = LV && LV['n' + lv]; if (!n) return;
+  const v = Object.assign({}, inp, {n_cord: n, nivel: lv});
+  if (lv !== 3) {   /* níveis 2 e 1: passiva tracionada (Ø16) para o ELU nas seções mais exigidas */
+    const a = analyse(Object.assign({}, v, {AscB: 0, AscV: 0, AstB: 0, AstV: 0})), nb = a.kSup >= 0 ? eluNeed(a.d, a.r, a.supIdx[a.kSup], true, 16) : null, nv = eluNeed(a.d, a.r, a.spIdx[a.kSpan], false, 16);
+    v.AscB = 0; v.AscV = 0; v.AstB = nb ? +nb.As.toFixed(2) : 0; v.AstV = +nv.As.toFixed(2);
+    if (lv === 1) { v.nB1 = nb ? nb.n : 0; v.nV1 = nv.n; v.phiN1 = 16; }
+  }
+  inp = v; preset = 'n' + lv; buildSide(); sched();
+}
 function buildSide(){
   const pr = $('#presets'); pr.innerHTML = '';
-  PRESETS.forEach(p => { const b = h('button', {class: 'btn', type: 'button', 'aria-pressed': String(preset === p.id), 'data-p': p.id}, p.n + '<small>' + p.s + '</small>'); pr.appendChild(b); });
+  buildPresets();
   const tp = $('#tipos'); tp.innerHTML = '';
   TIPOS.forEach(p => { const b = h('button', {class: 'btn', type: 'button', 'aria-pressed': String(tipoOf() === p.id), 'data-tp': p.id}, p.n + '<small>' + p.s + '</small>'); tp.appendChild(b); });
   const fl = $('#fields'); fl.innerHTML = '';
@@ -978,14 +1015,14 @@ function buildSide(){
     fl.appendChild(d);
   });
 }
-$('#presets').addEventListener('click', e => { const b = e.target.closest('button[data-p]'); if (!b) return; const p = PRESETS.find(x => x.id === b.dataset.p);
-  inp = Object.assign({}, DEF, p.ov); preset = p.id; buildSide(); sched(); });
+$('#presets').addEventListener('click', e => { const b = e.target.closest('button[data-p]'); if (!b || b.disabled) return;
+  if (b.dataset.p === 'base') { inp = Object.assign({}, base); preset = 'base'; buildSide(); sched(); } else applyLevel(+b.dataset.p.slice(1)); });
 $('#tipos').addEventListener('click', e => { const b = e.target.closest('button[data-tp]'); if (!b) return; const p = TIPOS.find(x => x.id === b.dataset.tp);
   inp = Object.assign({}, inp, p.ov); preset = ''; buildSide(); sched(); });
-$('#reset').addEventListener('click', () => { inp = Object.assign({}, DEF); preset = 'n3'; buildSide(); sched(); });
+$('#reset').addEventListener('click', () => { inp = Object.assign({}, DEF); base = Object.assign({}, DEF); preset = 'base'; buildSide(); sched(); });
 
 let pend = false;
-function sched(){ if (pend) return; pend = true; requestAnimationFrame(() => { pend = false; compute(); save(); renderStatus(); buildTabs(); renderPanel(); syncPresetButtons(); }); }
+function sched(){ if (pend) return; pend = true; requestAnimationFrame(() => { pend = false; compute(); save(); renderStatus(); buildTabs(); renderPanel(); refreshLevels(); syncPresetButtons(); }); }
 function syncPresetButtons(){ document.querySelectorAll('#presets button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.p === preset))); document.querySelectorAll('#tipos button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.tp === tipoOf()))); }
 
 /* ---------- cabeçalho de situação ---------- */
@@ -1113,6 +1150,7 @@ function cutBox(x, title, sel){
     for (let k = 0; k < b.n; k++) g += '<circle cx="' + (b.n === 1 ? bc / 2 : x0 + (x1 - x0) * k / (b.n - 1)).toFixed(2) + '" cy="' + y.toFixed(2) + '" r="' + r.toFixed(2) + '" fill="var(--s4)" stroke="var(--surface)" stroke-width="0.3"/>'; });
   g += '<text x="' + bc / 2 + '" y="-2" text-anchor="middle" font-size="3.6">' + f(bc, 0) + '</text><text x="-2.5" y="' + hc * 0.22 + '" text-anchor="middle" font-size="3.6" transform="rotate(-90 -2.5 ' + hc * 0.22 + ')">' + f(hc, 0) + '</text>';
   const fb = hc - yc;
+  if (title === null) return {g, bc, hc, e, fb, ps};
   return '<div class="cut' + (sel ? ' sel' : '') + '"><div class="t">' + title + '</div><svg viewBox="-9 -7 ' + (bc + 20) + ' ' + (hc + 12) + '" role="img" aria-label="Seção em x = ' + f(x, 2) + ' m">' + g + '</svg>' +
     '<div class="m">x = ' + f(x, 2) + ' m · e = ' + (e >= 0 ? '+' : '−') + f(Math.abs(e), 3) + ' m<br>cabos a ' + f(fb, 1) + ' cm da base<br>passiva sup.: ' + barTxt(ps.top) + '<br>passiva inf.: ' + barTxt(ps.bot) + '</div></div>';
 }
@@ -1123,10 +1161,34 @@ function cutsCard(){
   return '<div class="card" id="cutsCard"><h2>Cortes na seção · cablagem e armadura passiva</h2><p class="lead">' + d.n_cab + ' cabos de ' + d.n_cord + ' cordoalhas Ø12,7 em bainhas de Ø' + f(d.d_bain * 1000, 0) + ' mm, vistos nas seções ao longo da viga. O cabo sai do CG na ancoragem, desce no vão' + (multi ? ' e sobe para a parte superior sobre os apoios internos (e negativo)' : '') + '. Em roxo, a armadura passiva (A′ comprimida, As,ato e armadura tracionada no ELU, conforme o nível; barras ampliadas para leitura). Cotas em cm; a linha tracejada verde é o estribo. Na região da ancoragem (menos de 1 m das extremidades) não se desenha passiva.</p>' +
     '<div class="cuts">' + st.map(a => cutBox(a[0], a[1])).join('') + '</div>' +
     '<div class="cutctl"><label for="cutx"><b>Corte em x =</b> <span id="cutxv">' + f(d.L / 2, 1) + '</span> m</label><input type="range" id="cutx" min="0" max="' + Lt + '" step="0.5" value="' + L / 2 + '"><span class="foot" style="margin:0">arraste para percorrer a viga (0 a ' + f(Lt, 0) + ' m)</span></div>' +
-    '<div class="cuts" id="cutone" style="grid-template-columns:minmax(150px,220px);margin-top:10px">' + cutBox(L / 2, 'Corte escolhido', true) + '</div></div>';
+    '<div class="cuts" id="cutone" style="grid-template-columns:minmax(150px,220px);margin-top:10px">' + cutBox(L / 2, 'Corte escolhido', true) + '</div>' +
+    '<div class="cutctl" style="margin-top:10px"><b>Salvar seção:</b> <button class="btn" type="button" data-save="one:svg">Corte escolhido (SVG)</button><button class="btn" type="button" data-save="one:png">Corte escolhido (PNG)</button><button class="btn" type="button" data-save="all:svg">Todos os cortes (SVG)</button><button class="btn" type="button" data-save="all:png">Todos os cortes (PNG)</button></div></div>';
+}
+/* ---------- salvar a seção: SVG ou PNG do corte escolhido e de todos os cortes ---------- */
+const escX = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;');
+function cutSheet(list){   /* list = [[x, título], ...]; devolve um SVG autônomo, em cores claras */
+  const parts = list.map(([x, t], i) => { const c = cutBox(x, null), lines = [t, 'x = ' + f(x, 2) + ' m · e = ' + (c.e >= 0 ? '+' : '−') + f(Math.abs(c.e), 3) + ' m', 'cabos a ' + f(c.fb, 1) + ' cm da base', 'passiva sup.: ' + barTxt(c.ps.top), 'passiva inf.: ' + barTxt(c.ps.bot)]; return {c, lines}; });
+  const W = parts[0].c.bc + 20, H = parts[0].c.hc + 12 + 5 * 5.4 + 3, gap = 4; let body = '';
+  parts.forEach((q, i) => { const ox = i * (W + gap);
+    body += '<g transform="translate(' + ox + ' 0)"><g font-family="Segoe UI,Arial,sans-serif" font-size="3.6" fill="#4F5868">' + lightVars(q.c.g) + '</g>' +
+      q.lines.map((t, k) => '<text x="-9" y="' + (q.c.hc + 9 + k * 5.4) + '" font-family="Segoe UI,Arial,sans-serif" font-size="3.8" ' + (k === 0 ? 'font-weight="600" fill="#0B0B0B"' : 'fill="#4F5868"') + '>' + escX(t) + '</text>').join('') + '</g>'; });
+  const TW = parts.length * W + (parts.length - 1) * gap, scale = 6;
+  return {svg: '<svg xmlns="http://www.w3.org/2000/svg" width="' + Math.round(TW * scale) + '" height="' + Math.round(H * scale) + '" viewBox="-9 -7 ' + TW + ' ' + H + '"><rect x="-9" y="-7" width="' + TW + '" height="' + H + '" fill="#FFFFFF"/>' + body + '</svg>', w: Math.round(TW * scale), h: Math.round(H * scale)};
+}
+function saveCuts(which, kind){
+  const d = A.d, L = d.L, Lt = d.Ltot, pp = profileParams(d);
+  let list, nome;
+  if (which === 'one') { const x = +($('#cutx') || {value: L / 2}).value; list = [[x, 'Corte escolhido']]; nome = 'Secao_x' + String(+x.toFixed(2)).replace('.', ',') + 'm'; }
+  else { list = d.n > 1 ? [[0, 'Ancoragem'], [L / 5, 'Vão 1'], [pp.x0, 'Vão 1 (vértice)'], [0.7 * L, 'Vão 1'], [L - 0.5, 'Junto ao apoio B'], [L, 'Apoio B']] : [[0, 'Ancoragem'], [L / 5, 'Vão'], [pp.x0, 'Vão (vértice)'], [0.7 * L, 'Vão'], [L, 'Ancoragem']]; nome = 'Secoes_cabos_e_passiva'; }
+  const s = cutSheet(list);
+  if (kind === 'svg') { download(nome + '.svg', 'image/svg+xml', s.svg); return; }
+  const im = new Image(); im.onload = () => { const cv = document.createElement('canvas'); cv.width = s.w; cv.height = s.h; const cx = cv.getContext('2d'); cx.fillStyle = '#fff'; cx.fillRect(0, 0, s.w, s.h); cx.drawImage(im, 0, 0, s.w, s.h);
+    cv.toBlob(b => { const u = URL.createObjectURL(b), l = h('a', {href: u, download: nome + '.png'}); document.body.appendChild(l); l.click(); l.remove(); setTimeout(() => URL.revokeObjectURL(u), 4000); }, 'image/png'); };
+  im.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(s.svg);
 }
 function initCuts(){
   const r = $('#cutx'); if (!r) return;
+  document.querySelectorAll('#cutsCard [data-save]').forEach(b => b.addEventListener('click', () => saveCuts(b.dataset.save.split(':')[0], b.dataset.save.split(':')[1])));
   r.addEventListener('input', () => { const x = +r.value; $('#cutxv').textContent = f(x, 1); $('#cutone').innerHTML = cutBox(x, 'Corte escolhido', true); });
 }
 const PANELS = {};
@@ -1172,7 +1234,7 @@ PANELS.perdas = function(){
   const iB = A.iB >= 0 ? A.iB : Ls.x.length - 1, pmin = Math.min.apply(null, Ls.Pinf), dd2 = d.n > 1 && Math.abs(Ls.elong - Ls.elongR) > 0.05;
   return {
     html: '<div class="card"><h2>Tensão no aço ao longo do cabo</h2><div class="src">Planilha: Tracado_Perdas e Alongamento</div>' +
-      '<p class="lead">Protensão simultânea pelas duas extremidades. A tensão cai pelo atrito, a cravação das cunhas devolve tensão perto das ancoragens, o encurtamento elástico e as perdas progressivas (fluência, retração e relaxação) completam o quadro.</p><div id="c1"></div></div>' +
+      '<p class="lead">Protensão simultânea pelas duas extremidades. A tensão cai pelo atrito, a cravação das cunhas devolve tensão perto das ancoragens, o encurtamento elástico e as perdas progressivas (fluência, retração e relaxação) completam o quadro.</p>' + (Ls.stip ? '<p>' + chip('info', 'Perda total estipulada: ' + f(d.perdaTot, 1) + ' % de σp,j (P∞ = ' + f(d.Ap * d.sig_j * (1 - d.perdaTot / 100) * 1e3, 0) + ' kN em todo o cabo)') + (Ls.stipClamp ? ' ' + chip('warn', 'Em ' + Ls.stipClamp + ' seções as perdas imediatas já passam do estipulado: σp,∞ = σp,i') : '') + '</p>' : '') + '<div id="c1"></div></div>' +
       '<div class="grid2"><div class="card"><h2>Forças e perdas</h2>' + kv([
         ['σp,j no macaco', f(d.sig_j, 0) + ' MPa'], ['Pj', f(Ls.Pj, 0) + ' kN'], ['Pi no ato (mín.)', f(Math.min.apply(null, Ls.Pi), 0) + ' kN'], ['P∞ (mín.)', f(pmin, 0) + ' kN'],
         ['Perda total até o fim (mín. P∞/Pj)', f((1 - pmin / Ls.Pj) * 100, 1) + ' %'], ['Perda por atrito até ' + (A.iB >= 0 ? 'o apoio B' : 'a outra extremidade'), f((1 - Ls.sL[iB] / d.sig_j) * 100, 1) + ' %'], ['Alcance da cravação, extremidade esquerda', f(Ls.xa, 2) + ' m'], ['Alcance da cravação, extremidade direita', f(Ls.xaR, 2) + ' m'],
@@ -1418,8 +1480,8 @@ function memorialBody(){
     Rw('Encurtamento elástico', 'Δσ<sub>ee</sub> = c·[A<sub>p</sub>(1/A<sub>c</sub> + e²/I<sub>c</sub>)·σ − M<sub>g0</sub>·e/I<sub>c</sub>] / (1 + c·A<sub>p</sub>(1/A<sub>c</sub> + e²/I<sub>c</sub>)) ;  c = α<sub>p</sub>(n−1)/(2n)',
       'α<sub>p</sub> = ' + num(Ls.ap, 2) + ' ; c = ' + num(cES, 3) + ' ; e = ' + num(r.e[iV], 3) + ' m ; M<sub>g0</sub> = ' + num(ext.Mg0[iV], 1) + ' kN·m', num(Ls.des[iV], 1) + ' MPa'),
     Rw('Tensão no ato', 'σ<sub>p,i</sub> = σ − Δσ<sub>ee</sub> ;  P<sub>i</sub> = A<sub>p</sub>·σ<sub>p,i</sub>', num(Ls.sig_slip[iV], 1) + ' − ' + num(Ls.des[iV], 1), num(Ls.sig_i[iV], 1) + ' MPa · ' + num(Ls.Pi[iV], 0) + ' kN'),
-    Rw('Perdas progressivas', 'Δσ<sub>∞</sub> = [|ε<sub>cs</sub>|E<sub>p</sub> + α<sub>p</sub>|σ<sub>cp0</sub>|φ + σ<sub>p,i</sub>χ] / [(1+χ) + (1+0,5φ)α<sub>p</sub>η·ρ<sub>p</sub>]',
-      '[' + num(Math.abs(d.eps_cs) * d.Ep, 1) + ' + ' + num(Ls.ap28 * Math.abs(Ls.scp0[iV]) * d.phi_cr, 1) + ' + ' + num(Ls.sig_i[iV] * Ls.chi[iV], 1) + '] / [' + num(1 + Ls.chi[iV], 3) + ' + ' + num((1 + 0.5 * d.phi_cr) * Ls.ap28 * Ls.eta[iV] * rho_p, 3) + ']', num(Ls.dsig[iV], 1) + ' MPa'),
+    (d.perdaMode === 1 ? Rw('Perda total estipulada', 'σ<sub>p,∞</sub> = σ<sub>pj</sub>·(1 − Δ) ;  Δσ<sub>∞</sub> = σ<sub>p,i</sub> − σ<sub>p,∞</sub>', 'Δ = ' + num(d.perdaTot, 1) + ' % ; σ<sub>pj</sub> = ' + num(d.sig_j, 0) + ' MPa', num(Ls.dsig[iV], 1) + ' MPa de perdas progressivas') : Rw('Perdas progressivas', 'Δσ<sub>∞</sub> = [|ε<sub>cs</sub>|E<sub>p</sub> + α<sub>p</sub>|σ<sub>cp0</sub>|φ + σ<sub>p,i</sub>χ] / [(1+χ) + (1+0,5φ)α<sub>p</sub>η·ρ<sub>p</sub>]',
+      '[' + num(Math.abs(d.eps_cs) * d.Ep, 1) + ' + ' + num(Ls.ap28 * Math.abs(Ls.scp0[iV]) * d.phi_cr, 1) + ' + ' + num(Ls.sig_i[iV] * Ls.chi[iV], 1) + '] / [' + num(1 + Ls.chi[iV], 3) + ' + ' + num((1 + 0.5 * d.phi_cr) * Ls.ap28 * Ls.eta[iV] * rho_p, 3) + ']', num(Ls.dsig[iV], 1) + ' MPa')),
     Rw('Força final no vão 1', 'σ<sub>p,∞</sub> = σ<sub>p,i</sub> − Δσ<sub>∞</sub> ;  P<sub>∞</sub> = A<sub>p</sub>·σ<sub>p,∞</sub>', num(Ls.sig_i[iV], 1) + ' − ' + num(Ls.dsig[iV], 1), num(Ls.sig_inf[iV], 1) + ' MPa · ' + num(Ls.Pinf[iV], 0) + ' kN'),
     Rw('Força final ' + (hasB ? 'no apoio B' : 'na outra extremidade'), 'P<sub>∞</sub> = A<sub>p</sub>·σ<sub>p,∞</sub>', num(Ls.sig_inf[iB], 1) + ' MPa × ' + num(d.Ap * 1e4, 2) + ' cm²', num(Ls.Pinf[iB], 0) + ' kN'),
     Rw('Alongamento por extremidade (esquerda / direita)', 'Δl = ∫ σ/E<sub>p</sub> ds, cada extremidade até o cruzamento das curvas de atrito', 'comprimento do cabo ' + num(Ls.arc_tot, 2) + ' m', num(Ls.elong, 1) + ' / ' + num(Ls.elongR, 1) + ' mm'),
@@ -1597,10 +1659,10 @@ const DOC_CSS = 'body{font-family:"Segoe UI",Calibri,Arial,sans-serif;font-size:
   '@media print{body{max-width:none;padding:0}.ms{page-break-inside:auto}h2{page-break-after:avoid}.tela{page-break-inside:avoid}tr{page-break-inside:avoid}}@page{size:A4;margin:16mm 14mm}';
 
 const LOGO_UNB = document.getElementById('logoUnb') ? document.getElementById('logoUnb').src : '';
-const VERSION = '2.0.0'; { const v = document.getElementById('ver'); if (v) v.textContent = 'v' + VERSION; }
+const VERSION = '2.4.0'; { const v = document.getElementById('ver'); if (v) v.textContent = 'v' + VERSION; }
 let MEM = null;
 function memorialDoc(){
-  const sec = memorialBody(), d = A.d, tipoTxt = d.n === 1 ? 'viga protendida de 1 vão' : 'viga contínua protendida de ' + d.n + ' vãos', pn = (PRESETS.find(p => p.id === preset) || {n: 'dados personalizados'}).n, dt = new Date().toLocaleDateString('pt-BR');
+  const sec = memorialBody(), d = A.d, tipoTxt = d.n === 1 ? 'viga protendida de 1 vão' : 'viga contínua protendida de ' + d.n + ' vãos', pn = PRESET_NAMES[preset] || 'dados personalizados', dt = new Date().toLocaleDateString('pt-BR');
   const rows = []; groupsFor(inp).forEach(g => g.f.forEach(fl => { const [k, lab, sym, u, , sc, ok2] = fl; if (ok2) { rows.push('<tr><td>' + g.t + '</td><td>' + lab + '</td><td>' + sym + '</td><td class="n">' + (OPTS[ok2].find(o => o[0] === inp[k]) || [0, inp[k]])[1] + '</td><td></td></tr>'); return; }
     rows.push('<tr><td>' + g.t + '</td><td>' + lab + '</td><td>' + sym + '</td><td class="n">' + String(+(inp[k] * (sc || 1)).toPrecision(6)).replace('.', ',') + '</td><td>' + u + '</td></tr>'); }));
   const capa = '<div class="capa"><div class="unbl"><img alt="UnB" src="' + LOGO_UNB + '" height="32"> Universidade de Brasília</div><h1>Memorial de cálculo · ' + tipoTxt + '</h1><div class="sub">Concreto protendido · pós-tração aderente · NBR 6118 · UnB · Prof. Li Chong Lee Bacelar de Castro</div>' +
@@ -1649,14 +1711,49 @@ PANELS.memorial = function(){
   };
 };
 
+/* ---------- cartões: recolher/mostrar e ocupar toda a largura disponível ---------- */
+const COLK = 'viga-cp-recolhidos';
+let coll = {}; try { coll = JSON.parse(localStorage.getItem(COLK) || '{}') || {}; } catch (e) {}
+function saveColl(){ try { localStorage.setItem(COLK, JSON.stringify(coll)); } catch (e) {} }
+function layoutCards(host){
+  const bar = $('#recbar');
+  if (tab === 'memorial') { host.classList.remove('gridp'); bar.hidden = true; return; }
+  host.classList.add('gridp');
+  Array.from(host.children).filter(g => g.classList.contains('grid2')).forEach(g => { while (g.firstChild) g.parentNode.insertBefore(g.firstChild, g); g.remove(); });
+  const cards = Array.from(host.children).filter(c => c.classList.contains('card')), names = {};
+  cards.forEach(c => {
+    const h2 = c.querySelector('h2'), nm = h2 ? h2.textContent.trim() : 'Cartão', key = tab + '|' + nm; c.dataset.key = key; names[key] = nm;
+    if (h2 && !h2.querySelector('.cbtn')) { h2.classList.add('chd'); const b = h('button', {type: 'button', class: 'cbtn', title: 'Recolher este cartão', 'aria-label': 'Recolher ' + nm}, '–'); b.addEventListener('click', () => { coll[key] = 1; saveColl(); renderPanel(); }); h2.appendChild(b); }
+    c.hidden = !!coll[key];
+    const wide = c.id === 'cutsCard' || Array.from(c.querySelectorAll('table')).some(t => t.querySelectorAll('thead th').length > 6);
+    c.dataset.wide = wide ? '1' : ''; c.style.gridColumn = wide ? '1 / -1' : '';
+  });
+  /* chips dos recolhidos e botões gerais */
+  const hid = cards.filter(c => c.hidden);
+  bar.hidden = false; bar.innerHTML = '';
+  bar.appendChild(h('span', null, hid.length ? 'Recolhidos:' : 'Cartões:'));
+  hid.forEach(c => { const b = h('button', {type: 'button', class: 'chipc', title: 'Mostrar de novo'}, '+ ' + names[c.dataset.key]); b.addEventListener('click', () => { delete coll[c.dataset.key]; saveColl(); renderPanel(); }); bar.appendChild(b); });
+  const sp = h('span', {class: 'sp'}), bAll = h('button', {type: 'button'}, 'Recolher todos'), bNone = h('button', {type: 'button'}, 'Mostrar todos');
+  bAll.addEventListener('click', () => { cards.forEach(c => { coll[c.dataset.key] = 1; }); saveColl(); renderPanel(); });
+  bNone.addEventListener('click', () => { cards.forEach(c => { delete coll[c.dataset.key]; }); saveColl(); renderPanel(); });
+  if (cards.length - hid.length > 0) sp.appendChild(bAll); if (hid.length) sp.appendChild(bNone); bar.appendChild(sp);
+  /* a última linha de cada trecho é completada pelo último cartão, para ocupar toda a largura */
+  const vis = cards.filter(c => !c.hidden), cols = Math.max(1, getComputedStyle(host).gridTemplateColumns.split(' ').filter(w => parseFloat(w) > 1).length);
+  let col = 0, prev = null;
+  vis.forEach(c => {
+    if (c.dataset.wide) { if (prev && col > 0) prev.style.gridColumn = 'span ' + (cols - col + 1); col = 0; prev = null; return; }
+    c.style.gridColumn = ''; col++; prev = c; if (col >= cols) { col = 0; prev = null; }
+  });
+  if (prev && col > 0) prev.style.gridColumn = 'span ' + (cols - col + 1);
+}
 function renderPanel(){
   if (!A) return;
-  const p = PANELS[tab](); const host = $('#panel'); host.innerHTML = p.html; if (p.after) p.after();
+  const p = PANELS[tab](); const host = $('#panel'); host.innerHTML = p.html; layoutCards(host); if (p.after) p.after();
 }
 let rt = null; window.addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(renderPanel, 150); });
 
 /* ---------- inicialização ---------- */
-buildSide(); compute(); if (A) renderStatus(); buildTabs(); if (A) renderPanel();
+buildSide(); compute(); if (A) renderStatus(); buildTabs(); if (A) { renderPanel(); refreshLevels(); }
 })();
 </script>
 
