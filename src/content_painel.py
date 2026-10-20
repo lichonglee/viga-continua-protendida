@@ -4,7 +4,7 @@ Blocos: ('h1', t) ('h2', t) ('p', t) ('bul', [t]) ('num', [t]) ('img', [(arquivo
         ('side', arquivo, legenda, maxh_cm, [texto]) ('tab', linhas, larguras_cm) ('call', tipo, rótulo, texto) ('pb',)
 Marcação em texto: **negrito**. Tipos de caixa: info, warn, ok."""
 
-VERSAO = 'v2.8.0'
+VERSAO = 'v2.8.1'
 
 def blocos():
     B = []

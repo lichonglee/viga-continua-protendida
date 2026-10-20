@@ -187,7 +187,7 @@ h1{color:var(--accent)}
   <header class="top">
     <div>
       <h1 id="ttl">Viga contínua protendida, 2 vãos</h1>
-      <div class="credit">Produzido pelo Professor DSc. Li Chong Lee (Todos os direitos reservados) <span class="ver" id="ver" title="Versão do painel">v2.8.0</span></div>
+      <div class="credit">Produzido pelo Professor DSc. Li Chong Lee (Todos os direitos reservados) <span class="ver" id="ver" title="Versão do painel">v2.8.1</span></div>
       <div class="sub">Pós-tração aderente · 1 a 6 vãos, iguais ou diferentes · NBR 6118 · mesma lógica da planilha de apoio, recalculada a cada alteração</div>
     </div>
     <div class="status" id="status"></div>
@@ -1380,7 +1380,7 @@ PANELS.tensoes = function(){
   return {
     html: '<div class="card"><h2>Tensões nas fibras</h2><div class="src">Planilha: Tensoes</div><p class="lead">Tração positiva. σ1 é a fibra inferior e σ2 a superior. Combinações: frequente (ψ1), rara e quase permanente (ψ2).</p>' +
       '<div class="ctl"><label for="ts">Estado</label><select id="ts"><option value="ato">No ato (Pi + peso próprio)</option><option value="cqp">Quase permanente (ψ2)</option><option value="cf">ELS-D · frequente (ψ1)</option><option value="cr">ELS-F e ELS-CE · rara</option><option value="all">Todos os estados (agrupados)</option></select></div><div id="c1"></div></div>' +
-      '<div class="grid2"><div class="card"><h2>Margens aos limites</h2>' + table(['Verificação', 'Margem', 'Situação'], rows) + limNote() + '<p class="foot">Margem positiva significa folga. No ato a tração acima do limite é absorvida por armadura passiva As,ato = ' + f(Math.max.apply(null, A.aato), 1) + ' cm².</p></div>' +
+      '<div class="grid2"><div class="card"><h2>Margens aos limites</h2>' + table(['Verificação', 'Margem', 'Situação'], rows) + limNote() + '<p class="foot"><b>Margem</b> é a distância da tensão atuante até o limite da norma. <b>Folga</b> = margem positiva (atende, ainda resta tensão até o limite); margem negativa = limite ultrapassado. No ato a tração acima do limite é absorvida por armadura passiva As,ato = ' + f(Math.max.apply(null, A.aato), 1) + ' cm².</p></div>' +
       '<div class="card"><h2>Limites adotados</h2>' + kv([['fct,m', f(d.fctm, 2) + ' MPa'], ['fctk,inf', f(d.fctkinf, 2) + ' MPa'], ['fcj em t0', f(d.fcj, 1) + ' MPa'], ['Tração no ato 1,2·fct,m,j', f(d.ft_ato, 2) + ' MPa'], ['Compressão no ato 0,7·fcj', f(-0.7 * d.fcj, 2) + ' MPa'], ['Tração em serviço 1,2·fctk,inf', f(d.ft_els, 2) + ' MPa'], ['Compressão em serviço 0,7·fck', f(-0.7 * d.fck, 2) + ' MPa'], ['Ecs', f(d.Ecs, 0) + ' MPa'], ['Núcleo central k', f(d.k, 3) + ' m']]) + '</div></div>',
     after(){ const sel = $('#ts'); sel.value = tsel; const x = xsOf(), ck = A.r.ck, lv = A.lv.t, d = A.d;
       const draw = () => { tsel = sel.value; let s1, s2, refs, ttl;
@@ -1430,8 +1430,8 @@ PANELS.flecha = function(){
   const mx = a => a.reduce((m, v) => Math.abs(v) > Math.abs(m) ? v : m, 0);
   const dok = sd.every(s => s.dl <= s.lim);
   return {
-    html: '<div class="card"><h2>Deslocamentos verticais ' + (d.n === 1 ? 'do vão' : spans === 2 ? 'de todos os vãos' : 'do 1º vão') + '</h2><div class="src">Planilha: Flecha_PC</div><p class="lead">Seção não fissurada, rigidez Ecs·Ic, y″ = −M/EI integrado duas vezes. Positivo para baixo. Combinação quase permanente: Mg + ψ2·Mq + efeito da protensão P∞.</p><div id="c1"></div></div>' +
-      '<div class="card"><h2>Resultados</h2>' + kv([['Máx. |δ| do peso g', f(Math.abs(mx(g)), 1) + ' mm'], ['Máx. |δ| da protensão P∞', f(Math.abs(mx(P)), 1) + ' mm'], ['δ quase permanente (líquida)', f(mx(qp), 1) + ' mm'], ['δ quase permanente ×(1+φ)', f(mx(inf), 1) + ' mm'], ['Combinação frequente', f(mx(cf), 1) + ' mm']].concat(sd.map(s => [(d.n === 1 ? 'Vão' : 'Vão ' + (s.k + 1)) + ' · δ×(1+φ) / limite L/250', f(s.dl, 1) + ' / ' + f(s.lim, 1) + ' mm']), [['Frequência f1 (estimativa: maior vão biapoiado)', f(df.f1, 1) + ' Hz']])) +
+    html: '<div class="card"><h2>Deslocamentos verticais ' + (d.n === 1 ? 'do vão' : spans === 2 ? 'de todos os vãos' : 'do 1º vão') + '</h2><div class="src">Planilha: Flecha_PC</div><p class="lead">Seção não fissurada, rigidez Ecs·Ic, y″ = −M/EI integrado duas vezes. Positivo para baixo. Combinação quase permanente: Mg + ψ2·Mq + efeito da protensão P∞.</p><p class="foot"><b>Flecha líquida (PC líquida)</b> = flecha das cargas (g + ψ2·q, para baixo) menos o levantamento da protensão P∞ (para cima): é a flecha real da viga protendida. <b>×(1+φ)</b> soma a fluência (flecha a longo prazo). Valor negativo = contraflecha (a viga sobe). <b>Folga</b> = limite L/250 menos a flecha ×(1+φ).</p><div id="c1"></div></div>' +
+      '<div class="card"><h2>Resultados</h2>' + kv([['Máx. |δ| do peso g', f(Math.abs(mx(g)), 1) + ' mm'], ['Máx. |δ| da protensão P∞', f(Math.abs(mx(P)), 1) + ' mm'], ['δ quase permanente líquida (cargas − protensão)',f(mx(qp), 1) + ' mm'], ['δ quase permanente ×(1+φ)', f(mx(inf), 1) + ' mm'], ['Combinação frequente', f(mx(cf), 1) + ' mm']].concat(sd.map(s => [(d.n === 1 ? 'Vão' : 'Vão ' + (s.k + 1)) + ' · δ×(1+φ) / limite L/250', f(s.dl, 1) + ' / ' + f(s.lim, 1) + ' mm']), [['Frequência f1 (estimativa: maior vão biapoiado)', f(df.f1, 1) + ' Hz']])) +
       '<p style="margin-top:10px">' + ok(dok, 'Dentro de L/250 em todos os vãos', 'Acima de L/250 em algum vão') + (mx(inf) < 0 ? ' ' + chip('info', 'Contraflecha: a protensão levanta a viga') : '') + '</p></div>',
     after(){ chart($('#c1'), {series: [{name: 'Quase permanente líquida', x, y: qp, color: C.s1, d: 2}, {name: 'Quase permanente ×(1+φ)', x, y: inf, color: C.s2, d: 2}, {name: 'Frequente', x, y: cf, color: C.s3, d: 2}],
       refs: [{y: lim, label: d.n > 1 ? 'L/250 (maior vão)' : 'L/250'}, {y: -lim, label: '−L/250'}], groups: [{n: 'Quase permanente', s: ['Quase permanente líquida', 'Quase permanente ×(1+φ)']}, {n: 'Frequente', s: ['Frequente']}, {n: 'Longo prazo', s: ['Quase permanente ×(1+φ)']}], invertY: true, height: 300, xlab: 'x (m)', ylab: 'δ (mm), + para baixo', yd: 0, vd: 2, unit: 'mm', tx: x, title: 'Flecha'}); }
@@ -1487,7 +1487,7 @@ PANELS.ca = function(){
     neg ? [{c: ['Barras adotadas (apoios internos / vãos)', d.nnegCA + ' Ø' + d.phiCA + ' = ' + f(rc.As_neg, 1) + ' cm²', '—'], hl: 0}, {c: ['', d.nposCA + ' Ø' + d.phiCA + ' = ' + f(rc.As_pos, 1) + ' cm²', '—']}]
         : [{c: ['Barras adotadas (vão)', d.nposCA + ' Ø' + d.phiCA + ' = ' + f(rc.As_pos, 1) + ' cm²', '—'], hl: 0}],
     neg ? [{c: ['wk no ' + nmN + ', comb. frequente (mm)', f(rc.els.neg.wk, 2), 'fuso e tensões (aba Tensões)']}] : [{c: ['wk no vão, comb. frequente (mm)', f(rc.els.pos.wk, 2), 'fuso e tensões (aba Tensões)']}],
-    [{c: ['Flecha imediata (mm)', f(rc.defl_inst * 1000, 1), f(mm1(A.df.qp_net), 1) + ' (líquida)']}, {c: ['Flecha total (mm)', f(rc.defl_tot * 1000, 1), f(pcMax, 1) + ' (×(1+φ))']}],
+    [{c: ['Flecha imediata (mm)', f(rc.defl_inst * 1000, 1), f(mm1(A.df.qp_net), 1) + ' (líquida: cargas − protensão)']}, {c: ['Flecha total (mm)', f(rc.defl_tot * 1000, 1), f(pcMax, 1) + ' (×(1+φ))']}],
     neg ? [{c: ['Vsd no ' + nmN + ' (kN)', f(rc.Vsd_B, 0), f(Math.max.apply(null, A.sh.Vsd), 0)]}, {c: ['asw total no ' + nmN + ' (cm²/m)', f(rc.asw_B, 1), f(2 * Math.max.apply(null, A.sh.asw_calc), 1)]}]
         : [{c: ['Vsd na ancoragem (kN)', f(rc.Vsd_A, 0), f(Math.max.apply(null, A.sh.Vsd), 0)]}, {c: ['asw total na ancoragem (cm²/m)', f(rc.asw_A, 1), f(2 * Math.max.apply(null, A.sh.asw_calc), 1)]}]);
   function mm1(a){ return a.reduce((m, v) => Math.abs(v) > Math.abs(m) ? v : m, 0) * 1000; }
@@ -1767,7 +1767,7 @@ const DOC_CSS = 'body{font-family:"Segoe UI",Calibri,Arial,sans-serif;font-size:
   '@media print{body{max-width:none;padding:0}.ms{page-break-inside:auto}h2{page-break-after:avoid}.tela{page-break-inside:avoid}tr{page-break-inside:avoid}}@page{size:A4;margin:16mm 14mm}';
 
 const LOGO_UNB = document.getElementById('logoUnb') ? document.getElementById('logoUnb').src : '';
-const VERSION = '2.8.0'; { const v = document.getElementById('ver'); if (v) v.textContent = 'v' + VERSION; }
+const VERSION = '2.8.1'; { const v = document.getElementById('ver'); if (v) v.textContent = 'v' + VERSION; }
 let MEM = null;
 function memorialDoc(){
   const sec = memorialBody(), d = A.d, tipoTxt = d.n === 1 ? 'viga protendida de 1 vão' : 'viga contínua protendida de ' + d.n + ' vãos', pn = PRESET_NAMES[preset] || 'dados personalizados', dt = new Date().toLocaleDateString('pt-BR');
