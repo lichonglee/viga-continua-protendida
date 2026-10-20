@@ -1767,7 +1767,7 @@ const DOC_CSS = 'body{font-family:"Segoe UI",Calibri,Arial,sans-serif;font-size:
   '@media print{body{max-width:none;padding:0}.ms{page-break-inside:auto}h2{page-break-after:avoid}.tela{page-break-inside:avoid}tr{page-break-inside:avoid}}@page{size:A4;margin:16mm 14mm}';
 
 const LOGO_UNB = document.getElementById('logoUnb') ? document.getElementById('logoUnb').src : '';
-const VERSION = '2.8.1'; { const v = document.getElementById('ver'); if (v) v.textContent = 'v' + VERSION; }
+const VERSION = '2.8.1', VERSION_DATA = '20/10/2026'; { const v = document.getElementById('ver'); if (v) v.textContent = 'v' + VERSION + ' · ' + VERSION_DATA; }
 let MEM = null;
 function memorialDoc(){
   const sec = memorialBody(), d = A.d, tipoTxt = d.n === 1 ? 'viga protendida de 1 vão' : 'viga contínua protendida de ' + d.n + ' vãos', pn = PRESET_NAMES[preset] || 'dados personalizados', dt = new Date().toLocaleDateString('pt-BR');
@@ -1777,7 +1777,7 @@ function memorialDoc(){
     '<div class="sub">Seção ' + f(d.bw * 100, 0) + ' × ' + f(d.h * 100, 0) + ' cm · C' + f(d.fck, 0) + ' · ' + d.n_cab + ' cabos × ' + d.n_cord + ' cordoalhas Ø12,7 · ' + (d.n === 1 ? 'vão ' : 'vãos ') + d.Ls.map(l => f(l, l % 1 ? 1 : 0)).join(' + ') + ' m · ' + pn + ' · emitido em ' + dt + '</div><div class="sub">Produzido pelo Professor DSc. Li Chong Lee (Todos os direitos reservados) · painel v' + VERSION + '</div></div>';
   const toc = '<h2>Sumário</h2><ol class="toc">' + sec.map(s => '<li><a href="#ms' + s.n + '">' + s.titulo + '</a></li>').join('') + '</ol>';
   const dados = '<h2>Dados de entrada</h2><div class="tw"><table><thead><tr><th>Grupo</th><th>Dado</th><th>Símbolo</th><th class="n">Valor</th><th>Unid.</th></tr></thead><tbody>' + rows.join('') + '</tbody></table></div>';
-  return capa + toc + dados + sec.map(s => s.html).join('') + '<p class="rodape">Produzido pelo Professor DSc. Li Chong Lee (Todos os direitos reservados) · Universidade de Brasília · painel de viga contínua protendida v' + VERSION + '</p>';
+  return capa + toc + dados + sec.map(s => s.html).join('') + '<p class="rodape">Produzido pelo Professor DSc. Li Chong Lee (Todos os direitos reservados) · Universidade de Brasília · painel de viga contínua protendida v' + VERSION + ' · ' + VERSION_DATA + '</p>';
 }
 function docWithoutTelas(body, withTelas){ const w = h('div', null, body); if (!withTelas) w.querySelectorAll('.tela').forEach(n => n.remove()); return w; }
 function fullHtml(body, withTelas){ return '<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><title>Memorial de cálculo · viga contínua protendida</title><style>' + DOC_CSS + '</style></head><body>' + docWithoutTelas(body, withTelas).innerHTML + '</body></html>'; }

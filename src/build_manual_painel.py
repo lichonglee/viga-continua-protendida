@@ -20,7 +20,7 @@ NOME = 'Manual_Painel_Viga_Protendida_1_e_2_vaos'
 NAVY, BLUE, TINT = '164194', '0F6AB4', 'E3EAF6'
 CALL = {'info': ('E3EAF6', '164194'), 'warn': ('FFF3D6', 'C98500'), 'ok': ('E3F4E3', '1E9B5B')}
 W = 25.7                       # largura útil (cm), A4 paisagem com margens de 2 cm
-DATA = 'outubro de 2026'
+DATA = '20/10/2026'
 
 def dim(nome):
     with open(os.path.join(IMG, nome + '.png'), 'rb') as f: d = f.read(24)
